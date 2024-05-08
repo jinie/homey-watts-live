@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Watts live"
+  },
+  "class": "other",
+  "capabilities": [
+    "meter_power",
+    "measure_power"
+  ],
+  "energy": {
+    "cumulative": true
+  },
+  "platforms": [
+    "local"
+  ],
+  "connectivity": ["lan","cloud"],
+  "$extends": [
+    "defaults"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "unit": "W",
+  "title": {
+    "en": "L3 Negative Power Watt"
+  },
+  "desc": {
+    "en": "Power production of L3"
+  },  
+  "uiComponent": "sensor",
+  "uiQuickAction": true,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "icon": "/assets/images/measure_watt_avg.svg"
+}

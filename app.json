@@ -1,0 +1,398 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "dk.thoughtcrime.wattslive-mqtt",
+  "version": "1.0.6",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Watts Live MQTT"
+  },
+  "description": {
+    "en": "Monitor your home power consumtion with Watts Live through MQTT."
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [
+    "homey:app:nl.scanno.mqtt"
+  ],
+  "brandColor": "#587B70",
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Jimmy Selgen Nielsen",
+    "email": "jimmy.selgen@gmail.com"
+  },
+  "drivers": [
+    {
+      "images": {
+        "large": "/drivers/watts-live/assets/images/large.png",
+        "small": "/drivers/watts-live/assets/images/small.png"
+      },
+      "capabilities": [
+        "meter_power",
+        "measure_power"
+      ],
+      "class": "other",
+      "pair": [
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": false
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "name": {
+        "en": "Watts live"
+      },
+      "energy": {
+        "cumulative": true
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan",
+        "cloud"
+      ],
+      "id": "watts-live",
+      "settings": [
+        {
+          "id": "deviceId",
+          "type": "label",
+          "label": {
+            "en": "Device ID"
+          },
+          "value": ""
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Energy Production Data"
+          },
+          "children": [
+            {
+              "id": "include_production",
+              "type": "checkbox",
+              "label": {
+                "en": "Include Energy Production"
+              },
+              "value": false,
+              "hint": {
+                "en": "Include Energy Production readings, i.e. in case of solar power"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "capabilities": {
+    "measure_current_l1": {
+      "type": "number",
+      "unit": "A",
+      "title": {
+        "en": "Current L1"
+      },
+      "desc": {
+        "en": "Current of L1"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_current_l2": {
+      "type": "number",
+      "unit": "A",
+      "title": {
+        "en": "Current L2"
+      },
+      "desc": {
+        "en": "Current of L2"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_current_l3": {
+      "type": "number",
+      "unit": "A",
+      "title": {
+        "en": "Current L3"
+      },
+      "desc": {
+        "en": "Current of L3"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_active_energy": {
+      "type": "number",
+      "unit": "kWh",
+      "title": {
+        "en": "Energy Production kWh"
+      },
+      "desc": {
+        "en": "Cumulative Energy Production"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_active_power": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "Power Production Watt"
+      },
+      "desc": {
+        "en": "Cumulative Power Production"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_power_l1": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L1 Negative Power Watt"
+      },
+      "desc": {
+        "en": "Power production of L1"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_power_l2": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L2 Negative Power Watt"
+      },
+      "desc": {
+        "en": "Power production of L2"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_power_l3": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L3 Negative Power Watt"
+      },
+      "desc": {
+        "en": "Power production of L3"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_reactive_energy": {
+      "type": "number",
+      "unit": "KVarh",
+      "title": {
+        "en": "Reactive Energy KVarh"
+      },
+      "desc": {
+        "en": "Reactive energy produced by the system"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_reactive_power": {
+      "type": "number",
+      "unit": "Var",
+      "title": {
+        "en": "Reactive Production Var"
+      },
+      "desc": {
+        "en": "Reactive Power Production"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_positive_reactive_energy": {
+      "type": "number",
+      "unit": "KVarh",
+      "title": {
+        "en": "Reactive Consumption KVarh"
+      },
+      "desc": {
+        "en": "Reactive energy consumed by the system"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_positive_reactive_power": {
+      "type": "number",
+      "unit": "Var",
+      "title": {
+        "en": "Reactive Consumption Var"
+      },
+      "desc": {
+        "en": "Reactive Power Consumption"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_power_l1": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L1 Power"
+      },
+      "desc": {
+        "en": "Power consumption of L1"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_power_l2": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L2 Power"
+      },
+      "desc": {
+        "en": "Power consumption of L2"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_power_l3": {
+      "type": "number",
+      "unit": "W",
+      "title": {
+        "en": "L3 Power"
+      },
+      "desc": {
+        "en": "Power consumption of L3"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_voltage_l1": {
+      "type": "number",
+      "unit": "V",
+      "title": {
+        "en": "L1 Voltage"
+      },
+      "desc": {
+        "en": "Voltage of L1"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_voltage_l2": {
+      "type": "number",
+      "unit": "V",
+      "title": {
+        "en": "L2 Voltage"
+      },
+      "desc": {
+        "en": "Voltage of L2"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_voltage_l3": {
+      "type": "number",
+      "unit": "V",
+      "title": {
+        "en": "L3 Voltage"
+      },
+      "desc": {
+        "en": "Voltage of L3"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    }
+  }
+}

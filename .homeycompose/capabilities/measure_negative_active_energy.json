@@ -1,0 +1,16 @@
+{
+  "type": "number",
+  "unit": "kWh",
+  "title": {
+    "en": "Energy Production kWh"
+  },
+  "desc": {
+    "en": "Cumulative Energy Production"
+  },  
+  "uiComponent": "sensor",
+  "uiQuickAction": true,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "icon": "/assets/images/measure_watt_avg.svg"
+}

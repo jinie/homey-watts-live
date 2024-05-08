@@ -1,0 +1,31 @@
+{
+  "id": "dk.thoughtcrime.wattslive-mqtt",
+  "version": "1.0.6",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Watts Live MQTT"
+  },
+  "description": {
+    "en": "Monitor your home power consumtion with Watts Live through MQTT."
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [
+    "homey:app:nl.scanno.mqtt"
+  ],
+  "brandColor": "#587B70",
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Jimmy Selgen Nielsen",
+    "email": "jimmy.selgen@gmail.com"
+  }
+}
