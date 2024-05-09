@@ -115,7 +115,6 @@ export class WattsLiveDevice extends Homey.Device {
     }
   }
 
-
   async onSettings(event: any) {
     if (this.debug)
       this.log(`onSettings: changes ${JSON.stringify(event.changedKeys)}`);

@@ -1,7 +1,6 @@
 'use strict';
 
-import Homey from 'homey';
-import { ApiApp } from 'homey';
+import Homey, { ApiApp } from 'homey';
 
 export class WattsLiveApp extends Homey.App {
   private MQTTClient: Homey.ApiApp = this.homey.api.getApiApp('nl.scanno.mqtt') as ApiApp;
@@ -12,38 +11,32 @@ export class WattsLiveApp extends Homey.App {
   private applicationVersion: any;
   private debug: boolean = false;
   private applicationName: string = this.homey.manifest.name.en;
-  
+
   subscribeTopic(topicName: string) {
     if (!this.clientAvailable)
       return;
-    try {
-      return this.MQTTClient.post('subscribe', { topic: topicName }), (error: any) => {
-        if (error) {
-          this.log(`Can not subscrive to topic ${topicName}, error: ${error}`)
-        } else {
-          this.log(`Sucessfully subscribed to topic: ${topicName}`);
-        }
+    return this.MQTTClient.post('subscribe', { topic: topicName }).then((error: any) => {
+      if (error) {
+        this.log(`Can not subscrive to topic ${topicName}, error: ${JSON.stringify(error)}`)
+      } else {
+        this.log(`Sucessfully subscribed to topic: ${topicName}`);
       }
-    } catch (error: any) {
-      this.log(`Error while subscribing to ${topicName}. ${error}`);
-    };
+    });
   }
 
   sendMessage(topic: string, payload: string) {
     this.log(`sendMessage: ${topic} <= ${payload}`);
     if (!this.clientAvailable)
       return;
-    try {
-      this.MQTTClient.post('send', {
-        qos: 0,
-        retain: false,
-        mqttTopic: topic,
-        mqttMessage: payload
-      })
-    } catch (error: any) {
+    this.MQTTClient.post('send', {
+      qos: 0,
+      retain: false,
+      mqttTopic: topic,
+      mqttMessage: payload
+    }).catch((error: any) => {
       if (error)
         this.log(`Error sending ${topic} <= "${payload}"`);
-    }
+    });
   }
 
   onMessage(topic: string, message: string) {
@@ -65,39 +58,51 @@ export class WattsLiveApp extends Homey.App {
       .on('realtime', (topic: string, message: string) => {
         this.onMessage(topic, message);
       });
-    try {
-      this.MQTTClient.getInstalled()
-        .then((installed: boolean) => {
-          this.clientAvailable = installed;
-          this.log(`MQTT client status: ${this.clientAvailable}`);
-          if (installed) {
-            this.register();
-            this.homey.apps.getVersion(this.MQTTClient).then((version) => {
-              this.log(`MQTT client installed, version: ${version}`);
-            });
-          }
-        }).catch((error: any) => {
-          this.log(`MQTT client app error: ${error}`);
-        });
-    } catch (error) {
-      this.log(`MQTT client app error: ${error}`);
-    }
+    this.MQTTClient.getInstalled()
+      .then((installed: boolean) => {
+        this.clientAvailable = installed;
+        this.log(`MQTT client status: ${this.clientAvailable}`);
+        if (installed) {
+          this.register();
+          this.homey.apps.getVersion(this.MQTTClient).then((version) => {
+            this.log(`MQTT client installed, version: ${version}`);
+          });
+        }
+      }).catch((error: any) => {
+        this.log(`MQTT client app error: ${error}`);
+      });
+
   }
 
   register() {
-    this.clientAvailable = true;
-    // Subscribing to system topic to check if connection still alive (update ~10 second for mosquitto)
-    this.subscribeTopic("$SYS/broker/uptime");
-    this.lastMqttMessage = Date.now();
-    this.subscribeTopic("watts/+/measurement");
-    let now = Date.now();
-    Object.keys(this.drivers).forEach((driverId) => {
-      this.log(`Updating devices for driver: ${driverId}`);
-      this.drivers[driverId].getDevices().forEach((device: { nextRequest: number; }) => {
-        device.nextRequest = now;
+    try {
+      this.clientAvailable = true;
+      // Subscribing to system topic to check if connection still alive (update ~10 second for mosquitto)
+      let err = this.subscribeTopic("$SYS/broker/uptime");
+      if (err) {
+        this.log(`Error subscribing to system topic: $SYS/broker/uptime, error: ${JSON.stringify(err)}`);
+        return;
+      }
+      this.lastMqttMessage = Date.now();
+      err = this.subscribeTopic("watts/+/measurement");
+      if (err) {
+        this.log(`Error subscribing to topic: watts/+/measurement, error: ${JSON.stringify(err)}`);
+        return;
+      }
+      let now = Date.now();
+      Object.keys(this.drivers).forEach((driverId) => {
+        this.log(`Updating devices for driver: ${driverId}`);
+        this.drivers[driverId].getDevices().forEach((device: { nextRequest: number; }) => {
+          device.nextRequest = now;
+        });
+        this.drivers[driverId].updateDevices();
       });
-      this.drivers[driverId].updateDevices();
-    });
+    } catch (error) {
+      if (this.debug)
+        throw (error);
+      else
+        this.log(`${this.constructor.name} register error: ${error}`);
+    }
   }
 
   unregister() {
@@ -141,10 +146,7 @@ export class WattsLiveApp extends Homey.App {
           this.log(`${this.constructor.name} checkDevices error: ${error}`);
       }
     }, 60000);
-
   }
-
-
 }
 
 module.exports = WattsLiveApp;
