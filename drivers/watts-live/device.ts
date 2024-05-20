@@ -3,7 +3,7 @@ import { MeterReading, KvMap } from './types';
 
 export class WattsLiveDevice extends Homey.Device {
   private nextRequest: number | undefined = undefined;
-  private updateInterval: number = 10000;
+  private updateInterval: number = 30000;
   private debug: any;
 
   /**
@@ -47,6 +47,7 @@ export class WattsLiveDevice extends Homey.Device {
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = JSON.parse(JSON.stringify(message));
+      this.nextRequest = Date.now() + this.updateInterval;
 
       const kMap: KvMap = {
         'meter_power': readings.positive_active_energy / 1000,
@@ -133,7 +134,7 @@ export class WattsLiveDevice extends Homey.Device {
   }
 
   invalidateStatus(arg0: string) {
-    throw new Error('Method not implemented.');
+    this.setUnavailable(arg0);
   }
 
   onDeleted() {
