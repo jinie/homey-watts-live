@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "kWh",
+  "units": "kWh",
   "title": {
-    "en": "Energy Production kWh"
+    "en": "Energy Production"
   },
   "desc": {
     "en": "Cumulative Energy Production"

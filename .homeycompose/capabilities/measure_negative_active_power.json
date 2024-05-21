@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "W",
+  "units": "W",
   "title": {
-    "en": "Power Production Watt"
+    "en": "Power Production"
   },
   "desc": {
     "en": "Cumulative Power Production"

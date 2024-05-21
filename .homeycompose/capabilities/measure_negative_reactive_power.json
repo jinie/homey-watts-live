@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "Var",
+  "units": "Var",
   "title": {
-    "en": "Reactive Production Var"
+    "en": "Reactive Production"
   },
   "desc": {
     "en": "Reactive Power Production"

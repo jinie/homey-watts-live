@@ -109,7 +109,7 @@
   "capabilities": {
     "measure_current_l1": {
       "type": "number",
-      "unit": "A",
+      "units": "A",
       "title": {
         "en": "Current L1"
       },
@@ -125,7 +125,7 @@
     },
     "measure_current_l2": {
       "type": "number",
-      "unit": "A",
+      "units": "A",
       "title": {
         "en": "Current L2"
       },
@@ -141,7 +141,7 @@
     },
     "measure_current_l3": {
       "type": "number",
-      "unit": "A",
+      "units": "A",
       "title": {
         "en": "Current L3"
       },
@@ -157,9 +157,9 @@
     },
     "measure_negative_active_energy": {
       "type": "number",
-      "unit": "kWh",
+      "units": "kWh",
       "title": {
-        "en": "Energy Production kWh"
+        "en": "Energy Production"
       },
       "desc": {
         "en": "Cumulative Energy Production"
@@ -173,9 +173,9 @@
     },
     "measure_negative_active_power": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
-        "en": "Power Production Watt"
+        "en": "Power Production"
       },
       "desc": {
         "en": "Cumulative Power Production"
@@ -189,9 +189,9 @@
     },
     "measure_negative_power_l1": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
-        "en": "L1 Negative Power Watt"
+        "en": "L1 Negative Power"
       },
       "desc": {
         "en": "Power production of L1"
@@ -205,9 +205,9 @@
     },
     "measure_negative_power_l2": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
-        "en": "L2 Negative Power Watt"
+        "en": "L2 Negative Power"
       },
       "desc": {
         "en": "Power production of L2"
@@ -221,9 +221,9 @@
     },
     "measure_negative_power_l3": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
-        "en": "L3 Negative Power Watt"
+        "en": "L3 Negative Power"
       },
       "desc": {
         "en": "Power production of L3"
@@ -237,9 +237,9 @@
     },
     "measure_negative_reactive_energy": {
       "type": "number",
-      "unit": "KVarh",
+      "units": "KVarh",
       "title": {
-        "en": "Reactive Energy KVarh"
+        "en": "Reactive Energy"
       },
       "desc": {
         "en": "Reactive energy produced by the system"
@@ -253,9 +253,9 @@
     },
     "measure_negative_reactive_power": {
       "type": "number",
-      "unit": "Var",
+      "units": "Var",
       "title": {
-        "en": "Reactive Production Var"
+        "en": "Reactive Production"
       },
       "desc": {
         "en": "Reactive Power Production"
@@ -269,9 +269,9 @@
     },
     "measure_positive_reactive_energy": {
       "type": "number",
-      "unit": "KVarh",
+      "units": "KVarh",
       "title": {
-        "en": "Reactive Consumption KVarh"
+        "en": "Reactive Consumption"
       },
       "desc": {
         "en": "Reactive energy consumed by the system"
@@ -285,9 +285,9 @@
     },
     "measure_positive_reactive_power": {
       "type": "number",
-      "unit": "Var",
+      "units": "Var",
       "title": {
-        "en": "Reactive Consumption Var"
+        "en": "Reactive Consumption"
       },
       "desc": {
         "en": "Reactive Power Consumption"
@@ -301,7 +301,7 @@
     },
     "measure_power_l1": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
         "en": "L1 Power"
       },
@@ -317,7 +317,7 @@
     },
     "measure_power_l2": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
         "en": "L2 Power"
       },
@@ -333,7 +333,7 @@
     },
     "measure_power_l3": {
       "type": "number",
-      "unit": "W",
+      "units": "W",
       "title": {
         "en": "L3 Power"
       },
@@ -349,7 +349,7 @@
     },
     "measure_voltage_l1": {
       "type": "number",
-      "unit": "V",
+      "units": "V",
       "title": {
         "en": "L1 Voltage"
       },
@@ -365,7 +365,7 @@
     },
     "measure_voltage_l2": {
       "type": "number",
-      "unit": "V",
+      "units": "V",
       "title": {
         "en": "L2 Voltage"
       },
@@ -381,7 +381,7 @@
     },
     "measure_voltage_l3": {
       "type": "number",
-      "unit": "V",
+      "units": "V",
       "title": {
         "en": "L3 Voltage"
       },

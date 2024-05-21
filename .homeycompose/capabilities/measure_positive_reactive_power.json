@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "Var",
+  "units": "Var",
   "title": {
-    "en": "Reactive Consumption Var"
+    "en": "Reactive Consumption"
   },
   "desc": {
     "en": "Reactive Power Consumption"

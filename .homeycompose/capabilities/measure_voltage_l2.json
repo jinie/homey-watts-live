@@ -1,6 +1,6 @@
 {
   "type": "number",
-  "unit": "V",
+  "units": "V",
   "title": {
     "en": "L2 Voltage"
   },

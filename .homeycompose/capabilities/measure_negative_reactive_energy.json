@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "KVarh",
+  "units": "KVarh",
   "title": {
-    "en": "Reactive Energy KVarh"
+    "en": "Reactive Energy"
   },
   "desc": {
     "en": "Reactive energy produced by the system"

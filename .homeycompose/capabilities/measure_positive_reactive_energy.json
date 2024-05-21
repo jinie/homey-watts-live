@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "KVarh",
+  "units": "KVarh",
   "title": {
-    "en": "Reactive Consumption KVarh"
+    "en": "Reactive Consumption"
   },
   "desc": {
     "en": "Reactive energy consumed by the system"

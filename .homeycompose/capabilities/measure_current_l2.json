@@ -1,6 +1,6 @@
 {
   "type": "number",
-  "unit": "A",
+  "units": "A",
   "title": {
     "en": "Current L2"
   },

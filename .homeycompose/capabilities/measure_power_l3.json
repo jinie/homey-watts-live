@@ -1,6 +1,6 @@
 {
   "type": "number",
-  "unit": "W",
+  "units": "W",
   "title": {
     "en": "L3 Power"
   },

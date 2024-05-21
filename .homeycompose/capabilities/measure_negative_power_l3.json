@@ -1,8 +1,8 @@
 {
   "type": "number",
-  "unit": "W",
+  "units": "W",
   "title": {
-    "en": "L3 Negative Power Watt"
+    "en": "L3 Negative Power"
   },
   "desc": {
     "en": "Power production of L3"
