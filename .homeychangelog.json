@@ -25,5 +25,8 @@
   },
   "1.0.8": {
     "en": "Fixed units display of custom capabilities."
+  },
+  "1.0.9": {
+    "en": "Fix app no longer able to subscribe to MQTT Topic."
   }
 }
