@@ -13,10 +13,12 @@ export class WattsLiveApp extends Homey.App {
   private applicationName: string = this.homey.manifest.name.en;
 
   subscribeTopic(topicName: string) {
-    if (!this.clientAvailable)
+    if (!this.clientAvailable){
+      this.log(`MQTT client not available, can not subscribe to topic: ${topicName}`);
       return;
+    }
     return this.MQTTClient.post('subscribe', { topic: topicName }).then((error: any) => {
-      if (error) {
+      if (error.result != 0) {
         this.log(`Can not subscrive to topic ${topicName}, error: ${JSON.stringify(error)}`)
       } else {
         this.log(`Sucessfully subscribed to topic: ${topicName}`);
