@@ -1,6 +1,6 @@
 import Homey from 'homey';
 import { PairSession } from 'homey/lib/Driver';
-import { MessagesCollected } from './types';
+import { MessagesCollected, MeterReading } from './types';
 const WattsLiveDevice = require('./device');
 
 
@@ -153,6 +153,102 @@ export class WattsLiveDriver extends Homey.Driver {
   }
 
   collectedDataToDevice(deviceTopic: string, messages: string[]): {} | null {
+    let readings: MeterReading[] = [];
+    readings.forEach((message) => {
+      try {
+        readings.push(JSON.parse(JSON.stringify(message)) as MeterReading);
+      } catch (error) {
+        if (this.debug)
+          throw (error);
+        else
+          this.log(`collectedDataToDevice error: ${error}`);
+      }
+    });
+    // look through readings and find any keys that are undefined
+    let undefinedKeys: string[] = [];
+    readings.forEach((reading) => {
+      if(reading.positive_active_energy !== undefined) {
+        undefinedKeys.push('meter_power');
+      }
+      if(reading.positive_active_power === undefined) {
+        undefinedKeys.push('measure_power');
+      }
+      if(reading.positive_active_power_l1 === undefined) {
+        undefinedKeys.push('measure_power_l1');
+      }
+      if(reading.positive_active_power_l2 === undefined) {
+        undefinedKeys.push('measure_power_l2');
+      }
+      if(reading.positive_active_power_l3 === undefined) {
+        undefinedKeys.push('measure_power_l3');
+      }
+      if(reading.current_l1 === undefined) {
+        undefinedKeys.push('measure_current_l1');
+      }
+      if(reading.current_l2 === undefined) {
+        undefinedKeys.push('measure_current_l2');
+      }
+      if(reading.current_l3 === undefined) {
+        undefinedKeys.push('measure_current_l3');
+      }
+      if(reading.voltage_l1 === undefined) {
+        undefinedKeys.push('measure_voltage_l1');
+      }
+      if(reading.voltage_l2 === undefined) {
+        undefinedKeys.push('measure_voltage_l2');
+      }
+      if(reading.voltage_l3 === undefined) {
+        undefinedKeys.push('measure_voltage_l3');
+      }
+      if(reading.negative_active_energy !== undefined) {
+        undefinedKeys.push('measure_negative_active_energy');
+      }
+      if(reading.negative_active_power === undefined) {
+        undefinedKeys.push('measure_negative_active_power');
+      }
+      if(reading.negative_active_power_l1 === undefined) {
+        undefinedKeys.push('measure_negative_power_l1');
+      }
+      if(reading.negative_active_power_l2 === undefined) {
+        undefinedKeys.push('measure_negative_power_l2');
+      }
+      if(reading.negative_active_power_l3 === undefined) {
+        undefinedKeys.push('measure_negative_power_l3');
+      }
+      if(reading.negative_reactive_energy !== undefined) {
+        undefinedKeys.push('measure_negative_reactive_energy');
+      }
+      if(reading.negative_reactive_power === undefined) {
+        undefinedKeys.push('measure_negative_reactive_power');
+      }
+      if(reading.positive_reactive_energy !== undefined) {
+        undefinedKeys.push('measure_positive_reactive_energy');
+      }
+      if(reading.positive_reactive_power === undefined) {
+        undefinedKeys.push('measure_positive_reactive_power');
+      }
+    });
+
+    let caps: string[] = [
+      "measure_power",
+      "meter_power",
+      "measure_power_l1",
+      "measure_power_l2",
+      "measure_power_l3",
+      "measure_current_l1",
+      "measure_current_l2",
+      "measure_current_l3",
+      "measure_voltage_l1",
+      "measure_voltage_l2",
+      "measure_voltage_l3",
+    ]
+
+    undefinedKeys.forEach((key) => {
+      if(caps.includes(key)) {
+        caps.splice(caps.indexOf(key), 1);
+      }
+    });
+
     let devItem = {
       name: "Watts Live",
       data: {
@@ -162,19 +258,7 @@ export class WattsLiveDriver extends Homey.Driver {
         deviceId: deviceTopic,
         include_production: false,
       },
-      capabilities: [
-        "measure_power",
-        "meter_power",
-        "measure_power_l1",
-        "measure_power_l2",
-        "measure_power_l3",
-        "measure_current_l1",
-        "measure_current_l2",
-        "measure_current_l3",
-        "measure_voltage_l1",
-        "measure_voltage_l2",
-        "measure_voltage_l3",
-      ],
+      capabilities: caps,
       capabilitiesOptions: {},
       class: 'other'
     };

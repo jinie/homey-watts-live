@@ -50,30 +50,30 @@ export class WattsLiveDevice extends Homey.Device {
       this.nextRequest = Date.now() + this.updateInterval;
 
       const kMap: KvMap = {
-        'meter_power': readings.positive_active_energy / 1000,
-        'measure_power': readings.positive_active_power,
-        'measure_power_l1': readings.positive_active_power_l1,
-        'measure_power_l2': readings.positive_active_power_l2,
-        'measure_power_l3': readings.positive_active_power_l3,
-        'measure_current_l1': readings.current_l1,
-        'measure_current_l2': readings.current_l2,
-        'measure_current_l3': readings.current_l3,
-        'measure_voltage_l1': readings.voltage_l1,
-        'measure_voltage_l2': readings.voltage_l2,
-        'measure_voltage_l3': readings.voltage_l3,
-        'measure_negative_active_energy': readings.negative_active_energy / 1000,
-        'measure_negative_active_power': readings.negative_active_power,
-        'measure_negative_power_l1': readings.negative_active_power_l1,
-        'measure_negative_power_l2': readings.negative_active_power_l2,
-        'measure_negative_power_l3': readings.negative_active_power_l3,
-        'measure_negative_reactive_energy': readings.negative_reactive_energy / 1000,
-        'measure_negative_reactive_power': readings.negative_reactive_power,
-        'measure_positive_reactive_energy': readings.positive_reactive_energy / 1000,
-        'measure_positive_reactive_power': readings.positive_reactive_power
+        'meter_power': readings.positive_active_energy !== undefined ? readings.positive_active_energy / 1000 : 0,
+        'measure_power': readings.positive_active_power ?? 0,
+        'measure_power_l1': readings.positive_active_power_l1 ?? 0,
+        'measure_power_l2': readings.positive_active_power_l2 ?? 0,
+        'measure_power_l3': readings.positive_active_power_l3 ?? 0,
+        'measure_current_l1': readings.current_l1 ?? 0,
+        'measure_current_l2': readings.current_l2 ?? 0,
+        'measure_current_l3': readings.current_l3 ?? 0,
+        'measure_voltage_l1': readings.voltage_l1 ?? 0,
+        'measure_voltage_l2': readings.voltage_l2 ?? 0,
+        'measure_voltage_l3': readings.voltage_l3 ?? 0,
+        'measure_negative_active_energy': readings.negative_active_energy !== undefined ? readings.negative_active_energy / 1000 : 0,
+        'measure_negative_active_power': readings.negative_active_power ?? 0,
+        'measure_negative_power_l1': readings.negative_active_power_l1 ?? 0,
+        'measure_negative_power_l2': readings.negative_active_power_l2 ?? 0,
+        'measure_negative_power_l3': readings.negative_active_power_l3 ?? 0,
+        'measure_negative_reactive_energy': readings.negative_reactive_energy !== undefined ? readings.negative_reactive_energy / 1000 : 0,
+        'measure_negative_reactive_power': readings.negative_reactive_power ?? 0,
+        'measure_positive_reactive_energy': readings.positive_reactive_energy!== undefined ? readings.positive_reactive_energy / 1000 : 0,
+        'measure_positive_reactive_power': readings.positive_reactive_power ?? 0
       };
 
       Object.keys(kMap).forEach(key => {
-        if (this.hasCapability(key)) {
+        if (this.hasCapability(key) && kMap[key] !== undefined) {
           this.setCapabilityValue(key, kMap[key]);
         }
       });
