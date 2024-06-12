@@ -28,5 +28,8 @@
   },
   "1.0.9": {
     "en": "Fix app no longer able to subscribe to MQTT Topic."
+  },
+  "1.0.10": {
+    "en": "Fix for meters that do not report power per line/phase."
   }
 }
