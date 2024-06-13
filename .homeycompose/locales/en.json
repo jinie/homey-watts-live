@@ -1,0 +1,6 @@
+{
+    "mqtt_client.no_messages":"No messages received on MQTT Topic",
+    "mqtt_client.no_new_devices":"No new devices found while searching",
+    "device.unavailable.update":"Device is unavailable, please try again later",
+    "device.unavailable.offline":"Device is offline"
+}
