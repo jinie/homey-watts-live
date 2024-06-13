@@ -31,5 +31,8 @@
   },
   "1.0.10": {
     "en": "Fix for meters that do not report power per line/phase."
+  },
+  "1.0.11": {
+    "en": "Add error handling during pairing"
   }
 }
