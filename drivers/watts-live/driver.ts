@@ -1,6 +1,6 @@
 import Homey from 'homey';
 import { PairSession } from 'homey/lib/Driver';
-import { KvMap, MessagesCollected, MeterReading } from './types';
+import { MessagesCollected, MeterReading } from './types';
 const WattsLiveDevice = require('./device');
 
 

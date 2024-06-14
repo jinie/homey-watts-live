@@ -11,8 +11,10 @@ export class WattsLiveApp extends Homey.App {
   private applicationVersion: any;
   private debug: boolean = false;
   private applicationName: string = this.homey.manifest.name.en;
+  private mqttClientInitialized: boolean = false;
 
   subscribeTopic(topicName: string) {
+    this.log("Subscribing to topic: " + topicName);
     if (!this.clientAvailable){
       this.log(`MQTT client not available, can not subscribe to topic: ${topicName}`);
       return;
@@ -53,13 +55,20 @@ export class WattsLiveApp extends Homey.App {
     }
   }
 
-  connectMqttClient() {
+  setupMqttClient() {
+    if(this.mqttClientInitialized)
+      return;
     this.MQTTClient
-      .on('install', () => this.register())
-      .on('uninstall', () => this.unregister())
-      .on('realtime', (topic: string, message: string) => {
-        this.onMessage(topic, message);
-      });
+    .on('install', () => this.register())
+    .on('uninstall', () => this.unregister())
+    .on('realtime', (topic: string, message: string) => {
+      this.onMessage(topic, message);
+    });
+    this.mqttClientInitialized = true;
+  }
+  connectMqttClient() {
+
+    this.setupMqttClient();
     this.MQTTClient.getInstalled()
       .then((installed: boolean) => {
         this.clientAvailable = installed;
@@ -80,13 +89,13 @@ export class WattsLiveApp extends Homey.App {
     try {
       this.clientAvailable = true;
       // Subscribing to system topic to check if connection still alive (update ~10 second for mosquitto)
-      let err = this.subscribeTopic("$SYS/broker/uptime");
+      /*let err = this.subscribeTopic("$SYS/broker/uptime");
       if (err) {
         this.log(`Error subscribing to system topic: $SYS/broker/uptime, error: ${JSON.stringify(err)}`);
         return;
-      }
+      }*/
       this.lastMqttMessage = Date.now();
-      err = this.subscribeTopic("watts/+/measurement");
+      let err = this.subscribeTopic("watts/+/measurement");
       if (err) {
         this.log(`Error subscribing to topic: watts/+/measurement, error: ${JSON.stringify(err)}`);
         return;
