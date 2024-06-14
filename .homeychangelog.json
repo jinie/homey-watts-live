@@ -34,5 +34,8 @@
   },
   "1.0.11": {
     "en": "Add error handling during pairing"
+  },
+  "1.0.12": {
+    "en": "Fix MQTT assumption that broker is Mosquitto."
   }
 }
