@@ -55,25 +55,32 @@ export class WattsLiveApp extends Homey.App {
     }
   }
 
-  setupMqttClient() {
-    if(this.mqttClientInitialized)
-      return;
-    this.MQTTClient
-    .on('install', () => this.register())
-    .on('uninstall', () => this.unregister())
-    .on('realtime', (topic: string, message: string) => {
-      this.onMessage(topic, message);
-    });
-    this.mqttClientInitialized = true;
+  setupMqttClient(): boolean {
+    if(!this.mqttClientInitialized){
+      try{
+        this.MQTTClient
+        .on('install', () => this.register())
+        .on('uninstall', () => this.unregister())
+        .on('realtime', (topic: string, message: string) => {
+          this.onMessage(topic, message);
+        });
+        this.mqttClientInitialized = true;
+      } catch (error) {
+        this.log(`MQTT client setup error: ${error}`);
+      }
+    }
+    return this.mqttClientInitialized;
   }
-  connectMqttClient() {
 
-    this.setupMqttClient();
+
+  connectMqttClient() {
     this.MQTTClient.getInstalled()
       .then((installed: boolean) => {
         this.clientAvailable = installed;
         this.log(`MQTT client status: ${this.clientAvailable}`);
         if (installed) {
+          if(this.setupMqttClient() === false) 
+            return;
           this.register();
           this.homey.apps.getVersion(this.MQTTClient).then((version) => {
             this.log(`MQTT client installed, version: ${version}`);
@@ -87,13 +94,7 @@ export class WattsLiveApp extends Homey.App {
 
   register() {
     try {
-      this.clientAvailable = true;
       // Subscribing to system topic to check if connection still alive (update ~10 second for mosquitto)
-      /*let err = this.subscribeTopic("$SYS/broker/uptime");
-      if (err) {
-        this.log(`Error subscribing to system topic: $SYS/broker/uptime, error: ${JSON.stringify(err)}`);
-        return;
-      }*/
       this.lastMqttMessage = Date.now();
       let err = this.subscribeTopic("watts/+/measurement");
       if (err) {
@@ -119,6 +120,7 @@ export class WattsLiveApp extends Homey.App {
   unregister() {
     this.clientAvailable = false;
     this.lastMqttMessage = -1;
+    this.mqttClientInitialized = false;
     this.log(`${this.constructor.name} unregister called`);
   }
 
