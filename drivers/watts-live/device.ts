@@ -1,5 +1,5 @@
 import Homey from 'homey';
-import { MeterReading, KvMap } from './types';
+import { ReadingToCapabilityMap, MeterReading, KvMap } from './types';
 
 export class WattsLiveDevice extends Homey.Device {
   private nextRequest: number | undefined = undefined;
@@ -49,32 +49,21 @@ export class WattsLiveDevice extends Homey.Device {
       const readings: MeterReading = JSON.parse(JSON.stringify(message));
       this.nextRequest = Date.now() + this.updateInterval;
 
-      const kMap: KvMap = {
-        'meter_power': readings.positive_active_energy !== undefined ? readings.positive_active_energy / 1000 : 0,
-        'measure_power': readings.positive_active_power ?? 0,
-        'measure_power_l1': readings.positive_active_power_l1 ?? 0,
-        'measure_power_l2': readings.positive_active_power_l2 ?? 0,
-        'measure_power_l3': readings.positive_active_power_l3 ?? 0,
-        'measure_current_l1': readings.current_l1 ?? 0,
-        'measure_current_l2': readings.current_l2 ?? 0,
-        'measure_current_l3': readings.current_l3 ?? 0,
-        'measure_voltage_l1': readings.voltage_l1 ?? 0,
-        'measure_voltage_l2': readings.voltage_l2 ?? 0,
-        'measure_voltage_l3': readings.voltage_l3 ?? 0,
-        'measure_negative_active_energy': readings.negative_active_energy !== undefined ? readings.negative_active_energy / 1000 : 0,
-        'measure_negative_active_power': readings.negative_active_power ?? 0,
-        'measure_negative_power_l1': readings.negative_active_power_l1 ?? 0,
-        'measure_negative_power_l2': readings.negative_active_power_l2 ?? 0,
-        'measure_negative_power_l3': readings.negative_active_power_l3 ?? 0,
-        'measure_negative_reactive_energy': readings.negative_reactive_energy !== undefined ? readings.negative_reactive_energy / 1000 : 0,
-        'measure_negative_reactive_power': readings.negative_reactive_power ?? 0,
-        'measure_positive_reactive_energy': readings.positive_reactive_energy!== undefined ? readings.positive_reactive_energy / 1000 : 0,
-        'measure_positive_reactive_power': readings.positive_reactive_power ?? 0
-      };
-
+      // Map readings to capabilities, convert undefined to 0
+      let kMap: KvMap = {};
+      Object.keys(ReadingToCapabilityMap).forEach((value) => {
+        let key = ReadingToCapabilityMap[value];
+        kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
+        // Convert from Watts to kW
+        if(['meter_power', 'measure_negative_active_energy', 'measure_negative_reactive_energy', 'measure_positive_reactive_energy'].includes(key)) {
+          kMap[key] = (kMap[key] ?? 0) / 1000;
+        }
+      });
+    
+      // Set capabilities
       Object.keys(kMap).forEach(key => {
         if (this.hasCapability(key) && kMap[key] !== undefined) {
-          this.setCapabilityValue(key, kMap[key]);
+          this.setCapabilityValue(key, kMap[key] as number);
         }
       });
 
@@ -129,7 +118,12 @@ export class WattsLiveDevice extends Homey.Device {
 
     if (event.changedKeys.includes('include_production')) {
       this.log(`onSettings: include_production ${event.newSettings['include_production']}`);
-      await this.updateProductionCapabilities(event.newSettings['include_production']).catch((error) => { if (this.debug) throw (error); else this.log(`onSettings: updateProductionCapabilities ${error}`); });
+      await this.updateProductionCapabilities(event.newSettings['include_production']).catch((error) => {
+        if (this.debug)
+          throw (error);
+        else
+          this.log(`onSettings: updateProductionCapabilities ${error}`);
+      });
     };
   }
 
