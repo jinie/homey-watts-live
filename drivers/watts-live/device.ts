@@ -10,9 +10,8 @@ export class WattsLiveDevice extends Homey.Device {
    * onInit is called when the device is initialized.
    */
   async onInit() {
-
+    this.migrateCapabilities(); //Update capabilities from V1 to V2
     this.log('WattsLiveDevice has been initialized');
-    this.updateProductionCapabilities(true); // Add production capabilities to all devices and remove option to disable them.
   }
 
   /**
@@ -77,28 +76,6 @@ export class WattsLiveDevice extends Homey.Device {
     }
   }
 
-  async updateProductionCapabilities(enable: boolean) {
-    let production_capabilities: string[] = [
-      'meter_power.exported',
-      'measure_negative_active_power',
-      'measure_negative_power.l1',
-      'measure_negative_power.l2',
-      'measure_negative_power.l3',
-      'measure_negative_reactive_energy',
-      'measure_negative_reactive_power',
-      'measure_positive_reactive_energy',
-      'measure_positive_reactive_power'
-    ];
-    if (enable) {
-      this.log('Adding production capabilities')
-      for (let capability of production_capabilities) {
-        if (!this.getCapabilities().includes(capability)) {
-          await this.addCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`onSettings: addCapability ${error}`); });
-        }
-      };
-    }
-  }
-
   async onSettings(event: any) {
     if (this.debug)
       this.log(`onSettings: changes ${JSON.stringify(event.changedKeys)}`);
@@ -133,6 +110,45 @@ export class WattsLiveDevice extends Homey.Device {
     }
     return Date.now() > this.nextRequest;
   }
+
+  /**
+   * Migrate custom capabilities between versions.
+   * No "official" way of migrating exists, so for now just delete the old capabiliy and add a new one.
+   * This deletes history and may break flows, so don't make a habit of it.
+   */
+  async migrateCapabilities() {
+    const caps:string[] = [
+    'meter_power.exported',
+    'measure_negative_active_power',
+    'measure_negative_power_l1',
+    'measure_negative_power_l2',
+    'measure_negative_power_l3',
+    'measure_negative_reactive_energy',
+    'measure_negative_reactive_power',
+    'measure_positive_reactive_energy',
+    'measure_positive_reactive_power'
+    ]
+    
+    if(this.getCapabilities().includes("meter_power")){
+      this.log("Removing meter_power capability");
+      await this.removeCapability("meter_power").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+      this.log("Adding meter_power.imported capability");
+      await this.addCapability("meter_power.imported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });
+    }
+    if(this.getCapabilities().includes("measure_negative_active_energy")){
+      this.log("removing measure_negative_active_energy capability");
+      await this.removeCapability("measure_negative_active_energy").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+      this.log("Adding metwer_power.exported capability");
+      await this.addCapability("meter_power.exported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });    
+    };
+    
+    await caps.forEach( capability =>{
+      if(this.getCapabilities().includes(capability)===false)
+        this.log(`Adding capability ${capability}`);
+        this.addCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, Production addCapability error: ${error}`); });
+    })
+  }
+
 };
 
 module.exports = WattsLiveDevice;

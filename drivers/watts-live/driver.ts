@@ -1,6 +1,6 @@
 import Homey from 'homey';
 import { PairSession } from 'homey/lib/Driver';
-import { ReadingToCapabilityMap, MessagesCollected, MeterReading } from './types';
+import { ReadingToCapabilityMap, MessagesCollected, MeterReading, Capabilities } from './types';
 const WattsLiveDevice = require('./device');
 
 
@@ -31,7 +31,6 @@ export class WattsLiveDriver extends Homey.Driver {
       }
     }, 30000);
     this.log('WattsLiveDriver has been initialized');
-
   }
 
   collectPairingData(topic: string, message: string) {
@@ -175,30 +174,8 @@ export class WattsLiveDriver extends Homey.Driver {
       }
     });
 
-    let caps: string[] = [
-      "measure_power",
-      "meter_power.imported",
-      "meter_power.exported",
-      "measure_power",
-      "measure_power.l1",
-      "measure_power.l2",
-      "measure_power.l3",
-      "measure_current.l1",
-      "measure_current.l2",
-      "measure_current.l3",
-      "measure_voltage.l1",
-      "measure_voltage.l2",
-      "measure_voltage.l3",
-      'measure_negative_active_power',
-      'measure_negative_power',
-      'measure_negative_power.l1',
-      'measure_negative_power.l2',
-      'measure_negative_power.l3',
-      'measure_negative_reactive_energy',
-      'measure_negative_reactive_power',
-      'measure_positive_reactive_energy',
-      'measure_positive_reactive_power'
-    ]
+
+    let caps = Capabilities;
 
     undefinedKeys.forEach((key) => {
       if (caps.includes(key)) {
