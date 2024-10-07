@@ -6,24 +6,5 @@
             "en": "Device ID"
         },
         "value": ""
-    },
-    {
-        "type": "group",
-        "label": {
-            "en": "Energy Production Data"
-        },
-        "children": [
-            {
-                "id": "include_production",
-                "type": "checkbox",
-                "label": {
-                    "en": "Include Energy Production"
-                },
-                "value": false,
-                "hint": {
-                    "en": "Include Energy Production readings, i.e. in case of solar power"
-                }
-            }
-        ]
     }
 ]

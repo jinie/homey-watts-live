@@ -177,16 +177,27 @@ export class WattsLiveDriver extends Homey.Driver {
 
     let caps: string[] = [
       "measure_power",
-      "meter_power",
-      "measure_power_l1",
-      "measure_power_l2",
-      "measure_power_l3",
-      "measure_current_l1",
-      "measure_current_l2",
-      "measure_current_l3",
-      "measure_voltage_l1",
-      "measure_voltage_l2",
-      "measure_voltage_l3",
+      "meter_power.imported",
+      "meter_power.exported",
+      "measure_power",
+      "measure_power.l1",
+      "measure_power.l2",
+      "measure_power.l3",
+      "measure_current.l1",
+      "measure_current.l2",
+      "measure_current.l3",
+      "measure_voltage.l1",
+      "measure_voltage.l2",
+      "measure_voltage.l3",
+      'measure_negative_active_power',
+      'measure_negative_power',
+      'measure_negative_power.l1',
+      'measure_negative_power.l2',
+      'measure_negative_power.l3',
+      'measure_negative_reactive_energy',
+      'measure_negative_reactive_power',
+      'measure_positive_reactive_energy',
+      'measure_positive_reactive_power'
     ]
 
     undefinedKeys.forEach((key) => {

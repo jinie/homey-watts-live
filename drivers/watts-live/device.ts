@@ -12,6 +12,7 @@ export class WattsLiveDevice extends Homey.Device {
   async onInit() {
 
     this.log('WattsLiveDevice has been initialized');
+    this.updateProductionCapabilities(true); // Add production capabilities to all devices and remove option to disable them.
   }
 
   /**
@@ -55,7 +56,7 @@ export class WattsLiveDevice extends Homey.Device {
         let key = ReadingToCapabilityMap[value];
         kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
         // Convert from Watts to kW
-        if(['meter_power', 'measure_negative_active_energy', 'measure_negative_reactive_energy', 'measure_positive_reactive_energy'].includes(key)) {
+        if(['meter_power.imported', 'meter_power.exported', 'measure_negative_reactive_energy', 'measure_positive_reactive_energy'].includes(key)) {
           kMap[key] = (kMap[key] ?? 0) / 1000;
         }
       });
@@ -78,11 +79,11 @@ export class WattsLiveDevice extends Homey.Device {
 
   async updateProductionCapabilities(enable: boolean) {
     let production_capabilities: string[] = [
-      'measure_negative_active_energy',
+      'meter_power.exported',
       'measure_negative_active_power',
-      'measure_negative_power_l1',
-      'measure_negative_power_l2',
-      'measure_negative_power_l3',
+      'measure_negative_power.l1',
+      'measure_negative_power.l2',
+      'measure_negative_power.l3',
       'measure_negative_reactive_energy',
       'measure_negative_reactive_power',
       'measure_positive_reactive_energy',
@@ -93,13 +94,6 @@ export class WattsLiveDevice extends Homey.Device {
       for (let capability of production_capabilities) {
         if (!this.getCapabilities().includes(capability)) {
           await this.addCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`onSettings: addCapability ${error}`); });
-        }
-      };
-    } else {
-      this.log('Removing production capabilities')
-      for (let capability of production_capabilities) {
-        if (this.getCapabilities().includes(capability)) {
-          await this.removeCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`onSettings: removeCapability ${error}`); });
         }
       };
     }
@@ -114,16 +108,6 @@ export class WattsLiveDevice extends Homey.Device {
         this.nextRequest = Date.now();
         this.invalidateStatus(this.homey.__('device.unavailable.update'));
       }, 3000);
-    };
-
-    if (event.changedKeys.includes('include_production')) {
-      this.log(`onSettings: include_production ${event.newSettings['include_production']}`);
-      await this.updateProductionCapabilities(event.newSettings['include_production']).catch((error) => {
-        if (this.debug)
-          throw (error);
-        else
-          this.log(`onSettings: updateProductionCapabilities ${error}`);
-      });
     };
   }
 

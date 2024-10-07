@@ -37,8 +37,26 @@
         "small": "/drivers/watts-live/assets/images/small.png"
       },
       "capabilities": [
-        "meter_power",
-        "measure_power"
+        "meter_power.imported",
+        "meter_power.exported",
+        "measure_power",
+        "measure_power.l1",
+        "measure_power.l2",
+        "measure_power.l3",
+        "measure_voltage.l1",
+        "measure_voltage.l2",
+        "measure_voltage.l3",
+        "measure_current.l1",
+        "measure_current.l2",
+        "measure_current.l3",
+        "measure_negative_power",
+        "measure_negative_power.l1",
+        "measure_negative_power.l2",
+        "measure_negative_power.l3",
+        "measure_negative_reactive_energy",
+        "measure_negative_reactive_power",
+        "measure_positive_reactive_energy",
+        "measure_positive_reactive_power"
       ],
       "class": "other",
       "pair": [
@@ -64,8 +82,92 @@
       "name": {
         "en": "Watts live"
       },
+      "capabilitiesOptions": {
+        "meter_power.imported": {
+          "title": {
+            "en": "Imported Energy"
+          }
+        },
+        "meter_power.exported": {
+          "title": {
+            "en": "Exported Energy"
+          }
+        },
+        "measure_voltage.l1": {
+          "title": {
+            "en": "Voltage L1"
+          }
+        },
+        "measure_voltage.l2": {
+          "title": {
+            "en": "Voltage L2"
+          }
+        },
+        "measure_voltage.l3": {
+          "title": {
+            "en": "Voltage L3"
+          }
+        },
+        "measure_current.l1": {
+          "title": {
+            "en": "Current L1"
+          }
+        },
+        "measure_current.l2": {
+          "title": {
+            "en": "Current L2"
+          }
+        },
+        "measure_current.l3": {
+          "title": {
+            "en": "Current L3"
+          }
+        },
+        "measure_power": {
+          "title": {
+            "en": "Total Power"
+          }
+        },
+        "measure_power.l1": {
+          "title": {
+            "en": "Power L1"
+          }
+        },
+        "measure_power.l2": {
+          "title": {
+            "en": "Power L2"
+          }
+        },
+        "measure_power.l3": {
+          "title": {
+            "en": "Power L3"
+          }
+        },
+        "measure_negative_power": {
+          "title": {
+            "en": "Total Negative Power"
+          }
+        },
+        "measure_negative_power.l1": {
+          "title": {
+            "en": "Negative Power L1"
+          }
+        },
+        "measure_negative_power.l2": {
+          "title": {
+            "en": "Negative Power L2"
+          }
+        },
+        "measure_negative_power.l3": {
+          "title": {
+            "en": "Negative Power L3"
+          }
+        }
+      },
       "energy": {
-        "cumulative": true
+        "cumulative": true,
+        "cumulativeImportedCapability": "meter_power.imported",
+        "cumulativeExportedCapability": "meter_power.exported"
       },
       "platforms": [
         "local"
@@ -83,38 +185,19 @@
             "en": "Device ID"
           },
           "value": ""
-        },
-        {
-          "type": "group",
-          "label": {
-            "en": "Energy Production Data"
-          },
-          "children": [
-            {
-              "id": "include_production",
-              "type": "checkbox",
-              "label": {
-                "en": "Include Energy Production"
-              },
-              "value": false,
-              "hint": {
-                "en": "Include Energy Production readings, i.e. in case of solar power"
-              }
-            }
-          ]
         }
       ]
     }
   ],
   "capabilities": {
-    "measure_current_l1": {
+    "measure_current": {
       "type": "number",
       "units": "A",
       "title": {
-        "en": "Current L1"
+        "en": "Current"
       },
       "desc": {
-        "en": "Current of L1"
+        "en": "Current of specific phase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -123,30 +206,14 @@
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
     },
-    "measure_current_l2": {
+    "measure_energy": {
       "type": "number",
-      "units": "A",
+      "units": "kWh",
       "title": {
-        "en": "Current L2"
+        "en": "Energy"
       },
       "desc": {
-        "en": "Current of L2"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_current_l3": {
-      "type": "number",
-      "units": "A",
-      "title": {
-        "en": "Current L3"
-      },
-      "desc": {
-        "en": "Current of L3"
+        "en": "Cumulative Energy"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -187,7 +254,7 @@
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
     },
-    "measure_negative_power_l1": {
+    "measure_negative_power": {
       "type": "number",
       "units": "W",
       "title": {
@@ -195,38 +262,6 @@
       },
       "desc": {
         "en": "Power production of L1"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_negative_power_l2": {
-      "type": "number",
-      "units": "W",
-      "title": {
-        "en": "L2 Negative Power"
-      },
-      "desc": {
-        "en": "Power production of L2"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_negative_power_l3": {
-      "type": "number",
-      "units": "W",
-      "title": {
-        "en": "L3 Negative Power"
-      },
-      "desc": {
-        "en": "Power production of L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -299,7 +334,7 @@
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
     },
-    "measure_power_l1": {
+    "measure_power": {
       "type": "number",
       "units": "W",
       "title": {
@@ -315,39 +350,7 @@
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
     },
-    "measure_power_l2": {
-      "type": "number",
-      "units": "W",
-      "title": {
-        "en": "L2 Power"
-      },
-      "desc": {
-        "en": "Power consumption of L2"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_power_l3": {
-      "type": "number",
-      "units": "W",
-      "title": {
-        "en": "L3 Power"
-      },
-      "desc": {
-        "en": "Power consumption of L3"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_voltage_l1": {
+    "measure_voltage": {
       "type": "number",
       "units": "V",
       "title": {
@@ -355,38 +358,6 @@
       },
       "desc": {
         "en": "Voltage of L1"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_voltage_l2": {
-      "type": "number",
-      "units": "V",
-      "title": {
-        "en": "L2 Voltage"
-      },
-      "desc": {
-        "en": "Voltage of L2"
-      },
-      "uiComponent": "sensor",
-      "uiQuickAction": true,
-      "insights": true,
-      "getable": true,
-      "setable": false,
-      "icon": "/assets/images/measure_watt_avg.svg"
-    },
-    "measure_voltage_l3": {
-      "type": "number",
-      "units": "V",
-      "title": {
-        "en": "L3 Voltage"
-      },
-      "desc": {
-        "en": "Voltage of L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,

@@ -4,11 +4,81 @@
   },
   "class": "other",
   "capabilities": [
-    "meter_power",
-    "measure_power"
+    "meter_power.imported",
+    "meter_power.exported",
+    "measure_power",
+    "measure_power.l1",
+    "measure_power.l2",
+    "measure_power.l3",
+    "measure_voltage.l1",
+    "measure_voltage.l2",
+    "measure_voltage.l3",
+    "measure_current.l1",
+    "measure_current.l2",
+    "measure_current.l3",
+    "measure_negative_power",
+    "measure_negative_power.l1",
+    "measure_negative_power.l2",
+    "measure_negative_power.l3",
+    "measure_negative_reactive_energy",
+    "measure_negative_reactive_power",
+    "measure_positive_reactive_energy",
+    "measure_positive_reactive_power"
   ],
+  "capabilitiesOptions": {
+    "meter_power.imported": {
+      "title": { "en": "Imported Energy" }
+    },
+    "meter_power.exported": {
+      "title": { "en": "Exported Energy" }
+    },
+    "measure_voltage.l1": {
+      "title": {"en": "Voltage L1"}
+    },
+    "measure_voltage.l2": {
+      "title": {"en": "Voltage L2"}
+    },
+    "measure_voltage.l3": {
+      "title": {"en": "Voltage L3"}
+    },
+    "measure_current.l1": {
+      "title": {"en": "Current L1"}
+    },
+    "measure_current.l2": {
+      "title": {"en": "Current L2"}
+    },
+    "measure_current.l3": {
+      "title": {"en": "Current L3"}
+    },
+    "measure_power": {
+      "title": {"en": "Total Power"}
+    },
+    "measure_power.l1": {
+      "title": {"en": "Power L1"}
+    },
+    "measure_power.l2": {
+      "title": {"en": "Power L2"}
+    },
+    "measure_power.l3": {
+      "title": {"en": "Power L3"}
+    },
+    "measure_negative_power": {
+      "title": {"en": "Total Negative Power"}
+    },
+    "measure_negative_power.l1": {
+      "title": {"en": "Negative Power L1"}
+    },
+    "measure_negative_power.l2": {
+      "title": {"en": "Negative Power L2"}
+    },
+    "measure_negative_power.l3": {
+      "title": {"en": "Negative Power L3"}
+    }
+  },
   "energy": {
-    "cumulative": true
+    "cumulative": true,
+    "cumulativeImportedCapability": "meter_power.imported",
+    "cumulativeExportedCapability": "meter_power.exported"
   },
   "platforms": [
     "local"
