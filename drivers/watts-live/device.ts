@@ -1,6 +1,5 @@
 import Homey, {ApiApp} from 'homey';
-import { ReadingToCapabilityMap, MeterReading, KvMap, addedCapabilitiesV1toV2, removedCapabilitiesV1toV2 } from './types';
-import { DriverSettings } from './DriverSettings';
+import { ReadingToCapabilityMap, MeterReading, KvMap, addedCapabilitiesV1toV2, removedCapabilitiesV1toV2, DriverSettings } from '../../lib/types';
 import { MqttClient } from 'mqtt';
 import { MqttService } from '../../lib/MqttService';
 

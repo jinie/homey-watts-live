@@ -1,7 +1,6 @@
 import Homey from 'homey';
 import { PairSession } from 'homey/lib/Driver';
-import { ReadingToCapabilityMap, MessagesCollected, MeterReading, Capabilities } from './types';
-import { DriverSettings } from './DriverSettings';
+import { ReadingToCapabilityMap, MessagesCollected, MeterReading, Capabilities, DriverSettings } from '../../lib/types';
 const WattsLiveDevice = require('./device');
 import { MqttClient } from 'mqtt';
 

@@ -1,0 +1,87 @@
+<form id="mqtt-choice-form">
+  <label for="useBuiltInClient">Use Built-In MQTT Client:</label>
+  <input type="radio" id="useBuiltInClient" name="mqttClient" value="builtIn" checked>
+
+  <label for="useCustomClient">Use Custom MQTT Client:</label>
+  <input type="radio" id="useCustomClient" name="mqttClient" value="custom">
+
+  <div id="mqtt-settings" style="display: none;">
+      <form id="mqtt-settings-form">
+          <label for="server">MQTT Server:</label>
+          <input type="text" id="server" name="server">
+
+          <label for="port">Port:</label>
+          <input type="number" id="port" name="port">
+
+          <label for="clientId">Client ID:</label>
+          <input type="text" id="clientId" name="clientId">
+
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username">
+
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password">
+
+          <label for="useTLS">Use TLS:</label>
+          <input type="checkbox" id="useTLS" name="useTLS">
+
+          <div id="tls-settings" style="display: none;">
+              <label for="ca">CA Certificate:</label>
+              <textarea id="ca" name="ca"></textarea>
+
+              <label for="cert">Client Certificate:</label>
+              <textarea id="cert" name="cert"></textarea>
+
+              <label for="key">Client Key:</label>
+              <textarea id="key" name="key"></textarea>
+
+              <label for="rejectUnauthorized">Reject Unauthorized:</label>
+              <input type="checkbox" id="rejectUnauthorized" name="rejectUnauthorized">
+          </div>
+
+          <button type="submit">Save</button>
+      </form>
+  </div>
+</form>
+
+<script>
+  // Toggle between built-in and custom MQTT settings
+  document.getElementById('mqtt-choice-form').addEventListener('change', function(event) {
+      if (document.getElementById('useCustomClient').checked) {
+          document.getElementById('mqtt-settings').style.display = 'block';
+      } else {
+          document.getElementById('mqtt-settings').style.display = 'none';
+      }
+  });
+
+  // Toggle TLS settings visibility
+  document.getElementById('useTLS').addEventListener('change', function(event) {
+      document.getElementById('tls-settings').style.display = event.target.checked ? 'block' : 'none';
+  });
+
+  // Handle form submission for custom MQTT settings
+  document.getElementById('mqtt-settings-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const mqttSettings = {
+          server: document.getElementById('server').value,
+          port: document.getElementById('port').value,
+          clientId: document.getElementById('clientId').value,
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+          useTLS: document.getElementById('useTLS').checked,
+          ca: document.getElementById('ca').value,
+          cert: document.getElementById('cert').value,
+          key: document.getElementById('key').value,
+          rejectUnauthorized: document.getElementById('rejectUnauthorized').checked
+      };
+
+      Homey.emit('set_mqtt_settings', mqttSettings, function(err, result) {
+          if (err) {
+              console.error(err);
+          } else {
+              console.log(result);
+          }
+      });
+  });
+</script>
