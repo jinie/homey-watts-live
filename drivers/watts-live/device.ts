@@ -1,16 +1,20 @@
 import Homey from 'homey';
 import { ReadingToCapabilityMap, MeterReading, KvMap } from './types';
+import { DriverSettings } from './DriverSettings';
 
 export class WattsLiveDevice extends Homey.Device {
   private nextRequest: number | undefined = undefined;
   private updateInterval: number = 30000;
   private debug: any;
+  private settings: DriverSettings | undefined = undefined;
 
   /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
+    //this.updateSettings();
     this.migrateCapabilities(); //Update capabilities from V1 to V2
+    this.getSettings()
     this.log('WattsLiveDevice has been initialized');
   }
 
@@ -28,6 +32,11 @@ export class WattsLiveDevice extends Homey.Device {
    */
   async onRenamed(name: string) {
     this.log('WattsLiveDevice was renamed');
+  }
+
+
+  updateSettings(){
+    this.settings = JSON.parse(this.getSettings()) as DriverSettings;
   }
 
   onDeviceOffline() {
@@ -86,6 +95,8 @@ export class WattsLiveDevice extends Homey.Device {
         this.invalidateStatus(this.homey.__('device.unavailable.update'));
       }, 3000);
     };
+
+    //this.updateSettings();
   }
 
   invalidateStatus(arg0: string) {
@@ -119,15 +130,40 @@ export class WattsLiveDevice extends Homey.Device {
   async migrateCapabilities() {
     const caps:string[] = [
     'meter_power.exported',
-    'measure_negative_active_power',
-    'measure_negative_power_l1',
-    'measure_negative_power_l2',
-    'measure_negative_power_l3',
+    'measure_power.negative_active',
+    'measure_power.l1',
+    'measure_power.l2',
+    'measure_power.l3',
+    'measure_voltage.l1',
+    'measure_voltage.l2',
+    'measure_voltage.l3',
+    'measure_current.l1',
+    'measure_current.l2',
+    'measure_current.l3',
+    'measure_power.negative_l1',
+    'measure_power.negative_l2',
+    'measure_power.negative_l3',
     'measure_negative_reactive_energy',
-    'measure_negative_reactive_power',
+    'measure_power.negative_reactive',
     'measure_positive_reactive_energy',
-    'measure_positive_reactive_power'
+    'measure_power.positive_reactive'
     ]
+
+    const removedCapabilities: string[] = [
+      'measure_power_l1',
+      'measure_power_l2',
+      'measure_power_l3',
+      'measure_voltage_l1',
+      'measure_voltage_l2',
+      'measure_voltage_l3',
+      'measure_current_l1',
+      'measure_current_l2',
+      'measure_current_l3',
+      'measure_negative_active_power',
+      'measure_negative_power_l1',
+      'measure_negative_power_l2',
+      'measure_negative_power_l3'
+    ];
     
     if(this.getCapabilities().includes("meter_power")){
       this.log("Removing meter_power capability");
@@ -141,6 +177,13 @@ export class WattsLiveDevice extends Homey.Device {
       this.log("Adding metwer_power.exported capability");
       await this.addCapability("meter_power.exported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });    
     };
+
+    await removedCapabilities.forEach(capability => {
+      if(this.getCapabilities().includes(capability)===true)
+        this.log(`Removing capability ${capability}`);
+        this.removeCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+
+    });
     
     await caps.forEach( capability =>{
       if(this.getCapabilities().includes(capability)===false)

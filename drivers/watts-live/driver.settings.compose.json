@@ -6,5 +6,179 @@
             "en": "Device ID"
         },
         "value": ""
-    }
+    },
+    {
+        "type": "group",
+        "label": {
+          "en": "MQTT Settings"
+        },
+        "children": [
+          {
+            "type": "radio",
+            "id": "mqttClient",
+            "label": {
+              "en": "MQTT Client Selection"
+            },
+            "value": "builtIn", 
+            "values": [
+              {
+                "id": "builtIn",
+                "label": {
+                  "en": "Use Built-In MQTT Client"
+                }
+              },
+              {
+                "id": "custom",
+                "label": {
+                  "en": "Use Custom MQTT Client"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "id": "server",
+            "label": {
+              "en": "MQTT Server"
+            },
+            "placeholder": "mqtt://broker.hivemq.com",
+            "hint": {
+              "en": "Enter the URL of your MQTT server"
+            },
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "number",
+            "id": "port",
+            "label": {
+              "en": "Port"
+            },
+            "value": 1883,
+            "hint": {
+              "en": "Default MQTT port is 1883"
+            },
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "text",
+            "id": "clientId",
+            "label": {
+              "en": "Client ID"
+            },
+            "hint": {
+              "en": "Unique identifier for this client"
+            },
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "text",
+            "id": "username",
+            "label": {
+              "en": "Username"
+            },
+            "hint": {
+              "en": "Optional: Username for MQTT server authentication"
+            },
+            "optional": true,
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "password",
+            "id": "password",
+            "label": {
+              "en": "Password"
+            },
+            "hint": {
+              "en": "Optional: Password for MQTT server authentication"
+            },
+            "optional": true,
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "checkbox",
+            "id": "useTLS",
+            "label": {
+              "en": "Use TLS"
+            },
+            "hint": {
+              "en": "Check to use a secure connection"
+            },
+            "conditional": {
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "text",
+            "id": "ca",
+            "label": {
+              "en": "CA Certificate"
+            },
+            "multiline": true,
+            "optional": true,
+            "hint": {
+              "en": "Paste your CA certificate"
+            },
+            "conditional": {
+              "useTLS": true,
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "text",
+            "id": "cert",
+            "label": {
+              "en": "Client Certificate"
+            },
+            "multiline": true,
+            "optional": true,
+            "hint": {
+              "en": "Paste your client certificate"
+            },
+            "conditional": {
+              "useTLS": true,
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "text",
+            "id": "key",
+            "label": {
+              "en": "Client Key"
+            },
+            "multiline": true,
+            "optional": true,
+            "hint": {
+              "en": "Paste your client key"
+            },
+            "conditional": {
+              "useTLS": true,
+              "mqttClient": "custom"
+            }
+          },
+          {
+            "type": "checkbox",
+            "id": "rejectUnauthorized",
+            "label": {
+              "en": "Reject Unauthorized Certificates"
+            },
+            "hint": {
+              "en": "Check to reject unauthorized certificates"
+            },
+            "conditional": {
+              "useTLS": true,
+              "mqttClient": "custom"
+            }
+          }
+        ]
+      }
 ]

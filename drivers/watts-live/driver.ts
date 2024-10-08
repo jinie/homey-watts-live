@@ -1,7 +1,10 @@
 import Homey from 'homey';
 import { PairSession } from 'homey/lib/Driver';
 import { ReadingToCapabilityMap, MessagesCollected, MeterReading, Capabilities } from './types';
+import { DriverSettings } from './DriverSettings';
 const WattsLiveDevice = require('./device');
+import { MqttClient } from 'mqtt';
+
 
 
 
@@ -14,7 +17,11 @@ export class WattsLiveDriver extends Homey.Driver {
   private messagesCollected: MessagesCollected = {};
   private topicsToIgnore: string[] = [];
   private debug: boolean = false;
+  private config: DriverSettings | undefined = undefined;
+  private MQTTClient: Homey.ApiApp | undefined= undefined;
+  private MQTTClient_native: MqttClient | undefined = undefined;
 
+ 
   /**
    * onInit is called when the driver is initialized.
    */
