@@ -172,6 +172,16 @@
           "title": {
             "en": "Positive Reactive Power"
           }
+        },
+        "meter_power.positive_reactive": {
+          "title": {
+            "en": "Positive Reactive Energy"
+          }
+        },
+        "meter_power.negative_reactive": {
+          "title": {
+            "en": "Negative Reactive Energy"
+          }
         }
       },
       "energy": {
