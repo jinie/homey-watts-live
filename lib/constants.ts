@@ -1,3 +1,4 @@
+import { KvMap } from "../types/KvMap";
 
 export const Capabilities: string[] = [
     "meter_power.imported",
@@ -21,31 +22,7 @@ export const Capabilities: string[] = [
     'meter_power.positive_reactive',
     'measure_power.positive_reactive'
 ];
-/**
-* MeterReading interface to map MQTT message to JSON object
-*/
-export interface MeterReading {
-    positive_active_power: number | undefined;
-    positive_active_energy: number| undefined;
-    positive_active_power_l1: number| undefined;
-    positive_active_power_l2: number| undefined;
-    positive_active_power_l3: number| undefined;
-    current_l1: number| undefined;
-    current_l2: number| undefined;
-    current_l3: number| undefined;
-    voltage_l1: number| undefined;
-    voltage_l2: number| undefined;
-    voltage_l3: number| undefined;
-    negative_active_power: number| undefined;
-    negative_active_energy: number| undefined;
-    negative_reactive_power: number| undefined;
-    negative_reactive_energy: number| undefined;
-    positive_reactive_power: number| undefined;
-    positive_reactive_energy: number| undefined;
-    negative_active_power_l1: number| undefined;
-    negative_active_power_l2: number| undefined;
-    negative_active_power_l3: number| undefined;
-};
+
 
 export const ReadingToCapabilityMap: KvMap = { 
     "positive_active_energy": "meter_power.imported", 
@@ -110,31 +87,8 @@ export const removedCapabilitiesV1toV2: string[] = [
     'measure_negative_reactive_energy'
 ];
 
-/**
-* Key-Value map interface for string:number
-*/
-export interface KvMap {
-    [key: string]: any;
-}
 
-export interface MessagesCollected {
-    [topic: string]: {
-        messages: string[];
-    };
-}
 
-export interface DriverSettings {
-    deviceId: string;
-    useMqttClient: boolean;
-    hostname: string;
-    port: number;
-    clientId: string;
-    username: string;
-    password: string;
-    useTls: boolean;
-    caCertificate: string;
-    clientCertificate: string;
-    clientKey: string;
-    rejectUnauthorized: boolean;
-};
+
+
 

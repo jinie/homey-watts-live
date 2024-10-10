@@ -2,7 +2,7 @@
 
 import Homey, { ApiApp } from 'homey';
 import { Driver } from 'homey/lib/Device';
-import { DriverSettings } from './lib/types';
+import { DriverSettings } from './types/DriverSettings';
 
 export class WattsLiveApp extends Homey.App {
   
@@ -23,40 +23,11 @@ export class WattsLiveApp extends Homey.App {
     }
     process.on('unhandledRejection', (reason, p) => {
       this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-    });
-    
-    //Update settings for devices that don't have any due to migration
-    let drivers = this.homey.drivers.getDrivers();
-    Object.keys(drivers).forEach((driverId) => {
-      let devices = drivers[driverId].getDevices();
-      devices.forEach(device => {
-        let deviceSettings = device.getSettings();
-        if(Object.keys(deviceSettings).includes("useMqttClient")===false){
-          this.log(`Creating settings for driver ${device}`);
-          device.setSettings(this.migrateSettings(deviceSettings.deviceId));
-        }
-      });
-    });
+    });    
   };
-
-  private migrateSettings(deviceId: string): DriverSettings {
-    return  {
-      deviceId: deviceId,
-      clientId: deviceId,
-      useMqttClient: true,
-      hostname: "",
-      port: 1418,
-      username: "",
-      password: "",
-      useTls: false,
-      caCertificate: "",
-      clientCertificate: "",
-      clientKey: "",
-      rejectUnauthorized: true
-    }
-  }
   
-}
+
+};
 
 
 module.exports = WattsLiveApp;

@@ -102,56 +102,21 @@
   ],
   "pair": [
     {
-      "id": "start",
-      "template": "list",
-      "options": {
-        "title": "Select MQTT Method",
-        "items": [
-          { "id": "scanno", "name": "Use Homey's MQTT Client (nl.scanno.mqtt)" },
-          { "id": "custom", "name": "Use a custom MQTT server" }
-        ]
-      },
-      "next": "mqtt_config"
-    },
-    {
-      "id": "mqtt_config",
-      "template": "form",
-      "options": {
-        "title": "Configure MQTT Server",
-        "form": [
-          { "type": "text", "label": "MQTT Host", "id": "mqttHost", "required": true },
-          { "type": "number", "label": "MQTT Port", "id": "mqttPort", "defaultValue": 1883, "required": true },
-          { "type": "text", "label": "MQTT Username (optional)", "id": "mqttUsername" },
-          { "type": "password", "label": "MQTT Password (optional)", "id": "mqttPassword" },
-          { "type": "checkbox", "label": "Use TLS", "id": "mqttUseTLS" }
-        ]
-      },
-      "next": "waiting_for_devices"
-    },
-    {
-      "id": "waiting_for_devices",
-      "template": "message",
-      "options": {
-        "title": "Listening for devices...",
-        "message": "Please wait while we search for devices on the MQTT server."
+      "id": "choose_mqtt_method",
+      "template": "pairing.html",
+      "title": {
+        "en": "Select MQTT Connection Method"
       }
     },
     {
-      "id": "select_device",
-      "template": "list",
-      "options": {
-        "title": "Select a Device",
-        "items": "{{devices}}"
-      },
-      "next": "done"
-    },
-    {
-      "id": "done",
-      "template": "final",
-      "options": {
-        "title": "Finished",
-        "message": "The device has been paired successfully."
+      "id": "list_devices",
+      "template": "pairing_devices.html",
+      "title": {
+        "en": "Select Devices to Pair"
       }
     }
-  ]  
+  ],
+  "options": {
+    "template": "pairing.js"
+  }
 }

@@ -1,39 +1,73 @@
-import Homey, {ApiApp} from 'homey';
-import { ReadingToCapabilityMap, MeterReading, KvMap, addedCapabilitiesV1toV2, removedCapabilitiesV1toV2, DriverSettings } from '../../lib/types';
-import { MqttClient } from 'mqtt';
-import { MqttService } from '../../lib/MqttService';
+import Homey from 'homey';
+import { ReadingToCapabilityMap, addedCapabilitiesV1toV2, removedCapabilitiesV1toV2 } from '../../lib/constants';
+import { DriverSettings } from '../../types/DriverSettings';
+import { MqttWrapper } from '../../lib/MqttWrapper';
+import { KvMap } from '../../types/KvMap';
+import { MeterReading } from '../../types/MeterReading';
 
 export class WattsLiveDevice extends Homey.Device {
-
+  
   private debug: any;
   private settings: DriverSettings | undefined = undefined;
-  private MqttService: MqttService | undefined;
-  //private MqttClient_app: ApiApp | undefined = undefined; //MQTT Client App
-  //private MqttClient_native: MqttClient | undefined = undefined; // Native MQTT 
-
+  private mqttWrapper: MqttWrapper | null = null;
+  private isConnected: boolean = false;
+  
   /**
   * onInit is called when the device is initialized.
   */
   async onInit() {
-    this.migrateCapabilities(); //Update capabilities from V1 to V2
-    this.updateSettings();
-    this.MqttService = new MqttService(this.homey, this.debug);
-    await this.MqttService.connectToMqtt(this.settings!);
+    await this.migrateToNewMqttConnectivity();
+    await this.migrateCapabilities(); //Update capabilities from V1 to V2
 
-    this.MqttService
-    .on('realtime', (topic: string, message: string) => { this.onMessage(topic, message); })
-    .on('disconnect',() => { this.invalidateStatus('disconnected'); })
-    .on('connect',() => { this.setAvailable()})
-    ;
+    // Get device-specific settings and create a DriverSettings object
+    const driverSettings = this.getDeviceSettings();
 
-    this.log('WattsLiveDevice has been initialized');
+    this.homey.log(`Initializing Device with settings : ${JSON.stringify(driverSettings)}`);
+    // Initialize the MQTT wrapper with the device's settings
+    this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
+    await this.mqttWrapper.connect();
+    
+    // Subscribe to the relevant topic for this device
+    const deviceId = driverSettings.deviceId;
+    this.mqttWrapper.subscribe(`/watts/${deviceId}/measurement`, this.onMessage.bind(this));
+    
+    // Mark the device as connected
+    this.isConnected = true;
+    
+    // Check initial device status
+    await this.CheckDeviceStatus();
+  }
+  
+  
+  onMessage(topic: string, message: string | Buffer) {
+    let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
+    this.log(`Message recieved ${msg}`)
+    this.processMqttMessage(topic, msg);
   }
   
   /**
-  * onAdded is called when the user adds the device, called just after pairing.
+  * Called when the device is deleted from Homey.
   */
-  async onAdded() {
-    this.log('WattsLiveDevice has been added');
+  async onDeleted(): Promise<void> {
+    //this.log(`Device deleted: ${this.getName()} (${this.getData().id})`);
+    
+    // Perform cleanup by disconnecting MQTT and freeing any resources.
+    if (this.mqttWrapper) {
+      this.mqttWrapper.disconnect();
+    }
+  }
+  
+  /**
+  * Called when the device is added to Homey.
+  */
+  async onAdded(): Promise<void> {
+    //this.log(`Device added: ${this.getName()} (${this.getData().id})`);
+    // This is where you can implement any setup logic after the device is paired or added.
+    // For example, sending an MQTT message to let the server know this device was added
+    const deviceId = this.getDeviceSettings().deviceId;
+    this.log(`Device added: ${deviceId}`);
+    // Optionally: Publish an MQTT message or perform any initialization specific to being added.
+    this.setAvailable();
   }
   
   /**
@@ -46,40 +80,23 @@ export class WattsLiveDevice extends Homey.Device {
   }
   
   
-  updateSettings(){
-    let settings = this.getSettings();
-    this.settings = {
-      "deviceId": settings.deviceId,
-      "clientId": settings.deviceId,
-      "useMqttClient": settings.mqttClient === 'builtin' ? false : true,
-      "hostname": settings.server,
-      "port": settings.port,
-      "username": settings.username,
-      "password": settings.password,
-      "useTls": settings.useTLS,
-      "caCertificate": settings.ca,
-      "clientCertificate": settings.cert,
-      "clientKey": settings.key,
-      "rejectUnauthorized": settings.rejectUnauthorized
-    };
-    if(this.debug){
-      this.log(`UpdateSettings : ${settings}`);
-    }
-  }
-  
-  onDeviceOffline() {
-    this.invalidateStatus(this.homey.__('device.unavailable.offline'));
-  }
-   
-  
-  public onMessage(topic: string, message: string){
-    if(this.debug){
-      this.log(`Device Message recieved:${topic} - ${message}`)
-    }
-    let topicParts = topic.split('/');
-    if (topicParts.length > 1) {
-      this.processMqttMessage(topic, message).catch((error) => { if (this.debug) throw (error); else this.log(`onMessage error: ${error}`); });
-    }
+  /**
+  * Utility function to get device settings and return a DriverSettings object.
+  */
+  getDeviceSettings(): DriverSettings {
+    const settings = this.getSettings();
+    this.log(`Reading device settings ${JSON.stringify(settings)}`);
+    // Construct and return a DriverSettings object using the device's settings
+    return new DriverSettings({
+      deviceId: settings.deviceId || '',
+      hostname: settings.hostname || 'localhost',
+      port: Number(settings.port) || 1883,
+      clientId: settings.clientId || 'homey-watts',
+      username: settings.username || '',
+      password: settings.password || '',
+      useTls: settings.useTls === 'true',
+      useHomeyMqttClient: settings.useHomeyMqttClient || 'homey',
+    });
   }
   
   public async processMqttMessage(topic: string, message: string) {
@@ -114,45 +131,147 @@ export class WattsLiveDevice extends Homey.Device {
     }
   }
   
-  async onSettings(event: any) {
-    if (this.debug)
-      this.log(`onSettings: changes ${JSON.stringify(event.changedKeys)}`);
+  /**
+  * Called when settings are changed via the Homey UI.
+  * This method handles changes to settings and updates the device configuration accordingly.
+  */
+  async onSettings({
+    oldSettings,
+    newSettings,
+    changedKeys
+  }: {
+    oldSettings: { [key: string]: string | number | boolean | null | undefined };
+    newSettings: { [key: string]: string | number | boolean | null | undefined };
+    changedKeys: string[];
+  }): Promise<void> {
+    this.log('Settings updated:', changedKeys);
     
-    if (event.changedKeys.includes('mqtt_topic')) {
-      setTimeout(() => {
-        this.invalidateStatus(this.homey.__('device.unavailable.update'));
-      }, 3000);
-    };
+    // Check if any MQTT-related settings have changed that require reconnecting
+    const needsReconnect = changedKeys.some(key => [
+      'hostname', 'port', 'clientId', 'username', 'password', 'useTls', 'useHomeyMqttClient', 'deviceId'
+    ].includes(key));
     
-    //this.updateSettings();
+    if (needsReconnect) {
+      this.log('Reconnecting due to changed MQTT settings...');
+      const driverSettings = this.getDeviceSettings();
+      await this.reconnectMqtt(driverSettings);
+    }
   }
   
-  invalidateStatus(arg0: string) {
-    this.setUnavailable(arg0);
-    this.MqttService?.connectMqttClient(this.settings!);
+  /**
+  * Called when the device goes offline (e.g., MQTT disconnection or no response).
+  */
+  async onDeviceOffline(): Promise<void> {
+    //this.log(`Device offline: ${this.getName()} (${this.getData().id})`);
+    
+    // Mark the device as unavailable in Homey
+    this.setUnavailable('Device is offline or disconnected from MQTT server');
+    
+    // Clean up the MQTT connection
+    if (this.mqttWrapper) {
+      this.mqttWrapper.disconnect();
+      this.isConnected = false;
+    }
+    
+    // Optionally, you can set a retry mechanism to attempt reconnecting after a certain interval
+    // For example:
+    setTimeout(() => {
+      this.log('Attempting to reconnect after going offline...');
+      this.reconnectMqtt(); // Attempt to reconnect after a delay
+    }, 60000); // Retry after 60 seconds (you can adjust the delay as needed)
   }
   
+  /*
   onDeleted() {
-    this.MqttService?.unregister();
-    this.log("Unregistered device from MQTT Client")
-  }
+  this.MqttService?.unregister();
+  this.log("Unregistered device from MQTT Client")
+  }*/
   
   getMqttTopic() {
     return this.getSettings()['deviceId'];
   }
   
-  checkDeviceSearchStatus(): boolean {
-    return true;
-  }
-  
-  checkDeviceStatus(): boolean {
-    // return true if device is online and next request time is in the future
-    if (this.MqttService?.nextRequest === undefined) {
-      return false;
+  /**
+  * Method to check the status of the device.
+  * Typically verifies the connection and can check if the device is responsive.
+  */
+  async CheckDeviceStatus(): Promise<void> {
+    if (!this.isConnected) {
+      this.log('Device is not connected, attempting to reconnect...');
+      await this.reconnectMqtt();
     }
-    return Date.now() > this.MqttService?.nextRequest;
+    
+    // You can add further status checks if necessary
+    this.log('Device status checked and seems OK');
   }
   
+  /**
+  * Invalidate the device status, typically when the connection is lost or an error occurs.
+  */
+  invalidateStatus(): void {
+    this.log('Device status invalidated');
+    this.isConnected = false;
+    this.setUnavailable('Device disconnected or unavailable');
+  }
+  
+  /**
+  * Helper method to reconnect the device to the MQTT server.
+  * Handles disconnection and reconnection logic.
+  */
+  private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
+    if (this.mqttWrapper) {
+      this.mqttWrapper.disconnect();
+    }
+    
+    // Use new settings if provided, otherwise use current device settings
+    const driverSettings = newSettings || this.getDeviceSettings();
+    
+    // Reinitialize the MQTT wrapper with the new settings
+    const homeyApp = this.homey;
+    this.mqttWrapper = new MqttWrapper(homeyApp,driverSettings);
+    await this.mqttWrapper.connect();
+    
+    // Re-subscribe to the device's topic
+    const deviceId = this.getDeviceSettings().deviceId;
+    this.mqttWrapper.subscribe(`/watts/${deviceId}/measurement`, this.onMessage.bind(this));
+    
+    this.isConnected = true;
+    this.setAvailable();
+  }
+  
+  async migrateToNewMqttConnectivity(): Promise<void> {
+    try {
+      // Get the current settings of the device
+      const settings = this.getSettings();
+
+      // Check if the `useHomeyMqttClient` key is missing, indicating the old format
+      if (!settings.useHomeyMqttClient) {
+        this.log(`Migrating device ${this.getData().id} to the new MQTT connectivity...`);
+
+        // Set the new settings for MQTT, use "homey" or "custom" instead of a boolean
+        const newSettings = {
+          hostname: 'localhost', // Default value for Homey MQTT Client
+          port: 1883, // Default MQTT port for Homey MQTT Client
+          clientId: `homey-device-${this.getData().id}`, // Unique clientId based on the device ID
+          username: '', // Not needed for Homey MQTT Client
+          password: '', // Not needed for Homey MQTT Client
+          useTls: false, // Not needed for Homey MQTT Client
+          useHomeyMqttClient: 'homey', // Set this to "homey" to match the dropdown value
+          mqttTopic: `/watts/${settings.deviceId}/measurement` // Default MQTT topic based on deviceId
+        };
+
+        // Apply the new settings to the device
+        await this.setSettings(newSettings);
+
+        this.log(`Device ${this.getData().id} successfully migrated to the new MQTT connectivity.`);
+      } else {
+        this.log(`Device ${this.getData().id} is already using the new MQTT connectivity.`);
+      }
+    } catch (error) {
+      this.error(`Error migrating device ${this.getData().id}:`, error);
+    }
+  }
+
   /**
   * Migrate custom capabilities between versions.
   * No "official" way of migrating exists, so for now just delete the old capabiliy and add a new one.

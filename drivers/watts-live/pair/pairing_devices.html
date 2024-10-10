@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select Devices to Pair</title>
+</head>
+<body>
+  <h2>Select the Devices You Want to Pair</h2>
+
+  <div id="device-list"></div>
+
+  <button id="continue">Continue</button>
+
+  <!-- JavaScript to handle displaying available devices and device selection -->
+  <script>
+    // Request the list of available devices from Homey
+    Homey.emit('list_devices', {}, function(err, devices) {
+      if (err) {
+        alert('Error: ' + err.message);
+        return;
+      }
+
+      const deviceListDiv = document.getElementById('device-list');
+
+      // Display the available devices
+      devices.forEach(function(device) {
+        const deviceElement = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = device.data.id;
+        checkbox.name = 'selectedDevices';
+        checkbox.value = device.data.id;
+
+        const label = document.createElement('label');
+        label.htmlFor = device.data.id;
+        label.appendChild(document.createTextNode(device.name));
+
+        deviceElement.appendChild(checkbox);
+        deviceElement.appendChild(label);
+
+        deviceListDiv.appendChild(deviceElement);
+      });
+    });
+
+    // Handle "Continue" button click to send selected devices back to Homey
+    document.getElementById('continue').addEventListener('click', function() {
+      const selectedDevices = [];
+      document.querySelectorAll('input[name="selectedDevices"]:checked').forEach(function(checkbox) {
+        selectedDevices.push({ id: checkbox.value });
+      });
+
+      // Store the selected devices and proceed
+      Homey.emit('store_settings', { selectedDevices: selectedDevices }, function(err) {
+        if (err) {
+          alert('Error: ' + err.message);
+        } else {
+          Homey.showView(null); // Close the pairing view after success
+        }
+      });
+    });
+  </script>
+</body>
+</html>

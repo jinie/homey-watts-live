@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select MQTT Connection Method</title>
+</head>
+<body>
+  <h2>Select MQTT Connection Method</h2>
+
+  <label for="mqtt-method">Choose MQTT Method:</label>
+  <select id="mqtt-method">
+    <option value="homey">Homey MQTT Client</option>
+    <option value="custom">Custom MQTT Client</option>
+  </select>
+
+  <div id="custom-mqtt-settings" style="display:none;">
+    <h3>Custom MQTT Client Settings</h3>
+    <label for="hostname">MQTT Hostname:</label>
+    <input type="text" id="hostname" name="hostname" value="localhost" />
+
+    <label for="port">MQTT Port:</label>
+    <input type="number" id="port" name="port" value="1883" />
+
+    <label for="clientId">Client ID:</label>
+    <input type="text" id="clientId" name="clientId" value="homey-watts" />
+
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" />
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" />
+
+    <label for="useTls">Use TLS:</label>
+    <select id="useTls">
+      <option value="false">No</option>
+      <option value="true">Yes</option>
+    </select>
+  </div>
+
+  <button id="continue">Continue</button>
+
+  <script>
+    const mqttMethodSelect = document.getElementById('mqtt-method');
+    const customMqttSettingsDiv = document.getElementById('custom-mqtt-settings');
+
+    // Show custom MQTT settings if custom is selected
+    mqttMethodSelect.addEventListener('change', function() {
+      if (mqttMethodSelect.value === 'custom') {
+        customMqttSettingsDiv.style.display = 'block';
+      } else {
+        customMqttSettingsDiv.style.display = 'none';
+      }
+    });
+
+    document.getElementById('continue').addEventListener('click', function() {
+      const mqttMethod = mqttMethodSelect.value;
+      const data = {
+        mqttMethod: mqttMethod
+      };
+
+      if (mqttMethod === 'custom') {
+        data.hostname = document.getElementById('hostname').value;
+        data.port = document.getElementById('port').value;
+        data.clientId = document.getElementById('clientId').value;
+        data.username = document.getElementById('username').value;
+        data.password = document.getElementById('password').value;
+        data.useTls = document.getElementById('useTls').value;
+      }
+
+      // Send the MQTT method and any custom settings to pairing.js
+      Homey.emit('choose_mqtt_method', data, function(err) {
+        if (err) {
+          alert('Error: ' + err.message);
+        } else {
+          // Move to the next step (list devices)
+          Homey.showView('list_devices');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
