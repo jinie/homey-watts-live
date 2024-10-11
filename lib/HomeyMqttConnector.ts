@@ -79,8 +79,9 @@ export class HomeyMqttConnector implements IMqttConnector {
             // Add the discovered device to the list
             this.devices.push({
               id: deviceId,
-              name: deviceName,
-              data: {}
+              name: `Watts Live - ${deviceId}`,
+              data: {id: deviceId},
+              settings: {deviceId: deviceId}
             });
             //this.homey.log(`Discovered device ${deviceId}`);
           }

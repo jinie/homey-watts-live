@@ -121,9 +121,19 @@
     },
     {
       "id": "list_devices",  
+      "template": "list_devices",
+      "navigation": { "next": "add_devices" },
       "title": {
         "en": "Select Devices to Pair"
+      },
+      "options": {
+        "showNextButton": true,
+        "singular": true
       }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
     }
   ],
   "options": {

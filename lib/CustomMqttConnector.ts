@@ -151,8 +151,9 @@ export class CustomMqttConnector implements IMqttConnector {
             if (!this.devices.find(device => device.id === deviceId)) {
               this.devices.push({
                 id: deviceId,
-                name: `Device ${deviceId}`,
-                data: {}
+                name: `Watts Live - Device ${deviceId}`,
+                data: {id: deviceId},
+                settings: {deviceId: deviceId}
               });
               this.homey.log(`Discovered device: ${deviceId}`);
             }

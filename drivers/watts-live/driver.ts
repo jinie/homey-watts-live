@@ -17,7 +17,7 @@ class WattsLiveDriver extends Homey.Driver {
     session.setHandler('choose_mqtt_method', async (settings: DriverSettings) => {
       // Create an instance of DriverSettings based on the emitted data
       const driverSettings = new DriverSettings(settings);
-        
+      this.log(settings);
       try {
         // Initialize MqttWrapper with Homey.app["homey"] and the constructed DriverSettings
         this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
@@ -38,12 +38,34 @@ class WattsLiveDriver extends Homey.Driver {
         }
     
         // Start discovering devices using the topic
-        this.devices = await this.mqttWrapper.discoverDevices(this.topic);    
-        this.discoveredDevices = this.devices.map(device => ({
+        let discoveredDevices = await this.mqttWrapper.discoverDevices(this.topic);
+    
+        // Fetch already paired devices from Homey SDK
+        const pairedDevices = await this.getPairedDevices();
+    
+        // Filter out paired devices and ensure unique devices
+        const uniqueDiscoveredDevices = discoveredDevices
+          .filter(device => {
+            // Exclude already paired devices
+            return !pairedDevices.some((pairedDevice: { id: any; }) => pairedDevice.id === device.id);
+          })
+          .reduce((acc, device) => {
+            // Ensure the device is unique based on its id
+            if (!acc.some((d: { id: any; }) => d.id === device.id)) {
+              acc.push(device);
+            }
+            return acc;
+          }, [] as Array<{ id: string, name: string }>);
+    
+        // Store the unique, unpaired devices
+        this.discoveredDevices = uniqueDiscoveredDevices.map((device: { id: any; name: any; data: any, settings:any}) => ({
           id: device.id,
           name: device.name,
-          data: {}
+          data: device.settings,
+          settings: device.settings
         }));
+        this.log(this.discoveredDevices);
+    
         // Return a successful response
         return true;
       } catch (err: any) {
@@ -52,7 +74,7 @@ class WattsLiveDriver extends Homey.Driver {
     });
   
     // Handler to get the list of discovered devices
-    session.setHandler('get_devices', async () => {
+    session.setHandler('list_devices', async () => {
       // Return the list of discovered devices
       this.homey.log(`Returning discovered devices: ${JSON.stringify(this.devices)}`);
       return this.discoveredDevices;
@@ -61,10 +83,19 @@ class WattsLiveDriver extends Homey.Driver {
     // Handler to add a selected device to Homey
     session.setHandler('add_device', async (device) => {
       // Handle adding the device (you can implement your logic here)
+      this.log("Adding Device : ", device);
       return device;  // Return the device being added
     });
   }
   
+  // Helper function to get already paired devices
+private async getPairedDevices() {
+  // Assuming this.getDevices() returns the list of paired devices from Homey Pro
+  const pairedDevices = await this.getDevices();
+  return pairedDevices.map(device => ({
+    id: device.getSetting("deviceId")
+  }));
+}
   
   
   /**

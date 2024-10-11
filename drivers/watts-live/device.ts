@@ -27,9 +27,13 @@ export class WattsLiveDevice extends Homey.Device {
     this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
     await this.mqttWrapper.connect();
     
+    if (!this.mqttWrapper) {
+      throw new Error('MQTT wrapper is not initialized');
+    }
+    
     // Subscribe to the relevant topic for this device
     const deviceId = driverSettings.deviceId;
-    this.mqttWrapper.subscribe(`/watts/${deviceId}/measurement`, this.onMessage.bind(this));
+    this.mqttWrapper.subscribe(`watts/${deviceId}/measurement`, this.onMessage.bind(this));
     
     // Mark the device as connected
     this.isConnected = true;
@@ -40,6 +44,7 @@ export class WattsLiveDevice extends Homey.Device {
   
   
   onMessage(topic: string, message: string | Buffer) {
+    this.log("Message Recieved on topic : ",topic," message: ", message.toString());
     let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
     this.processMqttMessage(topic, msg);
   }
