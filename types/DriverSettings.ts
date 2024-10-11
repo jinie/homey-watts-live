@@ -6,7 +6,8 @@ export class DriverSettings {
   public username: string = '';
   public password: string = '';
   public useTls: boolean = false;
-  public useHomeyMqttClient: string = 'homey'; // New setting
+  public useHomeyMqttClient: string = "homey";
+  public acceptSelfSignedCert: boolean = false;  // New setting for self-signed certificates
 
   constructor(settings?: Partial<DriverSettings>) {
     if (settings) {

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select MQTT Connection Method</title>
+  <style>
+    .custom-mqtt-fields {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Select MQTT Connection Method</h2>
+
+  <label for="mqttMethod">Connection Type:</label>
+  <select id="mqttMethod">
+    <option value="homey_mqtt_client">Use Homey MQTT Client</option>
+    <option value="custom_mqtt_client">Use Custom MQTT Server</option>
+  </select>
+
+  <div id="customMqttSettings" class="custom-mqtt-fields">
+    <h3>Custom MQTT Server Settings</h3>
+    <label>Hostname: <input type="text" id="hostname"></label><br>
+    <label>Port: <input type="number" id="port"></label><br>
+    <label>Client ID: <input type="text" id="clientId"></label><br>
+    <label>Username: <input type="text" id="username"></label><br>
+    <label>Password: <input type="password" id="password"></label><br>
+    <label>Use TLS: <input type="checkbox" id="useTls"></label><br>
+    <label>Accept Self-Signed Certificates: <input type="checkbox" id="acceptSelfSignedCert"></label><br>
+  </div>
+
+  <button id="continue">Continue</button>
+
+  <script>
+    document.getElementById('mqttMethod').addEventListener('change', function() {
+      const customMqttFields = document.getElementById('customMqttSettings');
+      if (this.value === 'custom_mqtt_client') {
+        customMqttFields.style.display = 'block';  // Show custom MQTT settings
+      } else {
+        customMqttFields.style.display = 'none';   // Hide custom MQTT settings
+      }
+    });
+
+    document.getElementById('continue').addEventListener('click', function() {
+      const mqttMethod = document.getElementById('mqttMethod').value;
+      let data = {};
+
+      if (mqttMethod === 'homey_mqtt_client') {
+        data = {
+          useHomeyMqttClient: 'homey'
+        };
+      } else if (mqttMethod === 'custom_mqtt_client') {
+        data = {
+          useHomeyMqttClient: 'custom',
+          hostname: document.getElementById('hostname').value,
+          port: parseInt(document.getElementById('port').value),
+          clientId: document.getElementById('clientId').value,
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+          useTls: document.getElementById('useTls').checked,
+          acceptSelfSignedCert: document.getElementById('acceptSelfSignedCert').checked
+        };
+      }
+
+      // Emit the data to pairing.js
+      Homey.emit('choose_mqtt_method', data, function(err) {
+        if (err) {
+          alert('Error: ' + err.message);
+        } else {
+          Homey.nextView('loading');  // Proceed to the next step
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -6,6 +6,8 @@ export class HomeyMqttConnector implements IMqttConnector {
     private MQTTClient: Homey.ApiApp | null = null;
     private isConnected: boolean;
     private homey: Homey.App['homey'];
+    private topics:string[] = [];
+    private devices:any[] = [];
 
     constructor(homey: Homey.App['homey']) {  // Pass Homey instance to the constructor
         this.isConnected = false;
@@ -34,9 +36,10 @@ export class HomeyMqttConnector implements IMqttConnector {
     subscribe(topic: string, messageHandler: (topic: string, message: string) => void): void {
         this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
             if (error.result != 0) {
-              this.homey.log(`Can not subscrive to topic ${topic}, error: ${JSON.stringify(error)}`)
+              this.homey.log(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
             } else {
               this.homey.log(`Sucessfully subscribed to topic: ${topic}`);
+              this.topics.push(topic);
             }
           });
           this.MQTTClient?.on('realtime', (topic: string, message: string) => {
@@ -45,28 +48,70 @@ export class HomeyMqttConnector implements IMqttConnector {
     }
 
     async unsubscribe(topic: string): Promise<void> {
-
-    }
-
-    listenForDevices(topic: string, onDeviceDiscovered: (device: any) => void): void {
-        if (!this.isConnected) {
-            throw new Error('MQTT client is not connected');
+      this.MQTTClient?.post('unsubscribe',{topic:topic}).then((error: any) => {
+        if (error.result != 0) {
+          this.homey.log(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
+        } else {
+          this.homey.log(`Sucessfully unsubscribed from topic: ${topic}`);
         }
-
-        this.subscribe(topic, (topic: string, message: Buffer | string) => {
-            const match = topic.match(/\/watts\/(.+)\/measurement/);
-            if (match) {
-                const deviceId = match[1];
-                const deviceName = `Device ${deviceId}`;
-                onDeviceDiscovered({ id: deviceId, name: deviceName });
-            }
-        });
-
-        this.unsubscribe(topic);
+      });
     }
+
+    async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
+      this.homey.log("Discovering devices");
+    
+      return new Promise((resolve, reject) => {
+    
+        // Check if the client is connected
+        if (!this.isConnected) {
+          return reject(new Error('MQTT client is not connected'));
+        }
+    
+        // Subscribe to the topic
+        this.subscribe(topic, (topic: string, message: string) => {
+          this.homey.log(`Message received on topic ${topic}`);
+    
+          // Extract device ID from the topic
+          const match = topic.match(/\/?watts\/(.+)\/measurement/);
+          if (match) {
+            const deviceId = match[1];
+            const deviceName = `Device ${deviceId}`;
+            // Add the discovered device to the list
+            this.devices.push({
+              id: deviceId,
+              name: deviceName,
+              data: {}
+            });
+            //this.homey.log(`Discovered device ${deviceId}`);
+          }
+        });
+    
+        // Set a timeout to stop discovery after the specified time
+        setTimeout(() => {
+          // Unsubscribe from the topic and disconnect the MQTT client
+          this.unsubscribe(topic);
+          this.disconnect();
+    
+          if (this.devices.length === 0) {
+            // Log a message if no devices were discovered
+            this.homey.log('No devices discovered within the timeout.');
+          } else {
+            // Log the discovered devices
+            this.homey.log(`Discovered devices: ${JSON.stringify(this.devices)}`);
+          }
+    
+          // Resolve the promise with the list of devices
+          resolve(this.devices);
+        }, timeout);
+    
+      });
+    }
+    
 
     disconnect(): void {
-
+      this.topics.forEach(topic =>{
+        this.unsubscribe(topic);
+      })
     }
 
 

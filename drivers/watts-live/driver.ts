@@ -4,80 +4,73 @@ import { MqttWrapper } from '../../lib/MqttWrapper';
 
 class WattsLiveDriver extends Homey.Driver {
   private mqttWrapper: MqttWrapper | null = null;
+  private topic:string = "watts/+/measurement";
+  private devices:any[] = [];
+  private discoveredDevices:any[] = [];
 
+  
   /**
-   * Called when pairing starts.
-   */
+  * Called when pairing starts.
+  */
   async onPair(session: Homey.Driver.PairSession): Promise<void> {
-    // Set up the step to ask for MQTT connection method (Homey MQTT Client or Custom MQTT Client)
-    session.setHandler('choose_mqtt_method', async (data) => {
-      // Based on the user's selection, set up the MQTT connection for scanning
-      const settings = this.createDriverSettingsFromData(data);
-      const homeyApp = this.homey;
-
-      this.mqttWrapper = new MqttWrapper(homeyApp,settings);
-      await this.mqttWrapper.connect();
-
-      // Return available devices to continue the pairing process
-      return await this.scanForDevices();
-    });
-
-    // Set up the step for the user to select devices from the available list
-    session.setHandler('list_devices', async (data) => {
-      const availableDevices = await this.scanForDevices();
-      return availableDevices.map((device) => ({
-        name: device.name,
-        data: {
-          id: device.id,
-        },
-      }));
-    });
-
-    // Store the selected devices and their MQTT connection information
-    session.setHandler('store_settings', async (data) => {
-      const devices = data.selectedDevices;
-      const settings = this.createDriverSettingsFromData(data.mqttSettings);
-
-      devices.forEach(async (device:any) => {
-        const deviceObj = await this.getDevice(device.id);
-        if (deviceObj) {
-          // Store the settings (including MQTT settings) on each individual device
-          await deviceObj.setSettings({
-            ...settings, // Spread the MQTT settings
-            deviceId: device.id,
-          });
-        }
-      });
-    });
-  }
-
-  /**
-   * Helper method to scan for devices using MQTT
-   * This method returns devices that are not already present.
-   */
-  private async scanForDevices(): Promise<any[]> {
-    const existingDevices = this.getDevices();
-    const existingDeviceIds = existingDevices.map((device) => device.getData().id);
-
-    const availableDevices: any[] = [];
-
-    // Subscribe to the MQTT topic to discover devices
-    this.mqttWrapper?.subscribe('/watts/+/measurement', (topic, message) => {
-      const deviceId = topic.split('/')[2]; // Extract deviceId from topic
-      if (!existingDeviceIds.includes(deviceId)) {
-        availableDevices.push({ id: deviceId, name: `Device ${deviceId}` });
+    // Handler for the MQTT connection method selection
+    session.setHandler('choose_mqtt_method', async (settings: DriverSettings) => {
+      // Create an instance of DriverSettings based on the emitted data
+      const driverSettings = new DriverSettings(settings);
+        
+      try {
+        // Initialize MqttWrapper with Homey.app["homey"] and the constructed DriverSettings
+        this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
+        await this.mqttWrapper.connect();
+    
+        // Proceed to the next step if successful
+        return true;
+      } catch (err: any) {
+        throw new Error(`MQTT connection failed: ${err.message}`);
       }
     });
-
-    // You may want to wait for some time to gather all the devices
-    await new Promise(resolve => setTimeout(resolve, 2000)); // For example, wait 2 seconds for devices
-
-    return availableDevices;
+  
+    // Handler for starting device discovery
+    session.setHandler('start_discovery', async (data) => {
+      try {
+        if (!this.mqttWrapper) {
+          throw new Error('MQTT wrapper is not initialized');
+        }
+    
+        // Start discovering devices using the topic
+        this.devices = await this.mqttWrapper.discoverDevices(this.topic);    
+        this.discoveredDevices = this.devices.map(device => ({
+          id: device.id,
+          name: device.name,
+          data: {}
+        }));
+        // Return a successful response
+        return true;
+      } catch (err: any) {
+        throw new Error(`Failed to discover devices: ${err.message}`);
+      }
+    });
+  
+    // Handler to get the list of discovered devices
+    session.setHandler('get_devices', async () => {
+      // Return the list of discovered devices
+      this.homey.log(`Returning discovered devices: ${JSON.stringify(this.devices)}`);
+      return this.discoveredDevices;
+    });
+  
+    // Handler to add a selected device to Homey
+    session.setHandler('add_device', async (device) => {
+      // Handle adding the device (you can implement your logic here)
+      return device;  // Return the device being added
+    });
   }
-
+  
+  
+  
   /**
-   * Helper method to create a DriverSettings object from the pairing data.
-   */
+  * Helper method to create a DriverSettings object from the pairing data.
+  */
+  /*
   private createDriverSettingsFromData(data: any): DriverSettings {
     return new DriverSettings({
       hostname: data.hostname || 'localhost',
@@ -89,6 +82,7 @@ class WattsLiveDriver extends Homey.Driver {
       useHomeyMqttClient: data.useHomeyMqttClient || 'homey',
     });
   }
+    */
 }
 
 module.exports = WattsLiveDriver;

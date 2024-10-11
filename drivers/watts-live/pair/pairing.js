@@ -1,50 +1,65 @@
 'use strict';
 
 module.exports.init = function() {
-  let selectedMqttMethod = null;
-  let mqttSettings = null;
-  let availableDevices = [];
-
-  // Handle the event when the user selects an MQTT method
+  // Handle the MQTT method selection event
   Homey.on('choose_mqtt_method', function(data, callback) {
-    selectedMqttMethod = data.mqttMethod; // Capture the MQTT method chosen by the user
+    console.log('Received MQTT settings:', data);
 
-    if (selectedMqttMethod === 'custom') {
-      // Gather custom MQTT settings
-      mqttSettings = {
-        hostname: data.hostname,
-        port: data.port,
-        clientId: data.clientId,
-        username: data.username,
-        password: data.password,
-        useTls: data.useTls
-      };
-    } else {
-      // If Homey MQTT Client is selected, set the appropriate flag
-      mqttSettings = {
-        useHomeyMqttClient: true
-      };
-    }
-
-    // Scan for devices based on the chosen MQTT settings
-    Homey.api('choose_mqtt_method', { mqttSettings: mqttSettings }, function(err, response) {
-      if (err) return callback(err);
-      availableDevices = response.devices; // Get the devices available for pairing
-      callback(null, true); // Proceed to the next step
+    // Emit the data to the driver
+    Homey.emit('choose_mqtt_method', data, function(err) {
+      if (err) {
+        console.error('Error emitting choose_mqtt_method:', err);
+        return callback(err);
+      }
+      // Proceed to loading.html after emitting the settings
+      Homey.nextView('loading');
     });
   });
 
-  // Handle the list_devices step
-  Homey.on('list_devices', function(data, callback) {
-    callback(null, availableDevices);
+  // Start the device discovery process
+  Homey.on('start_discovery', function(data, callback) {
+    console.log('Starting device discovery...');
+    
+    // Emit the event to initiate discovery in the driver
+    Homey.emit('start_discovery', {}, function(err, result) {
+      if (err) {
+        console.error('Error starting discovery:', err);
+        return callback(err);
+      }
+      // Proceed to the list_devices view after discovery starts
+      console.log('Discovery started, proceeding to list_devices');
+      Homey.nextView('list_devices');
+    });
   });
 
-  // Store the selected devices
-  Homey.on('store_settings', function(data, callback) {
-    const selectedDevices = data.selectedDevices;
-    Homey.api('store_settings', { selectedDevices: selectedDevices, mqttSettings: mqttSettings }, function(err) {
-      if (err) return callback(err);
-      callback(null, true);
+  // Fetch the discovered devices from the driver
+  Homey.on('list_devices', function(data, callback) {
+    console.log('Requesting discovered devices from driver...');
+    
+    // Call the API to retrieve the devices
+    Homey.api('get_devices', {}, function(err, devices) {
+      if (err) {
+        console.error('Error fetching devices:', err);
+        return callback(err);
+      }
+      
+      console.log('Devices fetched:', devices);
+      callback(null, devices);  // Return the list of devices to the frontend
+    });
+  });
+
+  // Handle adding the selected device
+  Homey.on('add_device', function(device, callback) {
+    console.log('Adding device:', device);
+    
+    // Emit the event to add the selected device to Homey
+    Homey.emit('add_device', device, function(err, result) {
+      if (err) {
+        console.error('Error adding device:', err);
+        return callback(err);
+      }
+      console.log('Device successfully added:', result);
+      callback(null, result);  // Confirm the device was added successfully
     });
   });
 };

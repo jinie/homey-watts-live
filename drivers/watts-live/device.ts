@@ -18,10 +18,10 @@ export class WattsLiveDevice extends Homey.Device {
   async onInit() {
     await this.migrateToNewMqttConnectivity();
     await this.migrateCapabilities(); //Update capabilities from V1 to V2
-
+    
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
-
+    
     this.homey.log(`Initializing Device with settings : ${JSON.stringify(driverSettings)}`);
     // Initialize the MQTT wrapper with the device's settings
     this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
@@ -41,16 +41,13 @@ export class WattsLiveDevice extends Homey.Device {
   
   onMessage(topic: string, message: string | Buffer) {
     let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
-    this.log(`Message recieved ${msg}`)
     this.processMqttMessage(topic, msg);
   }
   
   /**
   * Called when the device is deleted from Homey.
   */
-  async onDeleted(): Promise<void> {
-    //this.log(`Device deleted: ${this.getName()} (${this.getData().id})`);
-    
+  async onDeleted(): Promise<void> {  
     // Perform cleanup by disconnecting MQTT and freeing any resources.
     if (this.mqttWrapper) {
       this.mqttWrapper.disconnect();
@@ -61,7 +58,6 @@ export class WattsLiveDevice extends Homey.Device {
   * Called when the device is added to Homey.
   */
   async onAdded(): Promise<void> {
-    //this.log(`Device added: ${this.getName()} (${this.getData().id})`);
     // This is where you can implement any setup logic after the device is paired or added.
     // For example, sending an MQTT message to let the server know this device was added
     const deviceId = this.getDeviceSettings().deviceId;
@@ -181,12 +177,6 @@ export class WattsLiveDevice extends Homey.Device {
     }, 60000); // Retry after 60 seconds (you can adjust the delay as needed)
   }
   
-  /*
-  onDeleted() {
-  this.MqttService?.unregister();
-  this.log("Unregistered device from MQTT Client")
-  }*/
-  
   getMqttTopic() {
     return this.getSettings()['deviceId'];
   }
@@ -239,15 +229,18 @@ export class WattsLiveDevice extends Homey.Device {
     this.setAvailable();
   }
   
+  /**
+   * Migrate V1 devices to new V2 connectivity 
+   */
   async migrateToNewMqttConnectivity(): Promise<void> {
     try {
       // Get the current settings of the device
       const settings = this.getSettings();
-
+      
       // Check if the `useHomeyMqttClient` key is missing, indicating the old format
       if (!settings.useHomeyMqttClient) {
         this.log(`Migrating device ${this.getData().id} to the new MQTT connectivity...`);
-
+        
         // Set the new settings for MQTT, use "homey" or "custom" instead of a boolean
         const newSettings = {
           hostname: 'localhost', // Default value for Homey MQTT Client
@@ -259,10 +252,10 @@ export class WattsLiveDevice extends Homey.Device {
           useHomeyMqttClient: 'homey', // Set this to "homey" to match the dropdown value
           mqttTopic: `/watts/${settings.deviceId}/measurement` // Default MQTT topic based on deviceId
         };
-
+        
         // Apply the new settings to the device
         await this.setSettings(newSettings);
-
+        
         this.log(`Device ${this.getData().id} successfully migrated to the new MQTT connectivity.`);
       } else {
         this.log(`Device ${this.getData().id} is already using the new MQTT connectivity.`);
@@ -271,7 +264,7 @@ export class WattsLiveDevice extends Homey.Device {
       this.error(`Error migrating device ${this.getData().id}:`, error);
     }
   }
-
+  
   /**
   * Migrate custom capabilities between versions.
   * No "official" way of migrating exists, so for now just delete the old capabiliy and add a new one.

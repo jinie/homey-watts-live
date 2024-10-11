@@ -11,6 +11,7 @@ export class MqttWrapper {
 
   constructor(homey: Homey.App['homey'], private settings: DriverSettings) {
     this.homey = homey;
+    this.homey.log(JSON.stringify(this.settings));
     if (this.settings.useHomeyMqttClient==="homey") {
       this.mqttConnector = new HomeyMqttConnector(this.homey);
     } else {
@@ -39,5 +40,10 @@ export class MqttWrapper {
 
   publish(topic: string, message: string): void {
     this.mqttConnector?.publish(topic, message);
+  }
+
+  async discoverDevices(topic: string, timeout:number = 10000): Promise<any[]>
+  {
+    return await this.mqttConnector?.discoverDevices(topic, timeout);
   }
 }

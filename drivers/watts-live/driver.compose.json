@@ -97,20 +97,30 @@
     "local"
   ],
   "connectivity": ["lan","cloud"],
-  "$extends": [
-    "defaults"
-  ],
   "pair": [
     {
-      "id": "choose_mqtt_method",
-      "template": "pairing.html",
+      "id": "choose_mqtt_method",  
       "title": {
         "en": "Select MQTT Connection Method"
+      },
+      "options": {
+        "showNextButton": false  
+      },
+      "navigation": {
+        "next": "loading"  
       }
     },
     {
-      "id": "list_devices",
-      "template": "pairing_devices.html",
+      "id": "loading",  
+      "title": {
+        "en": "Discovering Devices"
+      },
+      "navigation": {
+        "next": "list_devices"  
+      }
+    },
+    {
+      "id": "list_devices",  
       "title": {
         "en": "Select Devices to Pair"
       }
