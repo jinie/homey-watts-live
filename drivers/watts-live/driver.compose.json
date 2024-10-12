@@ -2,6 +2,10 @@
   "name": {
     "en": "Watts live"
   },
+  "images": {
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "small": "{{driverAssetsPath}}/images/small.png"
+  },
   "class": "other",
   "capabilities": [
     "meter_power.imported",

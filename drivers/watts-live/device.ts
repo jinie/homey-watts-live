@@ -243,7 +243,7 @@ export class WattsLiveDevice extends Homey.Device {
       
       // Check if the `useHomeyMqttClient` key is missing, indicating the old format
       if (!settings.useHomeyMqttClient) {
-        this.log(`Migrating device ${this.getData().id} to the new MQTT connectivity...`);
+        this.log(`Migrating device ${this.getSetting("deviceId")} to the new MQTT connectivity...`);
         
         // Set the new settings for MQTT, use "homey" or "custom" instead of a boolean
         const newSettings = {
@@ -260,9 +260,9 @@ export class WattsLiveDevice extends Homey.Device {
         // Apply the new settings to the device
         await this.setSettings(newSettings);
         
-        this.log(`Device ${this.getData().id} successfully migrated to the new MQTT connectivity.`);
+        this.log(`Device ${this.getSetting("deviceId")} successfully migrated to the new MQTT connectivity.`);
       } else {
-        this.log(`Device ${this.getData().id} is already using the new MQTT connectivity.`);
+        this.log(`Device ${this.getSetting("deviceId")} is already using the new MQTT connectivity.`);
       }
     } catch (error) {
       this.error(`Error migrating device ${this.getData().id}:`, error);
