@@ -32,40 +32,138 @@
   "homeyCommunityTopicId": 109554,
   "drivers": [
     {
-      "images": {
-        "large": "/drivers/watts-live/assets/images/large.png",
-        "small": "/drivers/watts-live/assets/images/small.png"
-      },
-      "capabilities": [
-        "meter_power",
-        "measure_power"
-      ],
-      "class": "other",
-      "pair": [
-        {
-          "id": "loading",
-          "template": "loading"
-        },
-        {
-          "id": "list_devices",
-          "template": "list_devices",
-          "navigation": {
-            "next": "add_devices"
-          },
-          "options": {
-            "singular": false
-          }
-        },
-        {
-          "id": "add_devices",
-          "template": "add_devices"
-        }
-      ],
       "name": {
         "en": "Watts live"
       },
+      "class": "other",
+      "capabilities": [
+        "meter_power.imported",
+        "meter_power.exported",
+        "measure_power",
+        "measure_power.l1",
+        "measure_power.l2",
+        "measure_power.l3",
+        "measure_voltage.l1",
+        "measure_voltage.l2",
+        "measure_voltage.l3",
+        "measure_current.l1",
+        "measure_current.l2",
+        "measure_current.l3",
+        "measure_power.negative_active",
+        "measure_power.negative_l1",
+        "measure_power.negative_l2",
+        "measure_power.negative_l3",
+        "measure_negative_reactive_energy",
+        "measure_power.negative_reactive",
+        "measure_positive_reactive_energy",
+        "measure_power.positive_reactive"
+      ],
+      "capabilitiesOptions": {
+        "meter_power.imported": {
+          "title": {
+            "en": "Imported Energy"
+          }
+        },
+        "meter_power.exported": {
+          "title": {
+            "en": "Exported Energy"
+          }
+        },
+        "measure_voltage.l1": {
+          "title": {
+            "en": "Voltage L1"
+          }
+        },
+        "measure_voltage.l2": {
+          "title": {
+            "en": "Voltage L2"
+          }
+        },
+        "measure_voltage.l3": {
+          "title": {
+            "en": "Voltage L3"
+          }
+        },
+        "measure_current.l1": {
+          "title": {
+            "en": "Current L1"
+          }
+        },
+        "measure_current.l2": {
+          "title": {
+            "en": "Current L2"
+          }
+        },
+        "measure_current.l3": {
+          "title": {
+            "en": "Current L3"
+          }
+        },
+        "measure_power": {
+          "title": {
+            "en": "Total Power"
+          }
+        },
+        "measure_power.l1": {
+          "title": {
+            "en": "Power L1"
+          }
+        },
+        "measure_power.l2": {
+          "title": {
+            "en": "Power L2"
+          }
+        },
+        "measure_power.l3": {
+          "title": {
+            "en": "Power L3"
+          }
+        },
+        "measure_power.negative_active": {
+          "title": {
+            "en": "Total Negative Power"
+          }
+        },
+        "measure_power.negative_l1": {
+          "title": {
+            "en": "Negative Power L1"
+          }
+        },
+        "measure_power.negative_l2": {
+          "title": {
+            "en": "Negative Power L2"
+          }
+        },
+        "measure_power.negative_l3": {
+          "title": {
+            "en": "Negative Power L3"
+          }
+        },
+        "measure_power.negative_reactive": {
+          "title": {
+            "en": "Negative Reactive Power"
+          }
+        },
+        "measure_power.positive_reactive": {
+          "title": {
+            "en": "Positive Reactive Power"
+          }
+        },
+        "meter_power.positive_reactive": {
+          "title": {
+            "en": "Positive Reactive Energy"
+          }
+        },
+        "meter_power.negative_reactive": {
+          "title": {
+            "en": "Negative Reactive Energy"
+          }
+        }
+      },
       "energy": {
-        "cumulative": true
+        "cumulative": true,
+        "cumulativeImportedCapability": "meter_power.imported",
+        "cumulativeExportedCapability": "meter_power.exported"
       },
       "platforms": [
         "local"
@@ -74,39 +172,215 @@
         "lan",
         "cloud"
       ],
+      "pair": [
+        {
+          "id": "choose_mqtt_method",
+          "title": {
+            "en": "Select MQTT Connection Method"
+          },
+          "options": {
+            "showNextButton": false
+          },
+          "navigation": {
+            "next": "loading"
+          }
+        },
+        {
+          "id": "loading",
+          "title": {
+            "en": "Discovering Devices"
+          },
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "title": {
+            "en": "Select Devices to Pair"
+          },
+          "options": {
+            "showNextButton": true,
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "options": {
+        "template": "pairing.js"
+      },
       "id": "watts-live",
       "settings": [
         {
           "id": "deviceId",
-          "type": "label",
+          "type": "text",
           "label": {
             "en": "Device ID"
           },
-          "value": ""
+          "hint": {
+            "en": "The unique device ID for this device, used to derive the MQTT topic."
+          },
+          "value": "",
+          "required": true
         },
         {
-          "type": "group",
+          "id": "useHomeyMqttClient",
+          "type": "dropdown",
           "label": {
-            "en": "Energy Production Data"
+            "en": "MQTT Connection Type"
           },
-          "children": [
+          "hint": {
+            "en": "Select whether to use Homey MQTT Client or Custom MQTT Client"
+          },
+          "values": [
             {
-              "id": "include_production",
-              "type": "checkbox",
+              "id": "homey",
               "label": {
-                "en": "Include Energy Production"
-              },
-              "value": false,
-              "hint": {
-                "en": "Include Energy Production readings, i.e. in case of solar power"
+                "en": "Homey MQTT Client"
+              }
+            },
+            {
+              "id": "custom",
+              "label": {
+                "en": "Custom MQTT Client"
               }
             }
-          ]
+          ],
+          "value": "homey"
+        },
+        {
+          "id": "hostname",
+          "type": "text",
+          "label": {
+            "en": "MQTT Hostname"
+          },
+          "hint": {
+            "en": "The hostname of the MQTT broker (required for Custom MQTT Client)"
+          },
+          "value": "localhost",
+          "required": true,
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "port",
+          "type": "number",
+          "label": {
+            "en": "MQTT Port"
+          },
+          "hint": {
+            "en": "The port of the MQTT broker (required for Custom MQTT Client)"
+          },
+          "value": 1883,
+          "required": true,
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "clientId",
+          "type": "text",
+          "label": {
+            "en": "Client ID"
+          },
+          "hint": {
+            "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)"
+          },
+          "value": "homey-device",
+          "required": true,
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "username",
+          "type": "text",
+          "label": {
+            "en": "MQTT Username"
+          },
+          "hint": {
+            "en": "Username for authenticating with the MQTT broker (optional)"
+          },
+          "optional": true,
+          "value": "",
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "password",
+          "type": "password",
+          "label": {
+            "en": "MQTT Password"
+          },
+          "hint": {
+            "en": "Password for authenticating with the MQTT broker (optional)"
+          },
+          "optional": true,
+          "value": "",
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "useTls",
+          "type": "checkbox",
+          "label": {
+            "en": "Use TLS"
+          },
+          "hint": {
+            "en": "Enable TLS for secure MQTT communication (optional)"
+          },
+          "value": false,
+          "conditional": {
+            "id": "useHomeyMqttClient",
+            "value": "custom"
+          }
+        },
+        {
+          "id": "mqttTopic",
+          "type": "text",
+          "label": {
+            "en": "MQTT Topic"
+          },
+          "hint": {
+            "en": "The topic to subscribe to for this device, typically based on the deviceId."
+          },
+          "value": ""
         }
       ]
     }
   ],
   "capabilities": {
+    "measure_current": {
+      "type": "number",
+      "units": "A",
+      "title": {
+        "en": "Current"
+      },
+      "desc": {
+        "en": "Current of specific phase"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
     "measure_current_l1": {
       "type": "number",
       "units": "A",
@@ -155,6 +429,22 @@
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
     },
+    "measure_energy": {
+      "type": "number",
+      "units": "kWh",
+      "title": {
+        "en": "Energy"
+      },
+      "desc": {
+        "en": "Cumulative Energy"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
     "measure_negative_active_energy": {
       "type": "number",
       "units": "kWh",
@@ -179,6 +469,22 @@
       },
       "desc": {
         "en": "Cumulative Power Production"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_negative_power": {
+      "type": "number",
+      "units": "W",
+      "title": {
+        "en": "Phase Negative Power"
+      },
+      "desc": {
+        "en": "Power production of specific phase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -291,6 +597,22 @@
       },
       "desc": {
         "en": "Reactive Power Consumption"
+      },
+      "uiComponent": "sensor",
+      "uiQuickAction": true,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_power": {
+      "type": "number",
+      "units": "W",
+      "title": {
+        "en": "Phase Power"
+      },
+      "desc": {
+        "en": "Power consumption of specific phase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,

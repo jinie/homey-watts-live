@@ -1,230 +1,119 @@
 import Homey from 'homey';
-import { PairSession } from 'homey/lib/Driver';
-import { ReadingToCapabilityMap, MessagesCollected, MeterReading } from './types';
-const WattsLiveDevice = require('./device');
+import { DriverSettings } from '../../types/DriverSettings';
+import { MqttWrapper } from '../../lib/MqttWrapper';
 
+class WattsLiveDriver extends Homey.Driver {
+  private mqttWrapper: MqttWrapper | null = null;
+  private topic:string = "watts/+/measurement";
+  private devices:any[] = [];
+  private discoveredDevices:any[] = [];
 
-
-export class WattsLiveDriver extends Homey.Driver {
-
-  private deviceConnectionTrigger: any;
-  private devicesCounter: number | undefined = undefined;
-  private searchingDevices = false;
-  private messagesCounter = 0;
-  private messagesCollected: MessagesCollected = {};
-  private topicsToIgnore: string[] = [];
-  private debug: boolean = false;
-
+  
   /**
-   * onInit is called when the driver is initialized.
-   */
-  async onInit() {
-    this.log(`${this.constructor.name} has been initiated, driver id: ${this.manifest.id}, driver name: ${this.manifest.name.en}`);
-    setInterval(() => {
+  * Called when pairing starts.
+  */
+  async onPair(session: Homey.Driver.PairSession): Promise<void> {
+    // Handler for the MQTT connection method selection
+    session.setHandler('choose_mqtt_method', async (settings: DriverSettings) => {
+      // Create an instance of DriverSettings based on the emitted data
+      const driverSettings = new DriverSettings(settings);
+      this.log(settings);
       try {
-        this.updateDevices();
-      } catch (error) {
-        if (this.debug)
-          throw (error);
-        else
-          this.log(`${this.constructor.name} checkDevices error: ${error}`);
-      }
-    }, 30000);
-    this.log('WattsLiveDriver has been initialized');
-
-  }
-
-  collectPairingData(topic: string, message: string) {
-    let topicParts = topic.split('/');
-    if (this.messagesCollected[topicParts[1]] === undefined)
-      this.messagesCollected[topicParts[1]] = {
-        messages: []
-      };
-
-    this.messagesCollected[topicParts[1]].messages.push(message);
-  }
-
-  getTopicsToIgnore() {
-    let result: string[] = [];
-    (this.getDevices() as typeof WattsLiveDevice[]).forEach(device => {
-      result.push(device.getMqttTopic());
-    });
-    return result;
-  }
-
-  updateDevices() {
-    this.getDevices().forEach(device => {
-      (device as typeof WattsLiveDevice).checkDeviceStatus();
-    });
-  }
-
-  public async onDeviceStatusChange(device: { getName: () => any; getData: () => { (): any; new(): any; id: any; }; }, newStatus: string, oldStatus: string) {
-    if ((oldStatus === 'unavailable') && (newStatus === 'available')) {
-      this.deviceConnectionTrigger.trigger({
-        name: device.getName(),
-        device_id: device.getData().id,
-        status: true
-      });
-    } else if ((oldStatus === 'available') && (newStatus === 'unavailable')) {
-      this.deviceConnectionTrigger.trigger({
-        name: device.getName(),
-        device_id: device.getData().id,
-        status: false
-      });
-    }
-  }
-
-  checkDeviceSearchStatus() {
-    this.log(`checkDeviceSearchStatus: ${this.devicesCounter} === ${Object.keys(this.messagesCollected).length}`);
-    if (this.devicesCounter === undefined)
-      this.devicesCounter = 0;
-    let devCount = Object.keys(this.messagesCollected).length;
-    if (devCount === this.devicesCounter) {
-      this.devicesCounter = undefined;
-      return true;
-    }
-    this.devicesCounter = devCount;
-    return false;
-  }
-
-  sendMessageToDevices(topic: string, message: string) {
-    let topicParts = topic.split('/');
-    let devices = this.getDevices();
-    for (const element of devices) {
-      let device = element as typeof WattsLiveDevice;
-      if (device.getMqttTopic() === topicParts[1]) {
-        device.onMessage(topic, message);
-        break;
-      }
-    }
-  }
-
-  onMessage(topic: string, message: any) {
-    try {
-      if (this.searchingDevices) {
-        this.messagesCounter++;
-        this.collectPairingData(topic, message);
-      }
-      this.sendMessageToDevices(topic, message);
-    } catch (error) {
-      if (this.debug)
-        throw (error);
-      else
-        this.log(`onMessage error: ${error}`);
-    }
-  }
-
-  async onPair(session: PairSession): Promise<void> {
-    let driver = this;
-    let devices: any[] = [];
-    session.setHandler('list_devices', async (data) => {
-      driver.log(`list_devices: ${JSON.stringify(data)}`);
-      if (devices.length === 0) {
-        if (driver.messagesCounter === 0)
-          return Promise.reject(new Error(driver.homey.__('mqtt_client.no_messages')));
-        else
-          return Promise.reject(new Error(driver.homey.__('mqtt_client.no_new_devices')));
-      }
-      driver.log(`list_devices: New devices found: ${JSON.stringify(devices)}`);
-      return devices;
-    });
-    session.setHandler("list_devices_selection", async (devices) => {
-      driver.log(`list_devices_selection: ${JSON.stringify(devices)}`);
-    });
-    session.setHandler('showView', async (viewId) => {
-      driver.log(`onPair current phase: "${viewId}"`);
-      if (viewId === 'loading') {
-        this.messagesCounter = 0;
-        this.searchingDevices = true;
-        this.topicsToIgnore = this.getTopicsToIgnore();
-        this.log(`Topics to ignore during pairing: ${JSON.stringify(this.topicsToIgnore)}`);
-        let interval = setInterval((drvArg, sessionArg) => {
-          if (drvArg.checkDeviceSearchStatus()) {
-            clearInterval(interval);
-            this.searchingDevices = false;
-            devices = drvArg.pairingFinished(this.messagesCollected);
-            this.messagesCollected = {};
-            sessionArg.emit('list_devices', devices);
-            sessionArg.nextView();
-          }
-        }, 7000, driver, session);
-      }
-    });
-  }
-
-  collectedDataToDevice(deviceTopic: string, messages: string[]): {} | null {
-    let readings: MeterReading[] = [];
-    readings.forEach((message) => {
-      try {
-        readings.push(JSON.parse(JSON.stringify(message)) as MeterReading);
-      } catch (error) {
-        if (this.debug)
-          throw (error);
-        else
-          this.log(`collectedDataToDevice error: ${error}`);
-      }
-    });
-    // look through readings and find any keys that are undefined
-    let undefinedKeys: string[] = [];
+        // Initialize MqttWrapper with Homey.app["homey"] and the constructed DriverSettings
+        this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
+        await this.mqttWrapper.connect();
     
-    readings.forEach((reading) => {
-      for (const key in ReadingToCapabilityMap) {
-        if (reading[key as keyof MeterReading] === undefined) {
-          undefinedKeys.push(ReadingToCapabilityMap[key]);
+        // Proceed to the next step if successful
+        return true;
+      } catch (err: any) {
+        throw new Error(`MQTT connection failed: ${err.message}`);
+      }
+    });
+  
+    // Handler for starting device discovery
+    session.setHandler('start_discovery', async (data) => {
+      try {
+        if (!this.mqttWrapper) {
+          throw new Error('MQTT wrapper is not initialized');
         }
+    
+        // Start discovering devices using the topic
+        let discoveredDevices = await this.mqttWrapper.discoverDevices(this.topic);
+    
+        // Fetch already paired devices from Homey SDK
+        const pairedDevices = await this.getPairedDevices();
+    
+        // Filter out paired devices and ensure unique devices
+        const uniqueDiscoveredDevices = discoveredDevices
+          .filter(device => {
+            // Exclude already paired devices
+            return !pairedDevices.some((pairedDevice: { id: any; }) => pairedDevice.id === device.id);
+          })
+          .reduce((acc, device) => {
+            // Ensure the device is unique based on its id
+            if (!acc.some((d: { id: any; }) => d.id === device.id)) {
+              acc.push(device);
+            }
+            return acc;
+          }, [] as Array<{ id: string, name: string }>);
+    
+        // Store the unique, unpaired devices
+        this.discoveredDevices = uniqueDiscoveredDevices.map((device: { id: any; name: any; data: any, settings:any}) => ({
+          id: device.id,
+          name: device.name,
+          data: device.settings,
+          settings: device.settings
+        }));
+        this.log(this.discoveredDevices);
+    
+        // Return a successful response
+        return true;
+      } catch (err: any) {
+        throw new Error(`Failed to discover devices: ${err.message}`);
       }
     });
-
-    let caps: string[] = [
-      "measure_power",
-      "meter_power",
-      "measure_power_l1",
-      "measure_power_l2",
-      "measure_power_l3",
-      "measure_current_l1",
-      "measure_current_l2",
-      "measure_current_l3",
-      "measure_voltage_l1",
-      "measure_voltage_l2",
-      "measure_voltage_l3",
-    ]
-
-    undefinedKeys.forEach((key) => {
-      if (caps.includes(key)) {
-        caps.splice(caps.indexOf(key), 1);
-      }
+  
+    // Handler to get the list of discovered devices
+    session.setHandler('list_devices', async () => {
+      // Return the list of discovered devices
+      this.homey.log(`Returning discovered devices: ${JSON.stringify(this.devices)}`);
+      return this.discoveredDevices;
     });
-
-    let devItem = {
-      name: "Watts Live",
-      data: {
-        id: deviceTopic,
-      },
-      settings: {
-        deviceId: deviceTopic,
-        include_production: false,
-      },
-      capabilities: caps,
-      capabilitiesOptions: {},
-      class: 'other'
-    };
-    if (devItem.capabilities.length <= 1)
-      return null;
-    return devItem;
-  }
-
-  pairingFinished(messagesCollected: MessagesCollected): Object[] {
-    this.log('pairingFinished called');
-    let devices: Object[] = [];
-    Object.keys(messagesCollected).sort().forEach(key => {
-      let devItem = this.collectedDataToDevice(key, messagesCollected[key].messages);
-      if (devItem !== null)
-        devices.push(devItem);
+  
+    // Handler to add a selected device to Homey
+    session.setHandler('add_device', async (device) => {
+      // Handle adding the device (you can implement your logic here)
+      this.log("Adding Device : ", device);
+      return device;  // Return the device being added
     });
-    this.log(`pairingFinished: devices found ${JSON.stringify(devices)}`);
-    return devices;
   }
-};
-
+  
+  // Helper function to get already paired devices
+private async getPairedDevices() {
+  // Assuming this.getDevices() returns the list of paired devices from Homey Pro
+  const pairedDevices = await this.getDevices();
+  return pairedDevices.map(device => ({
+    id: device.getSetting("deviceId")
+  }));
+}
+  
+  
+  /**
+  * Helper method to create a DriverSettings object from the pairing data.
+  */
+  /*
+  private createDriverSettingsFromData(data: any): DriverSettings {
+    return new DriverSettings({
+      hostname: data.hostname || 'localhost',
+      port: Number(data.port) || 1883,
+      clientId: data.clientId || 'homey-watts',
+      username: data.username || '',
+      password: data.password || '',
+      useTls: data.useTls === 'true',
+      useHomeyMqttClient: data.useHomeyMqttClient || 'homey',
+    });
+  }
+    */
+}
 
 module.exports = WattsLiveDriver;

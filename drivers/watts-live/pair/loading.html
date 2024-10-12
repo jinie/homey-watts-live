@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discovering Devices</title>
+  <style>
+    .spinner {
+      margin: 50px auto;
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .message {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="homey-header">
+  <h1 class="homey-title" data-i18n="settings.title">
+    <!-- This will be filled with the translated string with key 'settings.title'. -->
+  </h1>
+  <p class="homey-subtitle" data-i18n="settings.subtitle">
+    <!-- This will be filled with the translated string with key 'settings.subtitle'. -->
+  </p>
+</header>
+  <div class="spinner"></div>
+  <div class="message">Discovering devices, please wait...</div>
+
+  <script>
+    // Notify the pairing script to start device discovery
+    Homey.emit('start_discovery', {}, function(err, result) {
+      if (err) {
+        alert('Error: ' + err.message);
+      } else {
+        // Proceed to the list_devices view after discovery is done
+                // Before moving to the list_devices view, re-enable the Continue button
+        Homey.emit('showView', 'list_devices', {
+          showNext: true
+        });
+        document.getElementById('hy-nav-continue').style.display = 'block';
+        Homey.nextView('list_devices');  // Ensure transition to the next view
+      }
+    });
+  </script>
+</body>
+</html>

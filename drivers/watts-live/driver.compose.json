@@ -4,17 +4,139 @@
   },
   "class": "other",
   "capabilities": [
-    "meter_power",
-    "measure_power"
+    "meter_power.imported",
+    "meter_power.exported",
+    "measure_power",
+    "measure_power.l1",
+    "measure_power.l2",
+    "measure_power.l3",
+    "measure_voltage.l1",
+    "measure_voltage.l2",
+    "measure_voltage.l3",
+    "measure_current.l1",
+    "measure_current.l2",
+    "measure_current.l3",
+    "measure_power.negative_active",
+    "measure_power.negative_l1",
+    "measure_power.negative_l2",
+    "measure_power.negative_l3",
+    "measure_negative_reactive_energy",
+    "measure_power.negative_reactive",
+    "measure_positive_reactive_energy",
+    "measure_power.positive_reactive"
   ],
+  "capabilitiesOptions": {
+    "meter_power.imported": {
+      "title": { "en": "Imported Energy" }
+    },
+    "meter_power.exported": {
+      "title": { "en": "Exported Energy" }
+    },
+    "measure_voltage.l1": {
+      "title": {"en": "Voltage L1"}
+    },
+    "measure_voltage.l2": {
+      "title": {"en": "Voltage L2"}
+    },
+    "measure_voltage.l3": {
+      "title": {"en": "Voltage L3"}
+    },
+    "measure_current.l1": {
+      "title": {"en": "Current L1"}
+    },
+    "measure_current.l2": {
+      "title": {"en": "Current L2"}
+    },
+    "measure_current.l3": {
+      "title": {"en": "Current L3"}
+    },
+    "measure_power": {
+      "title": {"en": "Total Power"}
+    },
+    "measure_power.l1": {
+      "title": {"en": "Power L1"}
+    },
+    "measure_power.l2": {
+      "title": {"en": "Power L2"}
+    },
+    "measure_power.l3": {
+      "title": {"en": "Power L3"}
+    },
+    "measure_power.negative_active": {
+      "title": {"en": "Total Negative Power"}
+    },
+    "measure_power.negative_l1": {
+      "title": {"en": "Negative Power L1"}
+    },
+    "measure_power.negative_l2": {
+      "title": {"en": "Negative Power L2"}
+    },
+    "measure_power.negative_l3": {
+      "title": {"en": "Negative Power L3"}
+    },
+    "measure_power.negative_reactive": {
+      "title": {"en": "Negative Reactive Power"}
+    },
+    "measure_power.positive_reactive": {
+      "title": {"en": "Positive Reactive Power"}
+    },
+    "meter_power.positive_reactive": {
+      "title": {"en": "Positive Reactive Energy"}
+    },
+    "meter_power.negative_reactive": {
+      "title": {"en": "Negative Reactive Energy"}
+    }
+    
+  },
   "energy": {
-    "cumulative": true
+    "cumulative": true,
+    "cumulativeImportedCapability": "meter_power.imported",
+    "cumulativeExportedCapability": "meter_power.exported"
   },
   "platforms": [
     "local"
   ],
   "connectivity": ["lan","cloud"],
-  "$extends": [
-    "defaults"
-  ]
+  "pair": [
+    {
+      "id": "choose_mqtt_method",  
+      "title": {
+        "en": "Select MQTT Connection Method"
+      },
+      "options": {
+        "showNextButton": false  
+      },
+      "navigation": {
+        "next": "loading"  
+      }
+    },
+    {
+      "id": "loading",  
+      "title": {
+        "en": "Discovering Devices"
+      },
+      "navigation": {
+        "next": "list_devices"  
+      }
+    },
+    {
+      "id": "list_devices",  
+      "template": "list_devices",
+      "navigation": { "next": "add_devices" },
+      "title": {
+        "en": "Select Devices to Pair"
+      },
+      "options": {
+        "showNextButton": true,
+        "singular": true
+      }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ],
+  "options": {
+    "template": "pairing.js"
+  }
 }
