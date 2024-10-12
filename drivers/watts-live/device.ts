@@ -289,18 +289,37 @@ export class WattsLiveDevice extends Homey.Device {
       await this.addCapability("meter_power.exported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });    
     };
     
-    await removedCapabilitiesV1toV2.forEach(capability => {
-      if(this.getCapabilities().includes(capability)===true)
+    for (const capability of removedCapabilitiesV1toV2) {
+      if (this.getCapabilities().includes(capability)) {
         this.log(`Removing capability ${capability}`);
-      this.removeCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+      }
       
-    });
+      try {
+        await this.removeCapability(capability);
+      } catch (error) {
+        if (this.debug) {
+          throw error;
+        } else {
+          this.log(`migrateCapabilites, removeCapability error: ${error}`);
+        }
+      }
+    }
     
-    await addedCapabilitiesV1toV2.forEach( capability =>{
-      if(this.getCapabilities().includes(capability)===false)
+    for (const capability of addedCapabilitiesV1toV2) {
+      if (!this.getCapabilities().includes(capability)) {
         this.log(`Adding capability ${capability}`);
-      this.addCapability(capability).catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, Production addCapability error: ${error}`); });
-    })
+      }
+      
+      try {
+        await this.addCapability(capability);
+      } catch (error) {
+        if (this.debug) {
+          throw error;
+        } else {
+          this.log(`migrateCapabilites, Production addCapability error: ${error}`);
+        }
+      }
+    }
   }
   
 };
