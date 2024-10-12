@@ -10,30 +10,46 @@
   </style>
 </head>
 <body>
+  
+  <header class="homey-header">
+    <h1 class="homey-title" data-i18n="settings.title">
+      <!-- This will be filled with the translated string with key 'settings.title'. -->
+    </h1>
+    <p class="homey-subtitle" data-i18n="settings.subtitle">
+      <!-- This will be filled with the translated string with key 'settings.subtitle'. -->
+    </p>
+  </header>
   <h2>Select MQTT Connection Method</h2>
-
-  <label for="mqttMethod">Connection Type:</label>
-  <select id="mqttMethod">
-    <option value="homey_mqtt_client">Use Homey MQTT Client</option>
-    <option value="custom_mqtt_client">Use Custom MQTT Server</option>
-  </select>
-
-  <div id="customMqttSettings" class="custom-mqtt-fields">
-    <h3>Custom MQTT Server Settings</h3>
-    <label>Hostname: <input type="text" id="hostname"></label><br>
-    <label>Port: <input type="number" id="port"></label><br>
-    <label>Client ID: <input type="text" id="clientId"></label><br>
-    <label>Username: <input type="text" id="username"></label><br>
-    <label>Password: <input type="password" id="password"></label><br>
-    <label>Use TLS: <input type="checkbox" id="useTls"></label><br>
-    <label>Accept Self-Signed Certificates: <input type="checkbox" id="acceptSelfSignedCert"></label><br>
+  
+  <div class="homey-form-group">
+    
+    <label for="mqttMethod">Connection Type:</label>
+    <select id="mqttMethod">
+      <option value="homey_mqtt_client">Use Homey MQTT Client</option>
+      <option value="custom_mqtt_client">Use Custom MQTT Server</option>
+    </select>
+    
+    <div id="customMqttSettings" class="custom-mqtt-fields">
+      <h3>Custom MQTT Server Settings</h3>
+      <label>Hostname: <input type="text" id="hostname"></label><br>
+      <label>Port: <input type="number" id="port"></label><br>
+      <label>Client ID: <input type="text" id="clientId"></label><br>
+      <label>Username: <input type="text" id="username"></label><br>
+      <label>Password: <input type="password" id="password"></label><br>
+      <label>Use TLS: <input type="checkbox" id="useTls"></label><br>
+      <label>Accept Self-Signed Certificates: <input type="checkbox" id="acceptSelfSignedCert"></label><br>
+    </div>
   </div>
-
-  <button id="continue">Continue</button>
-
+  <button id="continue" class="homey-button-primary-full">Continue</button> <!-- This button remains visible -->
+  
   <script>
+    // Hide Homey's default 'Continue' button initially
+    document.getElementById('hy-nav-continue').style.display = 'none';
+
+    // Event listener for selecting the MQTT method
     document.getElementById('mqttMethod').addEventListener('change', function() {
       const customMqttFields = document.getElementById('customMqttSettings');
+      
       if (this.value === 'custom_mqtt_client') {
         customMqttFields.style.display = 'block';  // Show custom MQTT settings
       } else {
@@ -41,10 +57,11 @@
       }
     });
 
+    // Event listener for the custom 'Continue' button click
     document.getElementById('continue').addEventListener('click', function() {
       const mqttMethod = document.getElementById('mqttMethod').value;
       let data = {};
-
+      
       if (mqttMethod === 'homey_mqtt_client') {
         data = {
           useHomeyMqttClient: 'homey'
@@ -61,8 +78,8 @@
           acceptSelfSignedCert: document.getElementById('acceptSelfSignedCert').checked
         };
       }
-
-      // Emit the data to pairing.js
+      
+      // Emit the data to pairing.js and proceed to the next step
       Homey.emit('choose_mqtt_method', data, function(err) {
         if (err) {
           alert('Error: ' + err.message);

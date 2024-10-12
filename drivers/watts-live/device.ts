@@ -44,7 +44,6 @@ export class WattsLiveDevice extends Homey.Device {
   
   
   onMessage(topic: string, message: string | Buffer) {
-    this.log("Message Recieved on topic : ",topic," message: ", message.toString());
     let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
     this.processMqttMessage(topic, msg);
   }
