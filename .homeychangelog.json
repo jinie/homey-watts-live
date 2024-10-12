@@ -40,5 +40,11 @@
   },
   "1.0.13": {
     "en": "Clean up code and refactor message parsing."
+  },
+  "2.0.0": {
+    "en": "** Breaking Changes **"
+  },
+  "2.0.1": {
+    "en": "** Breaking Changes ** - The app no longer uses custom capabilities, and instead uses the default Homey capabilites. - The app will automatically migrate your existing capabilities upon install. - Any automation you may run against the old custom capabilities will no longer work until you edit it. Watts Live version 2.0 is a complete rewrite. Now using the standard homey capabilities for measuring power and energy, as well as voltage and current, for even better support in your automations. Can now use either the MQTT Client application for connections or a custom MQTT broker specified when pairing. Supports per device connections, allowing multiple devices across multiple brokers."
   }
 }
