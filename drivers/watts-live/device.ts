@@ -8,7 +8,6 @@ import { MeterReading } from '../../types/MeterReading';
 export class WattsLiveDevice extends Homey.Device {
   
   private debug: any;
-  private settings: DriverSettings | undefined = undefined;
   private mqttWrapper: MqttWrapper | null = null;
   private isConnected: boolean = false;
   
@@ -44,7 +43,11 @@ export class WattsLiveDevice extends Homey.Device {
   
   
   onMessage(topic: string, message: string | Buffer) {
-    let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
+    //let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
+    let msg = message.toString();
+    if(this.debug){
+        this.log(`onMessage: Message received on topic ${topic}: ${message}`);
+    }
     this.processMqttMessage(topic, msg);
   }
   
@@ -85,29 +88,38 @@ export class WattsLiveDevice extends Homey.Device {
   */
   getDeviceSettings(): DriverSettings {
     const settings = this.getSettings();
-    this.log(`Reading device settings ${JSON.stringify(settings)}`);
+    if(this.debug){
+      this.log(`Reading device settings ${JSON.stringify(settings)}`);
+    }
     // Construct and return a DriverSettings object using the device's settings
-    return new DriverSettings({
+    let newSettings:DriverSettings = {
       deviceId: settings.deviceId || '',
       hostname: settings.hostname || 'localhost',
       port: Number(settings.port) || 1883,
       clientId: settings.clientId || 'homey-watts',
       username: settings.username || '',
       password: settings.password || '',
-      useTls: settings.useTls === 'true',
+      useTls: settings.useTls || 'true',
       useHomeyMqttClient: settings.useHomeyMqttClient || 'homey',
-    });
+      acceptSelfSignedCert: settings.acceptSelfSignedCert || true
+    };
+    return newSettings;
   }
   
   public async processMqttMessage(topic: string, message: string) {
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = JSON.parse(JSON.stringify(message));
-      
+      if(this.debug){
+        this.log(`processMqttMessage: received reading ${readings}`);
+      }
       // Map readings to capabilities, convert undefined to 0
       let kMap: KvMap = {};
       Object.keys(ReadingToCapabilityMap).forEach((value) => {
         let key = ReadingToCapabilityMap[value];
+        if(this.debug){
+          this.log(`processMqttMessage: key ${key} = ${ReadingToCapabilityMap[value]}`);
+        }
         kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
         // Convert from Watts to kW
         if(['meter_power.imported', 'meter_power.exported', 'meter_power.negative_reactive', 'meter_power.positive_reactive'].includes(key)) {
@@ -119,6 +131,8 @@ export class WattsLiveDevice extends Homey.Device {
       Object.keys(kMap).forEach(key => {
         if (this.hasCapability(key) && kMap[key] !== undefined) {
           this.setCapabilityValue(key, kMap[key] as number);
+        }else{
+          this.log(`processMqttMessage: unknown capability ${key}`);
         }
       });
       
@@ -246,16 +260,17 @@ export class WattsLiveDevice extends Homey.Device {
         this.log(`Migrating device ${this.getSetting("deviceId")} to the new MQTT connectivity...`);
         
         // Set the new settings for MQTT, use "homey" or "custom" instead of a boolean
-        const newSettings = {
-          hostname: 'localhost', // Default value for Homey MQTT Client
-          port: 1883, // Default MQTT port for Homey MQTT Client
-          clientId: `homey-device-${this.getData().id}`, // Unique clientId based on the device ID
-          username: '', // Not needed for Homey MQTT Client
-          password: '', // Not needed for Homey MQTT Client
-          useTls: false, // Not needed for Homey MQTT Client
-          useHomeyMqttClient: 'homey', // Set this to "homey" to match the dropdown value
-          mqttTopic: `/watts/${settings.deviceId}/measurement` // Default MQTT topic based on deviceId
-        };
+        const newSettings: DriverSettings = {
+          deviceId: this.getSetting("deviceId"),
+          hostname: 'localhost',
+          port: 1883,
+          clientId: '',
+          username: '',
+          password: '',
+          useHomeyMqttClient: 'homey',
+          useTls: false,
+          acceptSelfSignedCert: false
+        }
         
         // Apply the new settings to the device
         await this.setSettings(newSettings);

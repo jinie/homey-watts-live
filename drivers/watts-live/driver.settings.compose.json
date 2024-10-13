@@ -132,6 +132,21 @@
     }
   },
   {
+    "id": "acceptSelfSignedCert",
+    "type": "checkbox",
+    "label": {
+      "en": "Accept Self Signed Certificates"
+    },
+    "hint": {
+      "en": "Accept Self Signed Certificates presented by the broker"
+    },
+    "value": false,
+    "conditional": {
+      "id": "useHomeyMqttClient",
+      "value": "custom"
+    }
+  },
+  {
     "id": "mqttTopic",
     "type": "text",
     "label": {

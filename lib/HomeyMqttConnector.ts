@@ -20,7 +20,7 @@ export class HomeyMqttConnector implements IMqttConnector {
     async connect(): Promise<void> {
         try {
             // Get access to the nl.scanno.mqtt API app
-            this.MQTTClient = await this.homey.api.getApiApp('nl.scanno.mqtt');
+            this.MQTTClient = this.homey.api.getApiApp('nl.scanno.mqtt');
             if (!this.MQTTClient) {
                 throw new Error('nl.scanno.mqtt app not found or unavailable');
             }

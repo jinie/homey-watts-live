@@ -51,9 +51,9 @@ export class CustomMqttConnector implements IMqttConnector {
         reject(err);
       });
 
-      this.mqttClient.on('message', (topic, message) => {
+      /*this.mqttClient.on('message', (topic, message) => {
         this.onMessageReceived(topic, message.toString());
-      });
+      });*/
     });
   }
 

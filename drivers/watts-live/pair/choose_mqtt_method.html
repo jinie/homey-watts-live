@@ -45,7 +45,7 @@
   <script>
     // Hide Homey's default 'Continue' button initially
     document.getElementById('hy-nav-continue').style.display = 'none';
-
+    
     // Event listener for selecting the MQTT method
     document.getElementById('mqttMethod').addEventListener('change', function() {
       const customMqttFields = document.getElementById('customMqttSettings');
@@ -56,9 +56,35 @@
         customMqttFields.style.display = 'none';   // Hide custom MQTT settings
       }
     });
-
+    
+    // Listen for the event to disable the Homey MQTT Client option
+    Homey.on('disable_homey_mqtt_option', function(data) {
+      console.log('disable_homey_mqtt_option event received:', data);
+      if (data.disable) {
+        const homeyMqttOption = document.querySelector('option[value="homey_mqtt_client"]');
+        if (homeyMqttOption) {
+          homeyMqttOption.remove();  // Remove the option
+          console.log('Homey MQTT Client option removed');
+        } else {
+          console.log('Homey MQTT Client option not found');
+        }
+      }
+    });
+    
+    
+    // Event listener for selecting the MQTT method
+    document.getElementById('mqttMethod').addEventListener('change', function () {
+      const customMqttFields = document.getElementById('customMqttSettings');
+      
+      if (this.value === 'custom_mqtt_client') {
+        customMqttFields.style.display = 'block';  // Show custom MQTT settings
+      } else {
+        customMqttFields.style.display = 'none';   // Hide custom MQTT settings
+      }
+    });
+    
     // Event listener for the custom 'Continue' button click
-    document.getElementById('continue').addEventListener('click', function() {
+    document.getElementById('continue').addEventListener('click', function () {
       const mqttMethod = document.getElementById('mqttMethod').value;
       let data = {};
       
@@ -80,7 +106,7 @@
       }
       
       // Emit the data to pairing.js and proceed to the next step
-      Homey.emit('choose_mqtt_method', data, function(err) {
+      Homey.emit('choose_mqtt_method', data, function (err) {
         if (err) {
           alert('Error: ' + err.message);
         } else {

@@ -1,28 +1,52 @@
 import Homey from 'homey';
 import { DriverSettings } from '../../types/DriverSettings';
 import { MqttWrapper } from '../../lib/MqttWrapper';
+import { userInfo } from 'os';
 
 class WattsLiveDriver extends Homey.Driver {
   private mqttWrapper: MqttWrapper | null = null;
   private topic:string = "watts/+/measurement";
   private devices:any[] = [];
   private discoveredDevices:any[] = [];
-
+  private driverSettings:DriverSettings | undefined= undefined;
   
   /**
   * Called when pairing starts.
   */
   async onPair(session: Homey.Driver.PairSession): Promise<void> {
+      // Check if the ApiApp is installed
+    // Try making a request to the ApiApp service
+    let apiAppAvailable = false;
+    
+    try {
+      // Try to communicate with the ApiApp using an API request, if available
+      apiAppAvailable = await this.homey.apps.getInstalled(this.homey.api.getApiApp('nl.scanno.mqtt'));
+      //apiAppAvailable = response !== null;
+      this.log('ApiApp available : ',apiAppAvailable);
+    } catch (err:any) {
+      this.log('ApiApp not available:', err.message);
+      apiAppAvailable = false;
+    }
+
+    // Continue with the pairing view
+    await session.showView('choose_mqtt_method');
+
+    if (!apiAppAvailable) {
+      // Emit to disable the Homey MQTT Client option in the pairing flow
+      session.emit('disable_homey_mqtt_option', { disable: true });
+    }
+
     // Handler for the MQTT connection method selection
     session.setHandler('choose_mqtt_method', async (settings: DriverSettings) => {
       // Create an instance of DriverSettings based on the emitted data
-      const driverSettings = new DriverSettings(settings);
+      this.driverSettings = new DriverSettings(settings);
       this.log(settings);
       try {
         // Initialize MqttWrapper with Homey.app["homey"] and the constructed DriverSettings
-        this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
+        this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
         await this.mqttWrapper.connect();
     
+        
         // Proceed to the next step if successful
         return true;
       } catch (err: any) {
@@ -61,8 +85,8 @@ class WattsLiveDriver extends Homey.Driver {
         this.discoveredDevices = uniqueDiscoveredDevices.map((device: { id: any; name: any; data: any, settings:any}) => ({
           id: device.id,
           name: device.name,
-          data: device.settings,
-          settings: device.settings
+          data: {id: device.id},
+          settings: this.createDriverSettingsFromData(device, this.driverSettings!)
         }));
         this.log(this.discoveredDevices);
     
@@ -80,12 +104,28 @@ class WattsLiveDriver extends Homey.Driver {
       return this.discoveredDevices;
     });
   
-    // Handler to add a selected device to Homey
-    session.setHandler('add_device', async (device) => {
-      // Handle adding the device (you can implement your logic here)
-      this.log("Adding Device : ", device);
-      return device;  // Return the device being added
+    // Handler to return the device data when pairing completes
+    session.setHandler('get_device', async () => {
+      try {
+        // Prepare the device data to be added
+        const newDevice = {
+          name: 'WattsLive Device', // Use a dynamic name if needed
+          data: {
+            id: 'unique-device-id', // Assign a unique ID for the device
+          },
+          store: {
+            settings: this.driverSettings, // Store MQTT settings or other configurations
+          },
+        };
+
+        // Return the device data to complete the pairing process
+        return newDevice;
+      } catch (error) {
+        this.log('Error returning device data:', error);
+        throw error;
+      }
     });
+    
   }
   
   // Helper function to get already paired devices
@@ -101,19 +141,22 @@ private async getPairedDevices() {
   /**
   * Helper method to create a DriverSettings object from the pairing data.
   */
-  /*
-  private createDriverSettingsFromData(data: any): DriverSettings {
-    return new DriverSettings({
-      hostname: data.hostname || 'localhost',
-      port: Number(data.port) || 1883,
-      clientId: data.clientId || 'homey-watts',
-      username: data.username || '',
-      password: data.password || '',
-      useTls: data.useTls === 'true',
-      useHomeyMqttClient: data.useHomeyMqttClient || 'homey',
-    });
+  
+  private createDriverSettingsFromData(device: { id: any; name: any; data: any, settings:any}, settings: DriverSettings): DriverSettings {
+    const newSettings:DriverSettings = {
+      deviceId: device.id,
+      useHomeyMqttClient: settings.useHomeyMqttClient,
+      hostname: settings.hostname,
+      clientId: settings.clientId,
+      username: settings.username,
+      password: settings.password,
+      port: settings.port,
+      useTls: settings.useTls,
+      acceptSelfSignedCert: settings.acceptSelfSignedCert
+    }
+    return newSettings;
   }
-    */
+    
 }
 
 module.exports = WattsLiveDriver;
