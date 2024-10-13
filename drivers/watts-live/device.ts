@@ -7,7 +7,7 @@ import { MeterReading } from '../../types/MeterReading';
 
 export class WattsLiveDevice extends Homey.Device {
   
-  private debug: boolean = true;
+  private debug: boolean = false;
   private mqttWrapper: MqttWrapper | null = null;
   private isConnected: boolean = false;
   
@@ -119,9 +119,6 @@ export class WattsLiveDevice extends Homey.Device {
       let kMap: KvMap = {};
       Object.keys(ReadingToCapabilityMap).forEach((value) => {
         let key = ReadingToCapabilityMap[value];
-        if(this.debug){
-          this.log(`processMqttMessage: key ${key} = ${ReadingToCapabilityMap[value]}`);
-        }
         kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
         // Convert from Watts to kW
         if(['meter_power.imported', 'meter_power.exported', 'meter_power.negative_reactive', 'meter_power.positive_reactive'].includes(key)) {
