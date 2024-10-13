@@ -63,7 +63,7 @@ class WattsLiveDriver extends Homey.Driver {
     
         // Start discovering devices using the topic
         let discoveredDevices = await this.mqttWrapper.discoverDevices(this.topic);
-    
+        this.mqttWrapper.disconnect();
         // Fetch already paired devices from Homey SDK
         const pairedDevices = await this.getPairedDevices();
     
@@ -89,7 +89,7 @@ class WattsLiveDriver extends Homey.Driver {
           settings: this.createDriverSettingsFromData(device, this.driverSettings!)
         }));
         this.log(this.discoveredDevices);
-    
+        
         // Return a successful response
         return true;
       } catch (err: any) {

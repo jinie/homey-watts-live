@@ -1,25 +1,31 @@
 /**
 * MeterReading interface to map MQTT message to JSON object
 */
-export interface MeterReading {
-    positive_active_power: number | undefined;
-    positive_active_energy: number| undefined;
-    positive_active_power_l1: number| undefined;
-    positive_active_power_l2: number| undefined;
-    positive_active_power_l3: number| undefined;
-    current_l1: number| undefined;
-    current_l2: number| undefined;
-    current_l3: number| undefined;
-    voltage_l1: number| undefined;
-    voltage_l2: number| undefined;
-    voltage_l3: number| undefined;
-    negative_active_power: number| undefined;
-    negative_active_energy: number| undefined;
-    negative_reactive_power: number| undefined;
-    negative_reactive_energy: number| undefined;
-    positive_reactive_power: number| undefined;
-    positive_reactive_energy: number| undefined;
-    negative_active_power_l1: number| undefined;
-    negative_active_power_l2: number| undefined;
-    negative_active_power_l3: number| undefined;
+export class MeterReading {
+    positive_active_power: number = 0;
+    positive_active_energy: number = 0;
+    positive_active_power_l1: number = 0;
+    positive_active_power_l2: number = 0;
+    positive_active_power_l3: number = 0;
+    current_l1: number = 0;
+    current_l2: number = 0;
+    current_l3: number = 0;
+    voltage_l1: number = 0;
+    voltage_l2: number = 0;
+    voltage_l3: number = 0;
+    negative_active_power: number = 0;
+    negative_active_energy: number = 0;
+    negative_reactive_power: number = 0;
+    negative_reactive_energy: number = 0;
+    positive_reactive_power: number = 0;
+    positive_reactive_energy: number = 0;
+    negative_active_power_l1: number = 0;
+    negative_active_power_l2: number = 0;
+    negative_active_power_l3: number = 0;
+
+    constructor(settings?: Partial<MeterReading>) {
+        if (settings) {
+          Object.assign(this, settings);
+        }
+      }
 };

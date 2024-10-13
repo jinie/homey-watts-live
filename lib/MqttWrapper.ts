@@ -6,9 +6,10 @@ import { DriverSettings } from '../types/DriverSettings';
 import Homey from 'homey/lib/Homey';
 
 export class MqttWrapper {
-  private mqttConnector: IMqttConnector;
+  private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
-
+  private subscribedTopics: string[] = [];
+  
   constructor(homey: Homey.App['homey'], private settings: DriverSettings) {
     this.homey = homey;
     this.homey.log(JSON.stringify(this.settings));
@@ -18,32 +19,40 @@ export class MqttWrapper {
       this.mqttConnector = new CustomMqttConnector(this.homey, this.settings);
     }
   }
-
+  
   async connect(): Promise<void> {
-
-    return this.mqttConnector.connect();
+    
+    return this.mqttConnector?.connect();
   }
-
+  
   disconnect(): void {
     if (this.mqttConnector) {
+      this.subscribedTopics.forEach(topic => {
+        this.mqttConnector?.unsubscribe(topic);
+      })
       this.mqttConnector.disconnect();
+      this.mqttConnector = null;
     }
   }
-
+  
   subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): void {
+    this.subscribedTopics.push(topic);
     this.mqttConnector?.subscribe(topic, messageHandler);
   }
-
+  
   unsubscribe(topic: string): void {
-    this.mqttConnector?.unsubscribe(topic);
+    if(this.subscribedTopics.indexOf(topic)>=0){
+      this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic),1);
+      this.mqttConnector?.unsubscribe(topic);
+    }
   }
-
+  
   publish(topic: string, message: string): void {
     this.mqttConnector?.publish(topic, message);
   }
-
+  
   async discoverDevices(topic: string, timeout:number = 10000): Promise<any[]>
   {
-    return await this.mqttConnector?.discoverDevices(topic, timeout);
+    return await this.mqttConnector?.discoverDevices(topic, timeout)!;
   }
 }

@@ -7,7 +7,7 @@ import { MeterReading } from '../../types/MeterReading';
 
 export class WattsLiveDevice extends Homey.Device {
   
-  private debug: any;
+  private debug: boolean = true;
   private mqttWrapper: MqttWrapper | null = null;
   private isConnected: boolean = false;
   
@@ -23,19 +23,21 @@ export class WattsLiveDevice extends Homey.Device {
     
     this.homey.log(`Initializing Device with settings : ${JSON.stringify(driverSettings)}`);
     // Initialize the MQTT wrapper with the device's settings
-    this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
-    await this.mqttWrapper.connect();
+    if(this.mqttWrapper===null){
+      this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
+      await this.mqttWrapper.connect();
+      // Mark the device as connected
+      this.isConnected = true;
+    }
     
     if (!this.mqttWrapper) {
       throw new Error('MQTT wrapper is not initialized');
     }
     
-    // Subscribe to the relevant topic for this device
     const deviceId = driverSettings.deviceId;
+    this.mqttWrapper.unsubscribe(`watts/${deviceId}/measurement`);
+    // Subscribe to the relevant topic for this device
     this.mqttWrapper.subscribe(`watts/${deviceId}/measurement`, this.onMessage.bind(this));
-    
-    // Mark the device as connected
-    this.isConnected = true;
     
     // Check initial device status
     await this.CheckDeviceStatus();
@@ -43,10 +45,10 @@ export class WattsLiveDevice extends Homey.Device {
   
   
   onMessage(topic: string, message: string | Buffer) {
-    //let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
-    let msg = message.toString();
+    let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
+    //let msg = message.toString();
     if(this.debug){
-        this.log(`onMessage: Message received on topic ${topic}: ${message}`);
+      this.log(`onMessage: Message received on topic ${topic}: ${message}`);
     }
     this.processMqttMessage(topic, msg);
   }
@@ -109,9 +111,9 @@ export class WattsLiveDevice extends Homey.Device {
   public async processMqttMessage(topic: string, message: string) {
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
-      const readings: MeterReading = JSON.parse(JSON.stringify(message));
+      const readings: MeterReading = new MeterReading(JSON.parse(message));
       if(this.debug){
-        this.log(`processMqttMessage: received reading ${readings}`);
+        this.log(`processMqttMessage: received reading ${JSON.stringify(readings)}`);
       }
       // Map readings to capabilities, convert undefined to 0
       let kMap: KvMap = {};
@@ -248,8 +250,8 @@ export class WattsLiveDevice extends Homey.Device {
   }
   
   /**
-   * Migrate V1 devices to new V2 connectivity 
-   */
+  * Migrate V1 devices to new V2 connectivity 
+  */
   async migrateToNewMqttConnectivity(): Promise<void> {
     try {
       // Get the current settings of the device
