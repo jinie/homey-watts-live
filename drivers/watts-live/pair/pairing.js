@@ -4,7 +4,7 @@ module.exports.init = function() {
   // Handle the MQTT method selection event
   Homey.on('choose_mqtt_method', function(data, callback) {
     console.log('Received MQTT settings:', data);
-
+    
     // Emit the data to the driver
     Homey.emit('choose_mqtt_method', data, function(err) {
       if (err) {
@@ -15,7 +15,7 @@ module.exports.init = function() {
       Homey.nextView('loading');
     });
   });
-
+  
   // Start the device discovery process
   Homey.on('start_discovery', function(data, callback) {
     console.log('Starting device discovery...');
@@ -31,7 +31,7 @@ module.exports.init = function() {
       Homey.nextView('list_devices');
     });
   });
-
+  
   // Fetch the discovered devices from the driver
   Homey.on('list_devices', function(data, callback) {
     console.log('Requesting discovered devices from driver...');
@@ -47,7 +47,7 @@ module.exports.init = function() {
       callback(null, devices);  // Return the list of devices to the frontend
     });
   });
-
+  
   // Handle adding the selected device
   Homey.on('add_device', function(device, callback) {
     console.log('Adding device:', device);

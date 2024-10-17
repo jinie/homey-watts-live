@@ -94,17 +94,7 @@ export class WattsLiveDevice extends Homey.Device {
       this.log(`Reading device settings ${JSON.stringify(settings)}`);
     }
     // Construct and return a DriverSettings object using the device's settings
-    let newSettings:DriverSettings = {
-      deviceId: settings.deviceId || '',
-      hostname: settings.hostname || 'localhost',
-      port: Number(settings.port) || 1883,
-      clientId: settings.clientId || 'homey-watts',
-      username: settings.username || '',
-      password: settings.password || '',
-      useTls: settings.useTls || 'true',
-      useHomeyMqttClient: settings.useHomeyMqttClient || 'homey',
-      acceptSelfSignedCert: settings.acceptSelfSignedCert || true
-    };
+    let newSettings = new DriverSettings(settings);
     return newSettings;
   }
   
@@ -258,18 +248,7 @@ export class WattsLiveDevice extends Homey.Device {
       if (!settings.useHomeyMqttClient) {
         this.log(`Migrating device ${this.getSetting("deviceId")} to the new MQTT connectivity...`);
         
-        // Set the new settings for MQTT, use "homey" or "custom" instead of a boolean
-        const newSettings: DriverSettings = {
-          deviceId: this.getSetting("deviceId"),
-          hostname: 'localhost',
-          port: 1883,
-          clientId: '',
-          username: '',
-          password: '',
-          useHomeyMqttClient: 'homey',
-          useTls: false,
-          acceptSelfSignedCert: false
-        }
+        const newSettings = DriverSettings.driverSettingsDefault(this.getSetting("deviceId"));
         
         // Apply the new settings to the device
         await this.setSettings(newSettings);
