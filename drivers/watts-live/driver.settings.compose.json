@@ -145,16 +145,5 @@
       "id": "useHomeyMqttClient",
       "value": "custom"
     }
-  },
-  {
-    "id": "mqttTopic",
-    "type": "text",
-    "label": {
-      "en": "MQTT Topic"
-    },
-    "hint": {
-      "en": "The topic to subscribe to for this device, typically based on the deviceId."
-    },
-    "value": ""
   }
 ]

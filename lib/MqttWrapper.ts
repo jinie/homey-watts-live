@@ -13,7 +13,7 @@ export default class MqttWrapper {
   
   constructor(homey: Homey.App['homey'], private settings: DriverSettings) {
     this.homey = homey;
-    this.homey.log(JSON.stringify(this.settings));
+    this.homey.log(this.settings.toSafeJSON());
     if (this.settings.useHomeyMqttClient==='homey') {
       this.mqttConnector = new HomeyMqttConnector(this.homey);
     } else {

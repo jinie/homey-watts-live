@@ -13,8 +13,8 @@ class WattsLiveDriver extends Homey.Driver {
   private driverSettings: DriverSettings | undefined = undefined;
 
   /**
-   * Called when pairing starts.
-   */
+  * Called when pairing starts.
+  */
   async onPair(session: Homey.Driver.PairSession): Promise<void> {
     // Check if the ApiApp is installed
     // Try making a request to the ApiApp service
@@ -157,13 +157,14 @@ class WattsLiveDriver extends Homey.Driver {
   }
 
   /**
-   * Helper method to create a DriverSettings object from the pairing data.
-   */
+  * Helper method to create a DriverSettings object from the pairing data.
+  */
   private createDriverSettingsFromData(
     device: { id: any; name: any; data: any; settings: any },
     settings: DriverSettings,
   ): DriverSettings {
     const newSettings = new DriverSettings(settings);
+    newSettings.deviceId = device.id;
     return newSettings;
   }
 }

@@ -22,7 +22,7 @@ export default class MeterReading {
   negative_active_power_l1: number = 0;
   negative_active_power_l2: number = 0;
   negative_active_power_l3: number = 0;
-  
+
   constructor(settings?: Partial<MeterReading>) {
     if (settings) {
       Object.assign(this, settings);

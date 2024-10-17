@@ -23,7 +23,7 @@ export default class WattsLiveDevice extends Homey.Device {
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
     
-    this.homey.log(`Initializing Device with settings : ${JSON.stringify(driverSettings)}`);
+    this.homey.log(`Initializing Device with settings : ${driverSettings.toSafeJSON()}`);
     // Initialize the MQTT wrapper with the device's settings
     if(this.mqttWrapper===null){
       this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);

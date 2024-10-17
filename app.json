@@ -57,9 +57,9 @@
         "measure_power.negative_l1",
         "measure_power.negative_l2",
         "measure_power.negative_l3",
-        "measure_negative_reactive_energy",
+        "meter_power.positive_reactive",
         "measure_power.negative_reactive",
-        "measure_positive_reactive_energy",
+        "meter_power.negative_reactive",
         "measure_power.positive_reactive"
       ],
       "capabilitiesOptions": {
@@ -368,17 +368,6 @@
             "id": "useHomeyMqttClient",
             "value": "custom"
           }
-        },
-        {
-          "id": "mqttTopic",
-          "type": "text",
-          "label": {
-            "en": "MQTT Topic"
-          },
-          "hint": {
-            "en": "The topic to subscribe to for this device, typically based on the deviceId."
-          },
-          "value": ""
         }
       ]
     }
