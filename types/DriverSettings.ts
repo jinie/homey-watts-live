@@ -1,4 +1,4 @@
-export class DriverSettings {
+export default class DriverSettings {
   public deviceId: string = '';
   public hostname: string = 'localhost';
   public port: number = 1883;

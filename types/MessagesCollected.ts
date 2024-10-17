@@ -1,4 +1,4 @@
-export interface MessagesCollected {
+export default interface MessagesCollected {
     [topic: string]: {
         messages: string[];
     };

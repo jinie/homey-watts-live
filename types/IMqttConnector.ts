@@ -1,4 +1,4 @@
-export interface IMqttConnector {
+export default interface IMqttConnector {
     connect(): Promise<void>;
     disconnect(): void;
     subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): void;

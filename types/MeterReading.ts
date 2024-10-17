@@ -1,7 +1,7 @@
 /**
 * MeterReading interface to map MQTT message to JSON object
 */
-export class MeterReading {
+export default class MeterReading {
   positive_active_power: number = 0;
   positive_active_energy: number = 0;
   positive_active_power_l1: number = 0;

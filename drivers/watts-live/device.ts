@@ -1,11 +1,13 @@
+'use strict';
+
 import Homey from 'homey';
 import { ReadingToCapabilityMap, addedCapabilitiesV1toV2, removedCapabilitiesV1toV2 } from '../../lib/constants';
-import { DriverSettings } from '../../types/DriverSettings';
-import { MqttWrapper } from '../../lib/MqttWrapper';
-import { KvMap } from '../../types/KvMap';
-import { MeterReading } from '../../types/MeterReading';
+import DriverSettings from '../../types/DriverSettings';
+import MqttWrapper from '../../lib/MqttWrapper';
+import KvMap from '../../types/KvMap';
+import MeterReading from '../../types/MeterReading';
 
-export class WattsLiveDevice extends Homey.Device {
+export default class WattsLiveDevice extends Homey.Device {
   
   private debug: boolean = false;
   private mqttWrapper: MqttWrapper | null = null;
@@ -246,16 +248,16 @@ export class WattsLiveDevice extends Homey.Device {
       
       // Check if the `useHomeyMqttClient` key is missing, indicating the old format
       if (!settings.useHomeyMqttClient) {
-        this.log(`Migrating device ${this.getSetting("deviceId")} to the new MQTT connectivity...`);
+        this.log(`Migrating device ${this.getSetting('deviceId')} to the new MQTT connectivity...`);
         
-        const newSettings = DriverSettings.driverSettingsDefault(this.getSetting("deviceId"));
+        const newSettings = DriverSettings.driverSettingsDefault(this.getSetting('deviceId'));
         
         // Apply the new settings to the device
         await this.setSettings(newSettings);
         
-        this.log(`Device ${this.getSetting("deviceId")} successfully migrated to the new MQTT connectivity.`);
+        this.log(`Device ${this.getSetting('deviceId')} successfully migrated to the new MQTT connectivity.`);
       } else {
-        this.log(`Device ${this.getSetting("deviceId")} is already using the new MQTT connectivity.`);
+        this.log(`Device ${this.getSetting('deviceId')} is already using the new MQTT connectivity.`);
       }
     } catch (error) {
       this.error(`Error migrating device ${this.getData().id}:`, error);
@@ -264,22 +266,22 @@ export class WattsLiveDevice extends Homey.Device {
   
   /**
   * Migrate custom capabilities between versions.
-  * No "official" way of migrating exists, so for now just delete the old capabiliy and add a new one.
+  * No 'official' way of migrating exists, so for now just delete the old capabiliy and add a new one.
   * This deletes history and may break flows, so don't make a habit of it.
   */
   async migrateCapabilities() {
     
-    if(this.getCapabilities().includes("meter_power")){
-      this.log("Removing meter_power capability");
-      await this.removeCapability("meter_power").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
-      this.log("Adding meter_power.imported capability");
-      await this.addCapability("meter_power.imported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });
+    if(this.getCapabilities().includes('meter_power')){
+      this.log('Removing meter_power capability');
+      await this.removeCapability('meter_power').catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+      this.log('Adding meter_power.imported capability');
+      await this.addCapability('meter_power.imported').catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });
     }
-    if(this.getCapabilities().includes("measure_negative_active_energy")){
-      this.log("removing measure_negative_active_energy capability");
-      await this.removeCapability("measure_negative_active_energy").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
-      this.log("Adding metwer_power.exported capability");
-      await this.addCapability("meter_power.exported").catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });    
+    if(this.getCapabilities().includes('measure_negative_active_energy')){
+      this.log('removing measure_negative_active_energy capability');
+      await this.removeCapability('measure_negative_active_energy').catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, removeCapability error: ${error}`); });
+      this.log('Adding metwer_power.exported capability');
+      await this.addCapability('meter_power.exported').catch((error) => { if (this.debug) throw (error); else this.log(`migrateCapabilites, addCapability error: ${error}`); });    
     };
     
     for (const capability of removedCapabilitiesV1toV2) {

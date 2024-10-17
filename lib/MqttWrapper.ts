@@ -1,11 +1,12 @@
+'use strict';
 
-import { IMqttConnector } from '../types/IMqttConnector';
-import { CustomMqttConnector } from './CustomMqttConnector';
-import { HomeyMqttConnector } from './HomeyMqttConnector';
-import { DriverSettings } from '../types/DriverSettings';
+import IMqttConnector from '../types/IMqttConnector';
+import CustomMqttConnector from './CustomMqttConnector';
+import HomeyMqttConnector from './HomeyMqttConnector';
+import DriverSettings from '../types/DriverSettings';
 import Homey from 'homey/lib/Homey';
 
-export class MqttWrapper {
+export default class MqttWrapper {
   private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
@@ -13,7 +14,7 @@ export class MqttWrapper {
   constructor(homey: Homey.App['homey'], private settings: DriverSettings) {
     this.homey = homey;
     this.homey.log(JSON.stringify(this.settings));
-    if (this.settings.useHomeyMqttClient==="homey") {
+    if (this.settings.useHomeyMqttClient==='homey') {
       this.mqttConnector = new HomeyMqttConnector(this.homey);
     } else {
       this.mqttConnector = new CustomMqttConnector(this.homey, this.settings);

@@ -1,8 +1,10 @@
-import Homey from 'homey';
-import { IMqttConnector } from '../types/IMqttConnector';
-import { DriverSettings } from '../types/DriverSettings';
+'use strict';
 
-export class HomeyMqttConnector implements IMqttConnector {
+import Homey from 'homey';
+import IMqttConnector from '../types/IMqttConnector';
+import DriverSettings from '../types/DriverSettings';
+
+export default class HomeyMqttConnector implements IMqttConnector {
   private MQTTClient: Homey.ApiApp | null = null;
   private isConnected: boolean;
   private homey: Homey.App['homey'];
@@ -12,7 +14,7 @@ export class HomeyMqttConnector implements IMqttConnector {
   constructor(homey: Homey.App['homey']) {  // Pass Homey instance to the constructor
     this.isConnected = false;
     this.homey = homey;
-    this.homey.log("HomeyMqttConnector initialized")
+    this.homey.log('HomeyMqttConnector initialized')
   }
   
   configure(settings: DriverSettings): void {}
@@ -58,7 +60,7 @@ export class HomeyMqttConnector implements IMqttConnector {
   }
   
   async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
-    this.homey.log("Discovering devices");
+    this.homey.log('Discovering devices');
     
     return new Promise((resolve, reject) => {
       
@@ -125,9 +127,7 @@ export class HomeyMqttConnector implements IMqttConnector {
       mqttMessage: message
     }).catch((error: any) => {
       if (error)
-        this.homey.log(`Error sending ${topic} <= "${message}"`);
+        this.homey.log(`Error sending ${topic} <= '${message}'`);
     });
   }
-}
-
-export default HomeyMqttConnector;
+};

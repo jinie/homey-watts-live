@@ -1,6 +1,6 @@
 /**
 * Key-Value map interface for string:number
 */
-export interface KvMap {
+export default interface KvMap {
     [key: string]: any;
 }

@@ -2,7 +2,7 @@
 
 import Homey, { ApiApp } from 'homey';
 import { Driver } from 'homey/lib/Device';
-import { DriverSettings } from './types/DriverSettings';
+import DriverSettings from './types/DriverSettings';
 
 export class WattsLiveApp extends Homey.App {
   

@@ -1,9 +1,11 @@
+'use strict';
+
 import mqtt from 'mqtt';
 import { IClientOptions } from 'mqtt';
-import { DriverSettings } from '../types/DriverSettings';
-import { IMqttConnector } from '../types/IMqttConnector';
+import DriverSettings from '../types/DriverSettings';
+import IMqttConnector from '../types/IMqttConnector';
 
-export class CustomMqttConnector implements IMqttConnector {
+export default class CustomMqttConnector implements IMqttConnector {
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
   private devices: any[] = [];
@@ -144,7 +146,7 @@ export class CustomMqttConnector implements IMqttConnector {
         
         // Listen for messages on the topic
         this.mqttClient?.on('message', (receivedTopic, message) => {
-          this.homey.log("Message received on topic ",receivedTopic)
+          this.homey.log('Message received on topic ',receivedTopic)
           const match = receivedTopic.match(/\/?watts\/([^\/]+)\/measurement/);
           if (match) {
             const deviceId = match[1];
