@@ -2,23 +2,23 @@
 
 import Homey from 'homey';
 import IMqttConnector from '../types/IMqttConnector';
-import DriverSettings from '../types/DriverSettings';
 
 export default class HomeyMqttConnector implements IMqttConnector {
   private MQTTClient: Homey.ApiApp | null = null;
   private isConnected: boolean;
-  private homey: Homey.App['homey'];
-  private topics: string[] = [];
-  private devices: any[] = [];
+  readonly homey: Homey.App['homey'];
+  readonly topics: string[] = [];
+  readonly devices: any[] = [];
 
   constructor(homey: Homey.App['homey']) {  // Pass Homey instance to the constructor
     this.isConnected = false;
     this.homey = homey;
-    this.homey.log('HomeyMqttConnector initialized')
+    this.homey.log('HomeyMqttConnector initialized');
+    process.on('unhandledRejection', (reason, p) => {
+      this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
   }
-
-  configure(settings: DriverSettings): void { }
-
+  
   async connect(): Promise<void> {
     try {
       // Get access to the nl.scanno.mqtt API app
@@ -77,7 +77,6 @@ export default class HomeyMqttConnector implements IMqttConnector {
         const match = topic.match(/\/?watts\/(.+)\/measurement/);
         if (match) {
           const deviceId = match[1];
-          const deviceName = `Device ${deviceId}`;
           // Add the discovered device to the list
           this.devices.push({
             id: deviceId,

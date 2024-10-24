@@ -1,7 +1,6 @@
 'use strict';
 
-import mqtt from 'mqtt';
-import { IClientOptions } from 'mqtt';
+import mqtt, { IClientOptions } from 'mqtt';
 import DriverSettings from '../types/DriverSettings';
 import IMqttConnector from '../types/IMqttConnector';
 
@@ -9,12 +8,15 @@ export default class CustomMqttConnector implements IMqttConnector {
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
   private devices: any[] = [];
-  private homey: any;  // Instance of Homey for logging
-  private driverSettings: DriverSettings;  // Connection parameters for the broker
+  readonly homey: any;  // Instance of Homey for logging
+  readonly driverSettings: DriverSettings;  // Connection parameters for the broker
 
   constructor(homey: any, driverSettings: DriverSettings) {
     this.homey = homey;
     this.driverSettings = driverSettings;
+    process.on('unhandledRejection', (reason, p) => {
+      this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
   }
 
   // Connect to the specified MQTT broker using the DriverSettings
@@ -147,7 +149,7 @@ export default class CustomMqttConnector implements IMqttConnector {
         // Listen for messages on the topic
         this.mqttClient?.on('message', (receivedTopic, message) => {
           this.homey.log('Message received on topic ', receivedTopic)
-          const match = receivedTopic.match(/\/?watts\/([^\/]+)\/measurement/);
+          const match = RegExp(/\/?watts\/([^/]+)\/measurement/).exec(receivedTopic);
           if (match) {
             const deviceId = match[1];
             if (!this.devices.find(device => device.id === deviceId)) {

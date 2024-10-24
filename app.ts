@@ -1,10 +1,10 @@
 'use strict';
 
-import Homey, { ApiApp } from 'homey';
+import Homey from 'homey';
 
 export class WattsLiveApp extends Homey.App {
 
-  private drivers: any = {};
+  
   private applicationVersion: any;
   private debug: boolean = false;
   private applicationName: string = this.homey.manifest.name.en;

@@ -43,6 +43,10 @@ export default class WattsLiveDevice extends Homey.Device {
     
     // Check initial device status
     await this.CheckDeviceStatus();
+
+    process.on('unhandledRejection', (reason, p) => {
+      this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
   }
   
   
@@ -157,9 +161,15 @@ export default class WattsLiveDevice extends Homey.Device {
     ].includes(key));
     
     if (needsReconnect) {
-      this.log('Reconnecting due to changed MQTT settings...');
-      const driverSettings = this.getDeviceSettings();
-      await this.reconnectMqtt(driverSettings);
+      try{
+        this.log('Reconnecting due to changed MQTT settings...');
+        const driverSettings = new DriverSettings(newSettings);//this.getDeviceSettings();
+        await this.reconnectMqtt(driverSettings);
+      }catch(ex:any){
+        this.log("Error reconnecting: ", ex);
+        this.reconnectMqtt(new DriverSettings(oldSettings));
+        throw(ex);
+      }
     }
   }
   

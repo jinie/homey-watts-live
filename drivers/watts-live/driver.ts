@@ -1,17 +1,21 @@
 "use strict";
 
-import { userInfo } from "os";
 import Homey from "homey";
 import DriverSettings from "../../types/DriverSettings";
 import MqttWrapper from "../../lib/MqttWrapper";
 
 class WattsLiveDriver extends Homey.Driver {
   private mqttWrapper: MqttWrapper | null = null;
-  private topic: string = "watts/+/measurement";
-  private devices: any[] = [];
+  readonly topic: string = "watts/+/measurement";
+  readonly devices: any[] = [];
   private discoveredDevices: any[] = [];
   private driverSettings: DriverSettings | undefined = undefined;
 
+  async onInit(): Promise<void> {
+    process.on('unhandledRejection', (reason, p) => {
+      this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
+  }
   /**
   * Called when pairing starts.
   */
@@ -150,7 +154,7 @@ class WattsLiveDriver extends Homey.Driver {
   // Helper function to get already paired devices
   private async getPairedDevices() {
     // Assuming this.getDevices() returns the list of paired devices from Homey Pro
-    const pairedDevices = await this.getDevices();
+    const pairedDevices = this.getDevices();
     return pairedDevices.map((device) => ({
       id: device.getSetting("deviceId"),
     }));

@@ -11,7 +11,7 @@ export default class MqttWrapper {
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
   
-  constructor(homey: Homey.App['homey'], private settings: DriverSettings) {
+  constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
     this.homey = homey;
     this.homey.log(this.settings.toSafeJSON());
     if (this.settings.useHomeyMqttClient==='homey') {
@@ -19,6 +19,9 @@ export default class MqttWrapper {
     } else {
       this.mqttConnector = new CustomMqttConnector(this.homey, this.settings);
     }
+    process.on('unhandledRejection', (reason, p) => {
+      this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
   }
   
   async connect(): Promise<void> {
