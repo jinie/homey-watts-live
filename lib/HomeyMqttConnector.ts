@@ -45,7 +45,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
       }
     });
     this.MQTTClient?.on('realtime', (topic: string, message: string) => {
-      messageHandler(topic, message);
+      messageHandler(topic, JSON.stringify(message));
     });
   }
 

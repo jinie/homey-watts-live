@@ -9,7 +9,7 @@ import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
   
-  private debug: boolean = false;
+  private debug: boolean = true;
   private mqttWrapper: MqttWrapper | null = null;
   private isConnected: boolean = false;
   
@@ -53,9 +53,9 @@ export default class WattsLiveDevice extends Homey.Device {
   onMessage(topic: string, message: string | Buffer) {
     let msg:string = (typeof message === typeof Buffer ) ? message.toString() : message as string;
     //let msg = message.toString();
-    if(this.debug){
+    //if(this.debug){
       this.log(`onMessage: Message received on topic ${topic}: ${message}`);
-    }
+    //}
     this.processMqttMessage(topic, msg);
   }
   
