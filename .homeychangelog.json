@@ -67,5 +67,8 @@
   },
   "2.0.8": {
     "en": "Fix parsing bug when using Homey MQTT Client app."
+  },
+  "2.0.9": {
+    "en": "Fix reconnect issue when MQTT is disconnected."
   }
 }
