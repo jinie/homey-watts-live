@@ -25,8 +25,9 @@ export default class MqttWrapper {
   }
   
   async connect(): Promise<void> {
-    
-    return this.mqttConnector?.connect();
+    return new Promise((resolve, reject) => {
+      this.mqttConnector?.connect().then(_ => {resolve()}).catch(err => {reject(new Error(err.message))});
+    });
   }
   
   disconnect(): void {
@@ -39,12 +40,12 @@ export default class MqttWrapper {
     }
   }
   
-  subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): void {
+  async subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): Promise<void> {
     this.subscribedTopics.push(topic);
-    this.mqttConnector?.subscribe(topic, messageHandler);
+    await this.mqttConnector?.subscribe(topic, messageHandler);
   }
   
-  unsubscribe(topic: string): void {
+  async unsubscribe(topic: string): Promise<void> {
     if(this.subscribedTopics.indexOf(topic)>=0){
       this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic),1);
       this.mqttConnector?.unsubscribe(topic);

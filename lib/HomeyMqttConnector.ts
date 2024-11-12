@@ -18,44 +18,59 @@ export default class HomeyMqttConnector implements IMqttConnector {
       this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
     });
   }
-  
+
   async connect(): Promise<void> {
-    try {
-      // Get access to the nl.scanno.mqtt API app
-      this.MQTTClient = this.homey.api.getApiApp('nl.scanno.mqtt');
-      if (!this.MQTTClient) {
-        throw new Error('nl.scanno.mqtt app not found or unavailable');
-      }
+    this.homey.log("connect");
+    this.MQTTClient = this.homey.api.getApiApp('nl.scanno.mqtt');
+    let available = await this.MQTTClient.getInstalled();
+    return new Promise((resolve, reject) => {
+      try {
+        // Get access to the nl.scanno.mqtt API app
 
-      // Connect to the MQTT client via its API
-      this.isConnected = true;
-    } catch (error) {
-      console.error('Error connecting to MQTT client:', error);
-      throw error;
-    }
-  }
+        if (available === false || !this.MQTTClient === null) {
+          reject(new Error("nl.scanno.mqtt app not found or unavailable"));
+        }
 
-  subscribe(topic: string, messageHandler: (topic: string, message: string) => void): void {
-    this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
-      if (error.result != 0) {
-        this.homey.log(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
-      } else {
-        this.homey.log(`Sucessfully subscribed to topic: ${topic}`);
-        this.topics.push(topic);
+        // Connect to the MQTT client via its API
+        this.isConnected = true;
+        resolve();
+      } catch (error: any) {
+        console.error('Error connecting to MQTT client:', error);
+        reject(new Error(error.message));
       }
     });
-    this.MQTTClient?.on('realtime', (topic: string, message: string) => {
-      messageHandler(topic, JSON.stringify(message));
+  }
+
+  async subscribe(topic: string, messageHandler: (topic: string, message: string) => void): Promise<void> {
+    this.homey.log("subscribe");
+    return new Promise((resolve, reject) => {
+      this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
+        if (error.result != 0) {
+          this.homey.log(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
+          reject(JSON.stringify(error));
+        } else {
+          this.homey.log(`Sucessfully subscribed to topic: ${topic}`);
+          this.topics.push(topic);
+        }
+      });
+      this.MQTTClient?.on('realtime', (topic: string, message: string) => {
+        messageHandler(topic, JSON.stringify(message));
+      });
+      resolve();
     });
   }
 
   async unsubscribe(topic: string): Promise<void> {
-    this.MQTTClient?.post('unsubscribe', { topic: topic }).then((error: any) => {
-      if (error.result != 0) {
-        this.homey.log(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
-      } else {
-        this.homey.log(`Sucessfully unsubscribed from topic: ${topic}`);
-      }
+    return new Promise((resolve, reject) => {
+      this.MQTTClient?.post('unsubscribe', { topic: topic }).then((error: any) => {
+        if (error.result != 0) {
+          this.homey.log(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
+          reject(JSON.stringify(error));
+        } else {
+          this.homey.log(`Sucessfully unsubscribed from topic: ${topic}`);
+          resolve();
+        }
+      });
     });
   }
 

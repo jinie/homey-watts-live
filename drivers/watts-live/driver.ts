@@ -1,12 +1,12 @@
-"use strict";
+'use strict';
 
-import Homey from "homey";
-import DriverSettings from "../../types/DriverSettings";
-import MqttWrapper from "../../lib/MqttWrapper";
+import Homey from 'homey';
+import DriverSettings from '../../types/DriverSettings';
+import MqttWrapper from '../../lib/MqttWrapper';
 
 class WattsLiveDriver extends Homey.Driver {
   private mqttWrapper: MqttWrapper | null = null;
-  readonly topic: string = "watts/+/measurement";
+  readonly topic: string = 'watts/+/measurement';
   readonly devices: any[] = [];
   private discoveredDevices: any[] = [];
   private driverSettings: DriverSettings | undefined = undefined;
@@ -24,51 +24,66 @@ class WattsLiveDriver extends Homey.Driver {
     // Try making a request to the ApiApp service
     let apiAppAvailable = false;
 
+
     try {
       // Try to communicate with the ApiApp using an API request, if available
       apiAppAvailable = await this.homey.apps.getInstalled(
-        this.homey.api.getApiApp("nl.scanno.mqtt"),
+        this.homey.api.getApiApp('nl.scanno.mqtt'),
       );
       //apiAppAvailable = response !== null;
-      this.log("ApiApp available : ", apiAppAvailable);
+      this.log('ApiApp available : ', apiAppAvailable);
     } catch (err: any) {
-      this.log("ApiApp not available:", err.message);
+      this.log('ApiApp not available:', err.message);
       apiAppAvailable = false;
     }
 
     // Continue with the pairing view
-    await session.showView("choose_mqtt_method");
+    await session.showView('choose_mqtt_method').then(_ => {
+      if (!apiAppAvailable) {
+        // Emit to disable the Homey MQTT Client option in the pairing flow
+        session.emit('disable_homey_mqtt_option', { disable: true });
+      }
+    });
 
-    if (!apiAppAvailable) {
-      // Emit to disable the Homey MQTT Client option in the pairing flow
-      session.emit("disable_homey_mqtt_option", { disable: true });
-    }
+    session.setHandler('error', async (errorMessage: string) => {
+      // Emit a view notification in response to the error event
+      await session.emit('showViewNotification', {
+        type: 'error',
+        message: errorMessage,
+      });
+    });
 
     // Handler for the MQTT connection method selection
     session.setHandler(
-      "choose_mqtt_method",
+      'choose_mqtt_method',
       async (settings: DriverSettings) => {
         // Create an instance of DriverSettings based on the emitted data
         this.driverSettings = new DriverSettings(settings);
         this.log(settings);
         try {
-          // Initialize MqttWrapper with Homey.app["homey"] and the constructed DriverSettings
+          // Initialize MqttWrapper with Homey.app['homey'] and the constructed DriverSettings
           this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
-          await this.mqttWrapper.connect();
+          await this.mqttWrapper.connect().then(_ => { return true }).catch(err => {
+            this.homey.log('Selected pairing method failed :', this.driverSettings);
+            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.', });
+            this.mqttWrapper = null;
+            throw new Error(err.message);
 
+          });
           // Proceed to the next step if successful
-          return true;
         } catch (err: any) {
+          this.homey.log(err);
+          this.mqttWrapper = null;
           throw new Error(`MQTT connection failed: ${err.message}`);
         }
       },
     );
 
     // Handler for starting device discovery
-    session.setHandler("start_discovery", async (data) => {
+    session.setHandler('start_discovery', async (data) => {
       try {
-        if (!this.mqttWrapper) {
-          throw new Error("MQTT wrapper is not initialized");
+        if (this.mqttWrapper === null) {
+          throw new Error('MQTT wrapper is not initialized');
         }
 
         // Start discovering devices using the topic
@@ -120,7 +135,7 @@ class WattsLiveDriver extends Homey.Driver {
     });
 
     // Handler to get the list of discovered devices
-    session.setHandler("list_devices", async () => {
+    session.setHandler('list_devices', async () => {
       // Return the list of discovered devices
       this.homey.log(
         `Returning discovered devices: ${JSON.stringify(this.devices)}`,
@@ -129,13 +144,13 @@ class WattsLiveDriver extends Homey.Driver {
     });
 
     // Handler to return the device data when pairing completes
-    session.setHandler("get_device", async () => {
+    session.setHandler('get_device', async () => {
       try {
         // Prepare the device data to be added
         const newDevice = {
-          name: "WattsLive Device", // Use a dynamic name if needed
+          name: 'WattsLive Device', // Use a dynamic name if needed
           data: {
-            id: "unique-device-id", // Assign a unique ID for the device
+            id: 'unique-device-id', // Assign a unique ID for the device
           },
           store: {
             settings: this.driverSettings, // Store MQTT settings or other configurations
@@ -145,7 +160,7 @@ class WattsLiveDriver extends Homey.Driver {
         // Return the device data to complete the pairing process
         return newDevice;
       } catch (error) {
-        this.log("Error returning device data:", error);
+        this.log('Error returning device data:', error);
         throw error;
       }
     });
@@ -156,7 +171,7 @@ class WattsLiveDriver extends Homey.Driver {
     // Assuming this.getDevices() returns the list of paired devices from Homey Pro
     const pairedDevices = this.getDevices();
     return pairedDevices.map((device) => ({
-      id: device.getSetting("deviceId"),
+      id: device.getSetting('deviceId'),
     }));
   }
 

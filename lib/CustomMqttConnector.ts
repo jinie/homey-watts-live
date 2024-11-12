@@ -20,10 +20,10 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Connect to the specified MQTT broker using the DriverSettings
-  public async connect(): Promise<void> {
+  async connect(): Promise<void> {
     if (this.mqttClient && this.isConnected) {
       this.homey.log('Already connected to the MQTT broker');
-      return;
+
     }
 
     return new Promise((resolve, reject) => {
@@ -62,7 +62,7 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Disconnect from the MQTT broker
-  public async disconnect(): Promise<void> {
+  async disconnect(): Promise<void> {
     return new Promise((resolve) => {
       if (this.mqttClient) {
         this.mqttClient.end(() => {
@@ -78,29 +78,34 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Subscribe to a topic with a message handler
-  public subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): void {
+  async subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): Promise<void> {
     if (!this.isConnected || !this.mqttClient) {
       this.homey.log('MQTT client is not connected');
       return;
     }
 
-    this.mqttClient.subscribe(topic, (err) => {
-      if (err) {
-        this.homey.log(`Failed to subscribe to topic: ${topic}. Error: ${err.message}`);
-      } else {
-        this.homey.log(`Successfully subscribed to topic: ${topic}`);
-      }
-    });
+    return new Promise((resolve, reject) => {
 
-    this.mqttClient.on('message', (receivedTopic, message) => {
-      if (receivedTopic === topic) {
-        messageHandler(receivedTopic, message.toString());
-      }
+      this.mqttClient?.subscribe(topic, (err) => {
+        if (err) {
+          this.homey.log(`Failed to subscribe to topic: ${topic}. Error: ${err.message}`);
+          reject(err);
+        } else {
+          this.homey.log(`Successfully subscribed to topic: ${topic}`);
+          resolve();
+        }
+      });
+
+      this.mqttClient?.on('message', (receivedTopic, message) => {
+        if (receivedTopic === topic) {
+          messageHandler(receivedTopic, message.toString());
+        }
+      });
     });
   }
 
   // Unsubscribe from a topic
-  public unsubscribe(topic: string): void {
+  unsubscribe(topic: string): void {
     if (!this.mqttClient) {
       this.homey.log('MQTT client not initialized');
       return;
@@ -116,7 +121,7 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Publish a message to a specific topic
-  public publish(topic: string, message: string): void {
+  publish(topic: string, message: string): void {
     if (!this.mqttClient || !this.isConnected) {
       this.homey.log('MQTT client is not connected');
       return;
@@ -132,7 +137,7 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Discover devices by subscribing to a discovery topic and listening for messages
-  public async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
+  async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
     return new Promise((resolve, reject) => {
       if (!this.mqttClient || !this.isConnected) {
         return reject(new Error('MQTT client not connected'));
