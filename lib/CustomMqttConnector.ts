@@ -78,7 +78,7 @@ export default class CustomMqttConnector implements IMqttConnector {
   }
 
   // Subscribe to a topic with a message handler
-  async subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): Promise<void> {
+  async subscribe(topic: string, messageHandler: (topic: string, message: {} ) => void): Promise<void> {
     if (!this.isConnected || !this.mqttClient) {
       this.homey.log('MQTT client is not connected');
       return;
@@ -98,7 +98,7 @@ export default class CustomMqttConnector implements IMqttConnector {
 
       this.mqttClient?.on('message', (receivedTopic, message) => {
         if (receivedTopic === topic) {
-          messageHandler(receivedTopic, message.toString());
+          messageHandler(receivedTopic, JSON.parse(message.toString()));
         }
       });
     });

@@ -37,12 +37,10 @@ class WattsLiveDriver extends Homey.Driver {
       apiAppAvailable = false;
     }
 
+    this.homey.emit('apiAppInstalledState', { apiAppAvailable });
+
     // Continue with the pairing view
     await session.showView('choose_mqtt_method').then(_ => {
-      if (!apiAppAvailable) {
-        // Emit to disable the Homey MQTT Client option in the pairing flow
-        session.emit('disable_homey_mqtt_option', { disable: true });
-      }
     });
 
     session.setHandler('error', async (errorMessage: string) => {
@@ -57,6 +55,11 @@ class WattsLiveDriver extends Homey.Driver {
     session.setHandler(
       'choose_mqtt_method',
       async (settings: DriverSettings) => {
+
+        if(apiAppAvailable === false && settings.useHomeyMqttClient === 'homey'){
+          this.homey.emit('apiAppNotInstalled')
+          return;
+        }
         // Create an instance of DriverSettings based on the emitted data
         this.driverSettings = new DriverSettings(settings);
         this.log(settings);

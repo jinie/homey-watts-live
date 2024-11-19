@@ -83,18 +83,13 @@ export default class WattsLiveDevice extends Homey.Device {
     }
   }
 
-  onMessage(topic: string, message: string | Buffer) {
+  onMessage(topic: string, message: {}) {
 
-    let msg: string =
-      typeof message === typeof Buffer
-        ? message.toString()
-        : (message as string);
-    //let msg = message.toString();
-    //if(this.debug){
+    
     this.log(`onMessage: Message received on topic ${topic}: ${message}`);
     //}
 
-    this.processMqttMessage(topic, msg);
+    this.processMqttMessage(topic, message);
     // Update the last message timestamp and restart the reconnect timer
     this.lastMessageTimestamp = Date.now();
     this.startReconnectTimer();
@@ -144,10 +139,22 @@ export default class WattsLiveDevice extends Homey.Device {
     return newSettings;
   }
 
-  public async processMqttMessage(topic: string, message: string) {
+  public async processMqttMessage(topic: string, message: {}) {
+    this.log(message);
+    let msg: {} = {};
+      if(typeof message === typeof Buffer){
+        msg = JSON.parse(message.toString());
+      }else if (typeof message === typeof String){
+        msg = JSON.parse(message as string);
+      }else {
+        this.log('Not converting message');
+        msg = message;
+      }
+
+    this.log(msg.toString());
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
-      const readings: MeterReading = new MeterReading(JSON.parse(message));
+      const readings: MeterReading = new MeterReading(msg);
       if (this.debug) {
         this.log(
           `processMqttMessage: received reading ${JSON.stringify(readings)}`,

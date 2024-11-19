@@ -41,7 +41,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
     });
   }
 
-  async subscribe(topic: string, messageHandler: (topic: string, message: string) => void): Promise<void> {
+  async subscribe(topic: string, messageHandler: (topic: string, message: {}) => void): Promise<void> {
     this.homey.log("subscribe");
     return new Promise((resolve, reject) => {
       this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
@@ -54,7 +54,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
         }
       });
       this.MQTTClient?.on('realtime', (topic: string, message: string) => {
-        messageHandler(topic, JSON.stringify(message));
+        messageHandler(topic, message);
       });
       resolve();
     });
@@ -85,7 +85,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
       }
 
       // Subscribe to the topic
-      this.subscribe(topic, (topic: string, message: string) => {
+      this.subscribe(topic, (topic: string, message: {}) => {
         this.homey.log(`Message received on topic ${topic}`);
 
         // Extract device ID from the topic

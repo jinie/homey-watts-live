@@ -40,7 +40,7 @@ export default class MqttWrapper {
     }
   }
   
-  async subscribe(topic: string, messageHandler: (topic: string, message: Buffer | string) => void): Promise<void> {
+  async subscribe(topic: string, messageHandler: (topic: string, message: {} ) => void): Promise<void> {
     this.subscribedTopics.push(topic);
     await this.mqttConnector?.subscribe(topic, messageHandler);
   }
