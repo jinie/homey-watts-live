@@ -70,5 +70,8 @@
   },
   "2.0.9": {
     "en": "Fix reconnect issue when MQTT is disconnected."
+  },
+  "2.0.10": {
+    "en": "Bugfixes for unexpected input format from MQTT"
   }
 }
