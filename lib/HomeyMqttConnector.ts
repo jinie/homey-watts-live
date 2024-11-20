@@ -53,7 +53,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
           this.topics.push(topic);
         }
       });
-      this.MQTTClient?.on('realtime', (topic: string, message: string) => {
+      this.MQTTClient?.on('realtime', (topic: string, message: {}) => {
         messageHandler(topic, message);
       });
       resolve();

@@ -32,13 +32,16 @@ export default class WattsLiveDevice extends Homey.Device {
       `Initializing Device with settings : ${driverSettings.toSafeJSON()}`,
     );
     // Initialize the MQTT wrapper with the device's settings
+    
     try {
-      if (this.mqttWrapper === null) {
+    /*  if (this.mqttWrapper === null) {
         this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
-        await this.mqttWrapper.connect();
+        await this.mqttWrapper.connect().then(() => {this.isConnected = true}).catch(()=>{
+          this.reconnectMqtt();
+        });
         // Mark the device as connected
-        this.isConnected = true;
-      }
+      }*/
+     await this.reconnectMqtt();
 
       if (!this.mqttWrapper) {
         throw new Error('MQTT wrapper is not initialized');
@@ -140,14 +143,14 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
   public async processMqttMessage(topic: string, message: {}) {
-    this.log(message);
+    //this.log(message);
     let msg: {} = {};
       if(typeof message === typeof Buffer){
         msg = JSON.parse(message.toString());
       }else if (typeof message === typeof String){
         msg = JSON.parse(message as string);
       }else {
-        this.log('Not converting message');
+        //this.log('Not converting message');
         msg = message;
       }
 

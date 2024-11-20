@@ -98,7 +98,12 @@ export default class CustomMqttConnector implements IMqttConnector {
 
       this.mqttClient?.on('message', (receivedTopic, message) => {
         if (receivedTopic === topic) {
-          messageHandler(receivedTopic, JSON.parse(message.toString()));
+          var convertedMessage = JSON.parse(message.toString());
+          if(convertedMessage !== null){
+            messageHandler(receivedTopic, JSON.parse(message.toString()));
+          }else{
+            this.homey.log(`Unknown message received : ${message}, convertedMessage: ${convertedMessage}`);
+          }
         }
       });
     });
