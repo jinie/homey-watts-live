@@ -4,14 +4,16 @@ import IMqttConnector from '../types/IMqttConnector';
 import CustomMqttConnector from './CustomMqttConnector';
 import HomeyMqttConnector from './HomeyMqttConnector';
 import DriverSettings from '../types/DriverSettings';
+import { EventEmitter } from 'events'; // Import EventEmitter
 import Homey from 'homey/lib/Homey';
 
-export default class MqttWrapper {
+export default class MqttWrapper extends EventEmitter {
   private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
   
   constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
+    super();
     this.homey = homey;
     this.homey.log(this.settings.toSafeJSON());
     if (this.settings.useHomeyMqttClient==='homey') {
@@ -19,6 +21,21 @@ export default class MqttWrapper {
     } else {
       this.mqttConnector = new CustomMqttConnector(this.homey, this.settings);
     }
+    // Listen for events
+    this.mqttConnector.on('connect', () => {
+      this.homey.log('MQTT broker connected');
+      this.emit('connect');
+    });
+
+    this.mqttConnector.on('disconnect', () => {
+      this.homey.log('MQTT broker disconnected');
+      this.emit('disconnect')
+    });
+
+    this.mqttConnector.on('error', (err) => {
+      this.homey.log('MQTT error:', err.message);
+    });
+
     process.on('unhandledRejection', (reason, p) => {
       this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
     });

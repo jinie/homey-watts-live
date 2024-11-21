@@ -2,8 +2,9 @@
 
 import Homey from 'homey';
 import IMqttConnector from '../types/IMqttConnector';
+import { EventEmitter } from 'events'; // Import EventEmitter
 
-export default class HomeyMqttConnector implements IMqttConnector {
+export default class HomeyMqttConnector extends EventEmitter implements IMqttConnector {
   private MQTTClient: Homey.ApiApp | null = null;
   private isConnected: boolean;
   readonly homey: Homey.App['homey'];
@@ -11,6 +12,7 @@ export default class HomeyMqttConnector implements IMqttConnector {
   readonly devices: any[] = [];
 
   constructor(homey: Homey.App['homey']) {  // Pass Homey instance to the constructor
+    super();
     this.isConnected = false;
     this.homey = homey;
     this.homey.log('HomeyMqttConnector initialized');

@@ -34,17 +34,18 @@ export default class WattsLiveDevice extends Homey.Device {
     // Initialize the MQTT wrapper with the device's settings
     
     try {
-    /*  if (this.mqttWrapper === null) {
-        this.mqttWrapper = new MqttWrapper(this.homey, driverSettings);
-        await this.mqttWrapper.connect().then(() => {this.isConnected = true}).catch(()=>{
-          this.reconnectMqtt();
-        });
-        // Mark the device as connected
-      }*/
      await this.reconnectMqtt();
+     
 
       if (!this.mqttWrapper) {
         throw new Error('MQTT wrapper is not initialized');
+      }else{
+        this.mqttWrapper.on('connect', () => {
+          this.setAvailable();
+        });
+        this.mqttWrapper.on('disconnect',() => {
+          this.setUnavailable();
+        })
       }
     } catch (err: any) {
       this.homey.log(err);
@@ -67,24 +68,6 @@ export default class WattsLiveDevice extends Homey.Device {
     });
   }
 
-  private startReconnectTimer() {
-    this.clearReconnectTimer(); // Clear any existing timer
-
-    this.reconnectTimer = setTimeout(() => {
-      const currentTime = Date.now();
-      if (currentTime - this.lastMessageTimestamp >= 60000) { // 60 seconds
-        this.log('No message received in the last 60 seconds. Forcing reconnect...');
-        this.onDeviceOffline();
-      }
-    }, 60000); // Check every 60 seconds
-  }
-
-  private clearReconnectTimer() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-  }
 
   onMessage(topic: string, message: {}) {
 
@@ -95,7 +78,6 @@ export default class WattsLiveDevice extends Homey.Device {
     this.processMqttMessage(topic, message);
     // Update the last message timestamp and restart the reconnect timer
     this.lastMessageTimestamp = Date.now();
-    this.startReconnectTimer();
   }
 
   /**
@@ -247,29 +229,6 @@ export default class WattsLiveDevice extends Homey.Device {
     }
   }
 
-  /**
-   * Called when the device goes offline (e.g., MQTT disconnection or no response).
-   */
-  async onDeviceOffline(): Promise<void> {
-    //this.log(`Device offline: ${this.getName()} (${this.getData().id})`);
-
-    // Mark the device as unavailable in Homey
-    this.setUnavailable('Device is offline or disconnected from MQTT server');
-
-    // Clean up the MQTT connection
-    if (this.mqttWrapper) {
-      this.mqttWrapper.disconnect();
-      this.isConnected = false;
-    }
-
-    // Optionally, you can set a retry mechanism to attempt reconnecting after a certain interval
-    // For example:
-    setTimeout(() => {
-      this.log('Attempting to reconnect after going offline...');
-      this.reconnectMqtt(); // Attempt to reconnect after a delay
-    }, 60000); // Retry after 60 seconds (you can adjust the delay as needed)
-  }
-
   getMqttTopic() {
     return this.getSettings()['deviceId'];
   }
@@ -320,7 +279,7 @@ export default class WattsLiveDevice extends Homey.Device {
         this.isConnected = true;
         this.setAvailable();
     }).catch(() => {
-      this.onDeviceOffline();
+      this.setUnavailable();
     });
 
     

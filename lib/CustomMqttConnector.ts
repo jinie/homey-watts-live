@@ -3,8 +3,9 @@
 import mqtt, { IClientOptions } from 'mqtt';
 import DriverSettings from '../types/DriverSettings';
 import IMqttConnector from '../types/IMqttConnector';
+import { EventEmitter } from 'events'; // Import EventEmitter
 
-export default class CustomMqttConnector implements IMqttConnector {
+export default class CustomMqttConnector extends EventEmitter implements IMqttConnector {
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
   private devices: any[] = [];
@@ -12,6 +13,7 @@ export default class CustomMqttConnector implements IMqttConnector {
   readonly driverSettings: DriverSettings;  // Connection parameters for the broker
 
   constructor(homey: any, driverSettings: DriverSettings) {
+    super();
     this.homey = homey;
     this.driverSettings = driverSettings;
     process.on('unhandledRejection', (reason, p) => {
@@ -35,6 +37,8 @@ export default class CustomMqttConnector implements IMqttConnector {
         username: this.driverSettings.username,
         password: this.driverSettings.password,
         protocol: this.driverSettings.useTls ? 'mqtts' : 'mqtt',
+        reconnectPeriod: 1000, // Attempt to reconnect every 1000ms
+        connectTimeout: 30 * 1000, // Timeout after 30 seconds
       };
 
       // If TLS is enabled and self-signed certificates are allowed
@@ -47,11 +51,24 @@ export default class CustomMqttConnector implements IMqttConnector {
       this.mqttClient.on('connect', () => {
         this.isConnected = true;
         this.homey.log(`Connected to MQTT broker at ${this.driverSettings.hostname}:${this.driverSettings.port}`);
+        this.emit('connect'); // Emit 'connect' event
         resolve();
       });
 
       this.mqttClient.on('error', (err) => {
         this.homey.log('MQTT error:', err.message);
+        reject(err);
+      });
+
+      this.mqttClient.on('disconnect', () => {
+        this.isConnected = false;
+        this.homey.log('Disconnected from MQTT broker');
+        this.emit('disconnect'); // Emit 'disconnect' event
+      });
+
+      this.mqttClient.on('error', (err) => {
+        this.homey.log('MQTT error:', err.message);
+        this.emit('error', err); // Emit 'error' event
         reject(err);
       });
 

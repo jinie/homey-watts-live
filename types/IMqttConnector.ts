@@ -1,4 +1,6 @@
-export default interface IMqttConnector {
+import { EventEmitter } from 'events'; // Import EventEmitter
+
+export default interface IMqttConnector extends EventEmitter {
     connect(): Promise<void>;
     disconnect(): void;
     subscribe(topic: string, messageHandler: (topic: string, message: {}) => void): Promise<void>;
