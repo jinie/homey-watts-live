@@ -76,5 +76,8 @@
   },
   "2.0.11": {
     "en": "Fix crash when empty message is received."
+  },
+  "2.0.12": {
+    "en": "Fix an error when an invalid message is received."
   }
 }
