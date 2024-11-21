@@ -79,5 +79,8 @@
   },
   "2.0.12": {
     "en": "Fix an error when an invalid message is received."
+  },
+  "2.0.13": {
+    "en": "Better handling of MQTT reconnects."
   }
 }
