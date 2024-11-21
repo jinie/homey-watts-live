@@ -154,7 +154,13 @@ export default class WattsLiveDevice extends Homey.Device {
         msg = message;
       }
 
-    this.log(msg.toString());
+    if(msg === null){
+      this.log(`Message converted to null : ${message}`)
+      return;
+    }else{
+      if(this.debug)
+        this.log(msg.toString());
+    }
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = new MeterReading(msg);
