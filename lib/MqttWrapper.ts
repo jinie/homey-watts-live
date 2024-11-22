@@ -57,9 +57,13 @@ export default class MqttWrapper extends EventEmitter {
     }
   }
   
-  async subscribe(topic: string, messageHandler: (topic: string, message: {} ) => void): Promise<void> {
+  async subscribe(topic: string): Promise<void> {
     this.subscribedTopics.push(topic);
-    await this.mqttConnector?.subscribe(topic, messageHandler);
+    await this.mqttConnector?.subscribe(topic).then(() => {
+      this.mqttConnector?.on('message', (topic: string, message: any)  => {
+        this.emit('message',topic, message);
+      });
+    });
   }
   
   async unsubscribe(topic: string): Promise<void> {

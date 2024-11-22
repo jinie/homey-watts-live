@@ -52,17 +52,6 @@ export default class WattsLiveDevice extends Homey.Device {
       throw err;
     }
 
-    const deviceId = driverSettings.deviceId;
-    await this.mqttWrapper.unsubscribe(`watts/${deviceId}/measurement`);
-    // Subscribe to the relevant topic for this device
-    await this.mqttWrapper.subscribe(
-      `watts/${deviceId}/measurement`,
-      this.onMessage.bind(this),
-    );
-
-    // Check initial device status
-    await this.CheckDeviceStatus();
-
     process.on('unhandledRejection', (reason, p) => {
       this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
     });
@@ -233,19 +222,6 @@ export default class WattsLiveDevice extends Homey.Device {
     return this.getSettings()['deviceId'];
   }
 
-  /**
-   * Method to check the status of the device.
-   * Typically verifies the connection and can check if the device is responsive.
-   */
-  async CheckDeviceStatus(): Promise<void> {
-    if (!this.isConnected) {
-      this.log('Device is not connected, attempting to reconnect...');
-      await this.reconnectMqtt();
-    }
-
-    // You can add further status checks if necessary
-    this.log('Device status checked and seems OK');
-  }
 
   /**
    * Invalidate the device status, typically when the connection is lost or an error occurs.
@@ -274,10 +250,15 @@ export default class WattsLiveDevice extends Homey.Device {
     await this.mqttWrapper.connect().then(() => {
       // Re-subscribe to the device's topic
         const deviceId = this.getDeviceSettings().deviceId;
-        this.mqttWrapper?.subscribe(`/watts/${deviceId}/measurement`,this.onMessage.bind(this));
-
+        this.mqttWrapper?.subscribe(
+          `watts/${deviceId}/measurement`,
+        ).then(() => {
+          this.mqttWrapper?.on('message',(topic: string, message: any) => {
+            this.onMessage(topic, message);
+          });
         this.isConnected = true;
         this.setAvailable();
+        });
     }).catch(() => {
       this.setUnavailable();
     });

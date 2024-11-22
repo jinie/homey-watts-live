@@ -43,7 +43,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     });
   }
 
-  async subscribe(topic: string, messageHandler: (topic: string, message: {}) => void): Promise<void> {
+  async subscribe(topic: string): Promise<void> {
     this.homey.log("subscribe");
     return new Promise((resolve, reject) => {
       this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
@@ -56,7 +56,8 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
         }
       });
       this.MQTTClient?.on('realtime', (topic: string, message: {}) => {
-        messageHandler(topic, message);
+        //messageHandler(topic, message);
+        this.emit('message',topic, message);
       });
       resolve();
     });
@@ -87,23 +88,24 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       }
 
       // Subscribe to the topic
-      this.subscribe(topic, (topic: string, message: {}) => {
+      this.subscribe(topic).then( () => {
         this.homey.log(`Message received on topic ${topic}`);
-
-        // Extract device ID from the topic
-        const match = topic.match(/\/?watts\/(.+)\/measurement/);
-        if (match) {
-          const deviceId = match[1];
-          // Add the discovered device to the list
-          this.devices.push({
-            id: deviceId,
-            name: `Watts Live - ${deviceId}`,
-            data: { id: deviceId },
-            settings: { deviceId: deviceId }
-          });
-          //this.homey.log(`Discovered device ${deviceId}`);
-        }
+        this.on('message',(topic: string, message:any)=>{
+          // Extract device ID from the topic
+          const match = topic.match(/\/?watts\/(.+)\/measurement/);
+          if (match) {
+            const deviceId = match[1];
+            // Add the discovered device to the list
+            this.devices.push({
+              id: deviceId,
+              name: `Watts Live - ${deviceId}`,
+              data: { id: deviceId },
+              settings: { deviceId: deviceId }
+            });
+            //this.homey.log(`Discovered device ${deviceId}`);
+          }
       });
+    });
 
       // Set a timeout to stop discovery after the specified time
       setTimeout(() => {
