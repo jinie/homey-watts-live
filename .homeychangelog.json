@@ -82,5 +82,8 @@
   },
   "2.0.13": {
     "en": "Better handling of MQTT reconnects."
+  },
+  "2.0.14": {
+    "en": "Fix for invalid message received using a custom MQTT Broker."
   }
 }
