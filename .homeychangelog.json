@@ -85,5 +85,8 @@
   },
   "2.0.14": {
     "en": "Fix for invalid message received using a custom MQTT Broker."
+  },
+  "2.0.15": {
+    "en": "Code cleanup"
   }
 }
