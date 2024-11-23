@@ -12,11 +12,9 @@ import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
-  private debug: boolean = true;
+  private readonly debug: boolean = process.env.DEBUG !== undefined;
   private mqttWrapper: MqttWrapper | null = null;
-  private isConnected: boolean = false;
-  private lastMessageTimestamp: number = Date.now();
-  private reconnectTimer: NodeJS.Timeout | null = null;
+
 
   /**
    * onInit is called when the device is initialized.
@@ -58,7 +56,7 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
 
-  onMessage(topic: string, message: {}) {
+  onMessage(topic: string, message: any) {
 
     
     this.log(`onMessage: Message received on topic ${topic}: ${message}`);
@@ -66,7 +64,6 @@ export default class WattsLiveDevice extends Homey.Device {
 
     this.processMqttMessage(topic, message);
     // Update the last message timestamp and restart the reconnect timer
-    this.lastMessageTimestamp = Date.now();
   }
 
   /**
@@ -113,7 +110,7 @@ export default class WattsLiveDevice extends Homey.Device {
     return newSettings;
   }
 
-  public async processMqttMessage(topic: string, message: {}) {
+  public async processMqttMessage(topic: string, message: any) {
     //this.log(message);
     let msg: {} = {};
       if(typeof message === typeof Buffer){
@@ -128,9 +125,6 @@ export default class WattsLiveDevice extends Homey.Device {
     if(msg === null){
       this.log(`Message converted to null : ${message}`)
       return;
-    }else{
-      if(this.debug)
-        this.log(msg.toString());
     }
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
@@ -228,7 +222,6 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   invalidateStatus(): void {
     this.log('Device status invalidated');
-    this.isConnected = false;
     this.setUnavailable('Device disconnected or unavailable');
   }
 
@@ -256,7 +249,6 @@ export default class WattsLiveDevice extends Homey.Device {
           this.mqttWrapper?.on('message',(topic: string, message: any) => {
             this.onMessage(topic, message);
           });
-        this.isConnected = true;
         this.setAvailable();
         });
     }).catch(() => {

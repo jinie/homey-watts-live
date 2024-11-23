@@ -11,6 +11,8 @@ export default class MqttWrapper extends EventEmitter {
   private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
+  private readonly debug: boolean = process.env.DEBUG !== undefined;
+
   
   constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
     super();

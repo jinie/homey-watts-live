@@ -5,6 +5,7 @@ import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 
 class WattsLiveDriver extends Homey.Driver {
+  private readonly debug: boolean = process.env.DEBUG !== undefined;
   private mqttWrapper: MqttWrapper | null = null;
   readonly topic: string = 'watts/+/measurement';
   readonly devices: any[] = [];

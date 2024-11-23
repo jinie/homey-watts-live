@@ -11,6 +11,8 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   private devices: any[] = [];
   readonly homey: any;  // Instance of Homey for logging
   readonly driverSettings: DriverSettings;  // Connection parameters for the broker
+  private readonly debug: boolean = process.env.DEBUG !== undefined;
+
   
   constructor(homey: any, driverSettings: DriverSettings) {
     super();
@@ -66,10 +68,6 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
         this.emit('error', err); // Emit 'error' event
         reject(err);
       });
-      
-      /*this.mqttClient.on('message', (topic, message) => {
-      this.onMessageReceived(topic, message.toString());
-      });*/
     });
   }
   
@@ -111,7 +109,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       this.mqttClient?.on('message', (receivedTopic, message) => {
         if (receivedTopic === topic) {
           try{
-            var convertedMessage = JSON.parse(message.toString());
+            let convertedMessage = JSON.parse(message.toString());
             if(convertedMessage !== null){
               this.emit('message', receivedTopic, convertedMessage);
             }else{

@@ -10,6 +10,8 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
   readonly homey: Homey.App['homey'];
   readonly topics: string[] = [];
   readonly devices: any[] = [];
+  private readonly debug: boolean = process.env.DEBUG !== undefined;
+
 
   constructor(homey: Homey.App['homey']) {  // Pass Homey instance to the constructor
     super();
@@ -29,7 +31,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       try {
         // Get access to the nl.scanno.mqtt API app
 
-        if (available === false || !this.MQTTClient === null) {
+        if (available === false || this.MQTTClient !== null) {
           reject(new Error("nl.scanno.mqtt app not found or unavailable"));
         }
 
@@ -49,8 +51,8 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       this.MQTTClient?.post('subscribe', { topic: topic }).then((error: any) => {
         if (error.result != 0) {
           this.homey.log(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
-          reject(JSON.stringify(error));
         } else {
+          reject(Error(JSON.stringify(error)));
           this.homey.log(`Sucessfully subscribed to topic: ${topic}`);
           this.topics.push(topic);
         }
@@ -68,7 +70,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       this.MQTTClient?.post('unsubscribe', { topic: topic }).then((error: any) => {
         if (error.result != 0) {
           this.homey.log(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
-          reject(JSON.stringify(error));
+          reject(Error(JSON.stringify(error)));
         } else {
           this.homey.log(`Sucessfully unsubscribed from topic: ${topic}`);
           resolve();
