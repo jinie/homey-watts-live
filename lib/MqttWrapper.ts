@@ -49,14 +49,18 @@ export default class MqttWrapper extends EventEmitter {
     });
   }
   
-  disconnect(): void {
-    if (this.mqttConnector) {
-      this.subscribedTopics.forEach(topic => {
-        this.mqttConnector?.unsubscribe(topic);
-      })
-      this.mqttConnector.disconnect();
-      this.mqttConnector = null;
-    }
+  async disconnect(): Promise<void> {
+    return new Promise((resolve, _) => {
+      if (this.mqttConnector!==null) {
+        this.subscribedTopics.forEach(topic => {
+          this.mqttConnector?.unsubscribe(topic);
+        })
+        this.mqttConnector.disconnect();
+        this.mqttConnector = null;
+        
+      }
+      resolve();
+    });
   }
   
   async subscribe(topic: string): Promise<void> {
@@ -71,7 +75,7 @@ export default class MqttWrapper extends EventEmitter {
   async unsubscribe(topic: string): Promise<void> {
     if(this.subscribedTopics.indexOf(topic)>=0){
       this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic),1);
-      this.mqttConnector?.unsubscribe(topic);
+      await this.mqttConnector?.unsubscribe(topic);
     }
   }
   

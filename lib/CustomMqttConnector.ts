@@ -74,7 +74,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   // Disconnect from the MQTT broker
   async disconnect(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.mqttClient) {
+      if (this.mqttClient!==null) {
         this.mqttClient.end(() => {
           this.mqttClient = null;
           this.isConnected = false;
@@ -124,18 +124,21 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   }
   
   // Unsubscribe from a topic
-  unsubscribe(topic: string): void {
-    if (!this.mqttClient) {
-      this.homey.log('MQTT client not initialized');
-      return;
-    }
-    
-    this.mqttClient.unsubscribe(topic, (err) => {
-      if (err) {
-        this.homey.log(`Failed to unsubscribe from topic: ${topic}. Error: ${err.message}`);
-      } else {
-        this.homey.log(`Successfully unsubscribed from topic: ${topic}`);
+  async unsubscribe(topic: string): Promise<void> {
+    return new Promise((resolve,reject) => {
+      if (!this.mqttClient) {
+        reject(new Error("MQTT Client not initialized"));
+        return;
       }
+      
+      this.mqttClient.unsubscribe(topic, (err) => {
+        if (err) {
+          this.homey.log(`Failed to unsubscribe from topic: ${topic}. Error: ${err.message}`);
+        } else {
+          this.homey.log(`Successfully unsubscribed from topic: ${topic}`);
+        }
+      });
+      resolve();
     });
   }
   

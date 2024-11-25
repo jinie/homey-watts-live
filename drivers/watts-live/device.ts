@@ -230,10 +230,8 @@ export default class WattsLiveDevice extends Homey.Device {
    * Handles disconnection and reconnection logic.
    */
   private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
-    if (this.mqttWrapper) {
-      this.mqttWrapper.disconnect();
-    }
-
+      await this.mqttWrapper?.disconnect();
+    
     // Use new settings if provided, otherwise use current device settings
     const driverSettings = newSettings || this.getDeviceSettings();
 

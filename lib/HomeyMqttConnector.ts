@@ -131,10 +131,10 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
   }
 
 
-  disconnect(): void {
-    this.topics.forEach(topic => {
-      this.unsubscribe(topic);
-    })
+  async disconnect(): Promise<void> {
+    for( const topic of this.topics){
+      await this.unsubscribe(topic);
+    } 
   }
 
 
