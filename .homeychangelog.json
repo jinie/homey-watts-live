@@ -88,5 +88,8 @@
   },
   "2.0.15": {
     "en": "Code cleanup"
+  },
+  "2.0.16": {
+    "en": "Better handling of reconnects when settings change."
   }
 }
