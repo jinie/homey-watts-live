@@ -91,5 +91,8 @@
   },
   "2.0.16": {
     "en": "Better handling of reconnects when settings change."
+  },
+  "2.0.17": {
+    "en": "Fix connectivity bug with MQTT Client App"
   }
 }
