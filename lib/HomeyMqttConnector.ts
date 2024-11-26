@@ -31,7 +31,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       try {
         // Get access to the nl.scanno.mqtt API app
 
-        if (available === false || this.MQTTClient !== null) {
+        if (available === false || !this.MQTTClient === null) {
           reject(new Error("nl.scanno.mqtt app not found or unavailable"));
         }
 
