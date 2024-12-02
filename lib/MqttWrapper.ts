@@ -1,24 +1,25 @@
 'use strict';
 
+import Homey from 'homey/lib/Homey';
+import { EventEmitter } from 'events'; // Import EventEmitter
 import IMqttConnector from '../types/IMqttConnector';
 import CustomMqttConnector from './CustomMqttConnector';
 import HomeyMqttConnector from './HomeyMqttConnector';
 import DriverSettings from '../types/DriverSettings';
-import { EventEmitter } from 'events'; // Import EventEmitter
-import Homey from 'homey/lib/Homey';
 
 export default class MqttWrapper extends EventEmitter {
+
   private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
   private readonly debug: boolean = process.env.DEBUG !== undefined;
 
-  
+
   constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
     super();
     this.homey = homey;
     this.homey.log(this.settings.toSafeJSON());
-    if (this.settings.useHomeyMqttClient==='homey') {
+    if (this.settings.useHomeyMqttClient === 'homey') {
       this.mqttConnector = new HomeyMqttConnector(this.homey);
     } else {
       this.mqttConnector = new CustomMqttConnector(this.homey, this.settings);
@@ -42,49 +43,52 @@ export default class MqttWrapper extends EventEmitter {
       this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
     });
   }
-  
+
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.mqttConnector?.connect().then(_ => {resolve()}).catch(err => {reject(new Error(err.message))});
+      this.mqttConnector?.connect().then((_) => {return resolve()}).catch((err) => { return reject(new Error(err.message)) });
     });
   }
-  
+
   async disconnect(): Promise<void> {
-    return new Promise((resolve, _) => {
-      if (this.mqttConnector!==null) {
-        this.subscribedTopics.forEach(topic => {
-          this.mqttConnector?.unsubscribe(topic);
-        })
-        this.mqttConnector.disconnect();
-        this.mqttConnector = null;
-        
+    return new Promise((resolve, reject) => {
+      if (this.mqttConnector !== null) {
+        this.subscribedTopics.forEach((topic) => {
+          this.mqttConnector?.unsubscribe(topic).then(() => {
+          }).catch(() => { this.homey.log(`Error unsubscribing from topic ${topic}`); });
+        });
+        this.mqttConnector?.disconnect().then(() => {
+          this.mqttConnector = null;
+          return resolve();
+        }).catch(() => {  });
       }
-      resolve();
     });
   }
-  
+
   async subscribe(topic: string): Promise<void> {
     this.subscribedTopics.push(topic);
     await this.mqttConnector?.subscribe(topic).then(() => {
       this.mqttConnector?.on('message', (topic: string, message: any)  => {
-        this.emit('message',topic, message);
+        this.emit('message', topic, message);
       });
     });
   }
-  
+
   async unsubscribe(topic: string): Promise<void> {
-    if(this.subscribedTopics.indexOf(topic)>=0){
-      this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic),1);
+    if (this.subscribedTopics.indexOf(topic) >= 0) {
+      this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic), 1);
       await this.mqttConnector?.unsubscribe(topic);
     }
   }
-  
+
   publish(topic: string, message: string): void {
     this.mqttConnector?.publish(topic, message);
   }
-  
-  async discoverDevices(topic: string, timeout:number = 10000): Promise<any[]>
-  {
-    return await this.mqttConnector?.discoverDevices(topic, timeout)!;
+
+  async discoverDevices(topic: string, timeout:number = 10000): Promise<any[]> {
+    if (this.mqttConnector !== null) {
+      return this.mqttConnector.discoverDevices(topic, timeout)!;
+    }
+    return [];
   }
 }

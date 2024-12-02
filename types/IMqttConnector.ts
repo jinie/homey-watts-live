@@ -1,3 +1,5 @@
+'use strict';
+
 import { EventEmitter } from 'events'; // Import EventEmitter
 
 export default interface IMqttConnector extends EventEmitter {

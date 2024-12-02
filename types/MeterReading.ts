@@ -1,3 +1,5 @@
+'use strict';
+
 /**
 * MeterReading interface to map MQTT message to JSON object
 */

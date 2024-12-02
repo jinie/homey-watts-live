@@ -5,6 +5,7 @@ import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 
 class WattsLiveDriver extends Homey.Driver {
+
   private readonly debug: boolean = process.env.DEBUG !== undefined;
   private mqttWrapper: MqttWrapper | null = null;
   readonly topic: string = 'watts/+/measurement';
@@ -17,6 +18,7 @@ class WattsLiveDriver extends Homey.Driver {
       this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
     });
   }
+
   /**
   * Called when pairing starts.
   */
@@ -31,7 +33,6 @@ class WattsLiveDriver extends Homey.Driver {
       apiAppAvailable = await this.homey.apps.getInstalled(
         this.homey.api.getApiApp('nl.scanno.mqtt'),
       );
-      //apiAppAvailable = response !== null;
       this.log('ApiApp available : ', apiAppAvailable);
     } catch (err: any) {
       this.log('ApiApp not available:', err.message);
@@ -56,11 +57,11 @@ class WattsLiveDriver extends Homey.Driver {
     session.setHandler(
       'choose_mqtt_method',
       async (settings: DriverSettings) => {
-
-        if(apiAppAvailable === false && settings.useHomeyMqttClient === 'homey'){
+        if (apiAppAvailable === false && settings.useHomeyMqttClient === 'homey') {
           this.homey.emit('apiAppNotInstalled')
           return;
         }
+
         // Create an instance of DriverSettings based on the emitted data
         this.driverSettings = new DriverSettings(settings);
         this.log(settings);
@@ -69,10 +70,9 @@ class WattsLiveDriver extends Homey.Driver {
           this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
           await this.mqttWrapper.connect().then(_ => { return true }).catch(err => {
             this.homey.log('Selected pairing method failed :', this.driverSettings);
-            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.', });
+            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.', }).catch((ex) => {throw Error(ex.message)});
             this.mqttWrapper = null;
             throw new Error(err.message);
-
           });
           // Proceed to the next step if successful
         } catch (err: any) {
@@ -91,10 +91,11 @@ class WattsLiveDriver extends Homey.Driver {
         }
 
         // Start discovering devices using the topic
-        let discoveredDevices = await this.mqttWrapper.discoverDevices(
+        const discoveredDevices = await this.mqttWrapper.discoverDevices(
           this.topic,
         );
-        this.mqttWrapper.disconnect();
+        this.homey.log(`discovered devices : ${discoveredDevices}`);
+        await this.mqttWrapper.disconnect();
         // Fetch already paired devices from Homey SDK
         const pairedDevices = await this.getPairedDevices();
 

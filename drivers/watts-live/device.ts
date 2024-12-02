@@ -12,6 +12,7 @@ import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
+
   private readonly debug: boolean = process.env.DEBUG !== undefined;
   private mqttWrapper: MqttWrapper | null = null;
 
@@ -30,19 +31,19 @@ export default class WattsLiveDevice extends Homey.Device {
       `Initializing Device with settings : ${driverSettings.toSafeJSON()}`,
     );
     // Initialize the MQTT wrapper with the device's settings
-    
+
     try {
-     await this.reconnectMqtt();
-     
+      await this.reconnectMqtt();
+
 
       if (!this.mqttWrapper) {
         throw new Error('MQTT wrapper is not initialized');
-      }else{
+      } else {
         this.mqttWrapper.on('connect', () => {
-          this.setAvailable();
+          this.setAvailable().catch(() => {});
         });
         this.mqttWrapper.on('disconnect',() => {
-          this.setUnavailable();
+          this.setUnavailable().catch(() => {});
         })
       }
     } catch (err: any) {
@@ -56,14 +57,9 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
 
-  onMessage(topic: string, message: any) {
-
-    
+  async onMessage(topic: string, message: any) {
     this.log(`onMessage: Message received on topic ${topic}: ${message}`);
-    //}
-
-    this.processMqttMessage(topic, message);
-    // Update the last message timestamp and restart the reconnect timer
+    await this.processMqttMessage(topic, message);
   }
 
   /**
@@ -71,9 +67,15 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   async onDeleted(): Promise<void> {
     // Perform cleanup by disconnecting MQTT and freeing any resources.
-    if (this.mqttWrapper) {
-      this.mqttWrapper.disconnect();
-    }
+    return new Promise((resolve, reject) => {
+      if (this.mqttWrapper) {
+        this.mqttWrapper.disconnect().then(() => {
+          resolve()
+        }).catch(() => {
+          reject()
+        });
+      }
+    });
   }
 
   /**
@@ -82,10 +84,10 @@ export default class WattsLiveDevice extends Homey.Device {
   async onAdded(): Promise<void> {
     // This is where you can implement any setup logic after the device is paired or added.
     // For example, sending an MQTT message to let the server know this device was added
-    const deviceId = this.getDeviceSettings().deviceId;
+    const { deviceId } = this.getDeviceSettings();
     this.log(`Device added: ${deviceId}`);
     // Optionally: Publish an MQTT message or perform any initialization specific to being added.
-    this.setAvailable();
+    await this.setAvailable();
   }
 
   /**
@@ -106,23 +108,21 @@ export default class WattsLiveDevice extends Homey.Device {
       this.log(`Reading device settings ${JSON.stringify(settings)}`);
     }
     // Construct and return a DriverSettings object using the device's settings
-    let newSettings = new DriverSettings(settings);
+    const newSettings = new DriverSettings(settings);
     return newSettings;
   }
 
   public async processMqttMessage(topic: string, message: any) {
-    //this.log(message);
-    let msg: {} = {};
-      if(typeof message === typeof Buffer){
-        msg = JSON.parse(message.toString());
-      }else if (typeof message === typeof String){
-        msg = JSON.parse(message as string);
-      }else {
-        //this.log('Not converting message');
-        msg = message;
-      }
+    let msg: object = {};
+    if (typeof message === typeof Buffer) {
+      msg = JSON.parse(message.toString());
+    } else if (typeof message === typeof String) {
+      msg = JSON.parse(message as string);
+    } else {
+      msg = message;
+    }
 
-    if(msg === null){
+    if(msg === null) {
       this.log(`Message converted to null : ${message}`)
       return;
     }
@@ -135,9 +135,9 @@ export default class WattsLiveDevice extends Homey.Device {
         );
       }
       // Map readings to capabilities, convert undefined to 0
-      let kMap: KvMap = {};
+      const kMap: KvMap = {};
       Object.keys(ReadingToCapabilityMap).forEach((value) => {
-        let key = ReadingToCapabilityMap[value];
+        const key = ReadingToCapabilityMap[value];
         kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
         // Convert from Watts to kW
         if (
@@ -155,7 +155,7 @@ export default class WattsLiveDevice extends Homey.Device {
       // Set capabilities
       Object.keys(kMap).forEach((key) => {
         if (this.hasCapability(key) && kMap[key] !== undefined) {
-          this.setCapabilityValue(key, kMap[key] as number);
+          this.setCapabilityValue(key, kMap[key] as number).catch(() => { });
         } else {
           this.log(`processMqttMessage: unknown capability ${key}`);
         }
@@ -202,11 +202,11 @@ export default class WattsLiveDevice extends Homey.Device {
     if (needsReconnect) {
       try {
         this.log('Reconnecting due to changed MQTT settings...');
-        const driverSettings = new DriverSettings(newSettings); //this.getDeviceSettings();
+        const driverSettings = new DriverSettings(newSettings);
         await this.reconnectMqtt(driverSettings);
       } catch (ex: any) {
         this.log('Error reconnecting: ', ex);
-        this.reconnectMqtt(new DriverSettings(oldSettings));
+        await this.reconnectMqtt(new DriverSettings(oldSettings));
         throw ex;
       }
     }
@@ -222,7 +222,7 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   invalidateStatus(): void {
     this.log('Device status invalidated');
-    this.setUnavailable('Device disconnected or unavailable');
+    this.setUnavailable('Device disconnected or unavailable').catch(() => {});
   }
 
   /**
@@ -230,8 +230,8 @@ export default class WattsLiveDevice extends Homey.Device {
    * Handles disconnection and reconnection logic.
    */
   private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
-      await this.mqttWrapper?.disconnect();
-    
+    await this.mqttWrapper?.disconnect();
+
     // Use new settings if provided, otherwise use current device settings
     const driverSettings = newSettings || this.getDeviceSettings();
 
@@ -240,20 +240,18 @@ export default class WattsLiveDevice extends Homey.Device {
     this.mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
     await this.mqttWrapper.connect().then(() => {
       // Re-subscribe to the device's topic
-        const deviceId = this.getDeviceSettings().deviceId;
-        this.mqttWrapper?.subscribe(
-          `watts/${deviceId}/measurement`,
-        ).then(() => {
-          this.mqttWrapper?.on('message',(topic: string, message: any) => {
-            this.onMessage(topic, message);
-          });
-        this.setAvailable();
+      const { deviceId } = this.getDeviceSettings();
+      this.mqttWrapper?.subscribe(
+        `watts/${deviceId}/measurement`,
+      ).then(() => {
+        this.mqttWrapper?.on('message', (topic: string, message: any) => {
+          this.onMessage(topic, message).catch((ex) => { throw ex });
         });
+        this.setAvailable().catch((ex) => { throw ex });
+      }).catch(() => { });
     }).catch(() => {
-      this.setUnavailable();
+      this.setUnavailable().catch((ex) => { throw ex });
     });
-
-    
   }
 
   /**

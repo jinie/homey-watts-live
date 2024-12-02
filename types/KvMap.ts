@@ -1,3 +1,5 @@
+'use strict';
+
 /**
 * Key-Value map interface for string:number
 */

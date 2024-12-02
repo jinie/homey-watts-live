@@ -1,4 +1,7 @@
+'use strict';
+
 export default class DriverSettings {
+
   public deviceId: string = '';
   public hostname: string = 'localhost';
   public port: number = 1883;
@@ -6,8 +9,8 @@ export default class DriverSettings {
   public username: string = '';
   public password: string = '';
   public useTls: boolean = false;
-  public useHomeyMqttClient: string = "homey";
-  public acceptSelfSignedCert: boolean = false;  // New setting for self-signed certificates
+  public useHomeyMqttClient: string = 'homey';
+  public acceptSelfSignedCert: boolean = false; // New setting for self-signed certificates
 
   constructor(settings?: Partial<DriverSettings>) {
     if (settings) {
@@ -27,7 +30,7 @@ export default class DriverSettings {
   }
 
   static driverSettingsDefault(deviceId: string): DriverSettings {
-    let settings = new DriverSettings({ 'deviceId': deviceId });
+    const settings = new DriverSettings({ deviceId });
     return settings;
   }
 }
