@@ -41,18 +41,18 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
         this.isConnected = true;
         resolve();
       } catch (error: any) {
-        console.error('Error connecting to MQTT client:', error);
+        this.homey.error('Error connecting to MQTT client:', error);
         reject(new Error(error.message));
       }
     });
   }
 
   async subscribe(topic: string): Promise<void> {
-    this.homey.log("subscribe");
+    this.homey.log('subscribe');
     return new Promise((resolve, reject) => {
       this.MQTTClient?.post('subscribe', { topic }).then((error: any) => {
         if (error.result !== 0) {
-          this.homey.log(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
+          this.homey.error(`Cannot subscribe to topic ${topic}, error: ${JSON.stringify(error)}`)
           reject(JSON.stringify(error));
         } else {
           this.homey.log(`Sucessfully subscribed to topic: ${topic}`);
@@ -62,7 +62,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       }).catch((error) => { reject(JSON.stringify(error)); });
       this.MQTTClient?.on('realtime', (topic: string, message: object) => {
         // messageHandler(topic, message);
-        this.emit('message',topic, message);
+        this.emit('message', topic, message);
       });
       resolve();
     });
@@ -72,13 +72,13 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     return new Promise((resolve, reject) => {
       this.MQTTClient?.post('unsubscribe', { topic }).then((error: any) => {
         if (error.result !== 0) {
-          this.homey.log(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
+          this.homey.error(`Cannot unsubscribe from topic ${topic}, error: ${JSON.stringify(error)}`)
           reject(Error(JSON.stringify(error)));
         } else {
           this.homey.log(`Sucessfully unsubscribed from topic: ${topic}`);
           resolve();
         }
-      }).catch((error) => { reject(JSON.stringify(error)) });
+      }).catch((error) => { reject(JSON.stringify(error)); });
     });
   }
 
@@ -104,34 +104,34 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
               id: deviceId,
               name: `Watts Live - ${deviceId}`,
               data: { id: deviceId },
-              settings: { deviceId }
+              settings: { deviceId },
             });
           }
         });
+      }).catch((error) => {
+        this.homey.log(JSON.stringify(error));
+        return reject(error);
+      });
 
-        delay(timeout, undefined).then(() => {
-          this.homey.log(`timeout expired : ${timeout}`);
-          this.unsubscribe(topic).catch((error) => {
-            this.homey.log(error);
-          });
-          this.disconnect().catch((error) => {
-            this.homey.log(error);
-          });
-
-          if (this.devices.length === 0) {
-            // Log a message if no devices were discovered
-            this.homey.log('No devices discovered within the timeout.');
-          } else {
-            // Log the discovered devices
-            this.homey.log(`Discovered devices: ${JSON.stringify(this.devices)}`);
-          }
-
-          // Resolve the promise with the list of devices
-          return resolve(this.devices);
-        }).catch((error) => {
-          console.log(JSON.stringify(error));
-          return reject(error);
+      delay(timeout, this.devices).then(() => {
+        this.homey.log(`timeout expired : ${timeout}`);
+        this.unsubscribe(topic).catch((error) => {
+          this.homey.log(error);
         });
+        this.disconnect().catch((error) => {
+          this.homey.log(error);
+        });
+
+        if (this.devices.length === 0) {
+          // Log a message if no devices were discovered
+          this.homey.log('No devices discovered within the timeout.');
+        } else {
+          // Log the discovered devices
+          this.homey.log(`Discovered devices: ${JSON.stringify(this.devices)}`);
+        }
+
+        // Resolve the promise with the list of devices
+        return resolve(this.devices);
       }).catch((error) => {
         this.homey.log(JSON.stringify(error));
         return reject(error);
@@ -156,7 +156,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       mqttMessage: message
     }).catch((error: any) => {
       if (error) {
-        this.homey.log(`Error sending ${topic} <= '${message}'`);
+        this.homey.error(`Error sending ${topic} <= '${message}'`);
       }
     });
   }

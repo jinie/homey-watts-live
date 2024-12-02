@@ -1,3 +1,5 @@
+/* eslint-disable import/no-unresolved */
+
 'use strict';
 
 import Homey from 'homey';
@@ -42,8 +44,7 @@ class WattsLiveDriver extends Homey.Driver {
     this.homey.emit('apiAppInstalledState', { apiAppAvailable });
 
     // Continue with the pairing view
-    await session.showView('choose_mqtt_method').then(_ => {
-    });
+    await session.showView('choose_mqtt_method');
 
     session.setHandler('error', async (errorMessage: string) => {
       // Emit a view notification in response to the error event
@@ -68,9 +69,9 @@ class WattsLiveDriver extends Homey.Driver {
         try {
           // Initialize MqttWrapper with Homey.app['homey'] and the constructed DriverSettings
           this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
-          await this.mqttWrapper.connect().then(_ => { return true }).catch(err => {
+          await this.mqttWrapper.connect().then((_) => { return true }).catch((err) => {
             this.homey.log('Selected pairing method failed :', this.driverSettings);
-            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.', }).catch((ex) => {throw Error(ex.message)});
+            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.' }).catch((ex) => { throw Error(ex.message); });
             this.mqttWrapper = null;
             throw new Error(err.message);
           });
@@ -104,13 +105,13 @@ class WattsLiveDriver extends Homey.Driver {
           .filter((device) => {
             // Exclude already paired devices
             return !pairedDevices.some(
-              (pairedDevice: { id: any }) => pairedDevice.id === device.id,
+              (pairedDevice: { id: string }) => pairedDevice.id === device.id,
             );
           })
           .reduce(
             (acc, device) => {
               // Ensure the device is unique based on its id
-              if (!acc.some((d: { id: any }) => d.id === device.id)) {
+              if (!acc.some((d: { id: string }) => d.id === device.id)) {
                 acc.push(device);
               }
               return acc;
@@ -120,7 +121,7 @@ class WattsLiveDriver extends Homey.Driver {
 
         // Store the unique, unpaired devices
         this.discoveredDevices = uniqueDiscoveredDevices.map(
-          (device: { id: any; name: any; data: any; settings: any }) => ({
+          (device: { id: string; name: string; data: object; settings: object }) => ({
             id: device.id,
             name: device.name,
             data: { id: device.id },
@@ -134,7 +135,7 @@ class WattsLiveDriver extends Homey.Driver {
 
         // Return a successful response
         return true;
-      } catch (err: any) {
+      } catch (err:any) {
         throw new Error(`Failed to discover devices: ${err.message}`);
       }
     });
@@ -184,7 +185,7 @@ class WattsLiveDriver extends Homey.Driver {
   * Helper method to create a DriverSettings object from the pairing data.
   */
   private createDriverSettingsFromData(
-    device: { id: any; name: any; data: any; settings: any },
+    device: { id: string; name: string; data: object; settings: object },
     settings: DriverSettings,
   ): DriverSettings {
     const newSettings = new DriverSettings(settings);

@@ -186,18 +186,16 @@ export default class WattsLiveDevice extends Homey.Device {
     this.log('Settings updated:', changedKeys);
 
     // Check if any MQTT-related settings have changed that require reconnecting
-    const needsReconnect = changedKeys.some((key) =>
-      [
-        'hostname',
-        'port',
-        'clientId',
-        'username',
-        'password',
-        'useTls',
-        'useHomeyMqttClient',
-        'deviceId',
-      ].includes(key),
-    );
+    const needsReconnect = changedKeys.some((key) => [
+      'hostname',
+      'port',
+      'clientId',
+      'username',
+      'password',
+      'useTls',
+      'useHomeyMqttClient',
+      'deviceId',
+    ].includes(key));
 
     if (needsReconnect) {
       try {
@@ -230,27 +228,30 @@ export default class WattsLiveDevice extends Homey.Device {
    * Handles disconnection and reconnection logic.
    */
   private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
-    await this.mqttWrapper?.disconnect();
+    return new Promise((resolve, reject) => {
+      this.mqttWrapper?.disconnect().catch((error) => { this.homey.error((error)); });
 
-    // Use new settings if provided, otherwise use current device settings
-    const driverSettings = newSettings || this.getDeviceSettings();
+      // Use new settings if provided, otherwise use current device settings
+      const driverSettings = newSettings || this.getDeviceSettings();
 
-    // Reinitialize the MQTT wrapper with the new settings
-    const homeyApp = this.homey;
-    this.mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
-    await this.mqttWrapper.connect().then(() => {
-      // Re-subscribe to the device's topic
-      const { deviceId } = this.getDeviceSettings();
-      this.mqttWrapper?.subscribe(
-        `watts/${deviceId}/measurement`,
-      ).then(() => {
-        this.mqttWrapper?.on('message', (topic: string, message: any) => {
-          this.onMessage(topic, message).catch((ex) => { throw ex });
-        });
-        this.setAvailable().catch((ex) => { throw ex });
-      }).catch(() => { });
-    }).catch(() => {
-      this.setUnavailable().catch((ex) => { throw ex });
+      // Reinitialize the MQTT wrapper with the new settings
+      const homeyApp = this.homey;
+      this.mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
+      this.mqttWrapper.connect().then(() => {
+        // Re-subscribe to the device's topic
+        const { deviceId } = this.getDeviceSettings();
+        this.mqttWrapper?.subscribe(
+          `watts/${deviceId}/measurement`,
+        ).then(() => {
+          this.mqttWrapper?.on('message', (topic: string, message: any) => {
+            this.onMessage(topic, message).catch((ex) => { throw ex });
+          });
+          this.setAvailable().catch((ex) => { throw ex });
+        }).catch(() => { });
+      }).catch(() => {
+        this.setUnavailable().catch((ex) => { throw ex });
+      });
+      return resolve();
     });
   }
 

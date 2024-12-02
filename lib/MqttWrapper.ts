@@ -14,7 +14,6 @@ export default class MqttWrapper extends EventEmitter {
   private subscribedTopics: string[] = [];
   private readonly debug: boolean = process.env.DEBUG !== undefined;
 
-
   constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
     super();
     this.homey = homey;
@@ -46,7 +45,7 @@ export default class MqttWrapper extends EventEmitter {
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.mqttConnector?.connect().then((_) => {return resolve()}).catch((err) => { return reject(new Error(err.message)) });
+      this.mqttConnector?.connect().then((_) => { return resolve(); }).catch((err) => { return reject(new Error(err.message)); });
     });
   }
 
@@ -60,7 +59,7 @@ export default class MqttWrapper extends EventEmitter {
         this.mqttConnector?.disconnect().then(() => {
           this.mqttConnector = null;
           return resolve();
-        }).catch(() => {  });
+        }).catch(() => { });
       }
     });
   }
@@ -68,7 +67,7 @@ export default class MqttWrapper extends EventEmitter {
   async subscribe(topic: string): Promise<void> {
     this.subscribedTopics.push(topic);
     await this.mqttConnector?.subscribe(topic).then(() => {
-      this.mqttConnector?.on('message', (topic: string, message: any)  => {
+      this.mqttConnector?.on('message', (topic: string, message: any) => {
         this.emit('message', topic, message);
       });
     });
@@ -91,4 +90,5 @@ export default class MqttWrapper extends EventEmitter {
     }
     return [];
   }
+
 }
