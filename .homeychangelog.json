@@ -94,5 +94,8 @@
   },
   "2.0.17": {
     "en": "Fix connectivity bug with MQTT Client App"
+  },
+  "2.0.18": {
+    "en": "Fix reconnect issue when network connection is lost or unstable."
   }
 }
