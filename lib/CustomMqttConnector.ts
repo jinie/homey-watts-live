@@ -4,7 +4,7 @@ import mqtt, { IClientOptions } from 'mqtt';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import DriverSettings from '../types/DriverSettings';
 import IMqttConnector from '../types/IMqttConnector';
-import delay from './delay';
+import delay from '../lib/delay';
 
 export default class CustomMqttConnector extends EventEmitter implements IMqttConnector {
 

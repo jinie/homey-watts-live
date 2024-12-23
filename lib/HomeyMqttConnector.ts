@@ -3,7 +3,7 @@
 import Homey from 'homey';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import IMqttConnector from '../types/IMqttConnector';
-import delay from './delay';
+import delay from '../lib/delay';
 
 export default class HomeyMqttConnector extends EventEmitter implements IMqttConnector {
 
@@ -39,10 +39,11 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
 
         // Connect to the MQTT client via its API
         this.isConnected = true;
+        this.emit('connect'); // Emit 'connect' event
         resolve();
-      } catch (error: any) {
+      } catch (error: unknown) {
         this.homey.error('Error connecting to MQTT client:', error);
-        reject(new Error(error.message));
+        reject((error as Error).message);
       }
     });
   }

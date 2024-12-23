@@ -1,3 +1,20 @@
 {
-  "extends": "athom/homey-app"
+  "extends": "athom/homey-app",
+  "rules": {
+    "quotes": [ 2, "single" ],
+    "node/no-missing-import": ["error", {
+      "resolvePaths": ["./lib", "./types", "./drivers/watts-live"],
+      "tryExtensions": [".ts"],
+      "allowModules": ["homey"]
+  }]
+  },
+  "overrides": [
+    {
+      "files": ["{lib,types,drivers/watts-live}/*.{ts,js}"],
+      "excludedFiles": ["node_modules/**/*"],
+      "rules": {
+        "quotes": [ 2, "single" ]
+      }
+    }
+  ]
 }

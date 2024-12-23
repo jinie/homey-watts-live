@@ -34,18 +34,6 @@ export default class WattsLiveDevice extends Homey.Device {
 
     try {
       await this.reconnectMqtt();
-
-
-      if (!this.mqttWrapper) {
-        throw new Error('MQTT wrapper is not initialized');
-      } else {
-        this.mqttWrapper.on('connect', () => {
-          this.setAvailable().catch(() => {});
-        });
-        this.mqttWrapper.on('disconnect',() => {
-          this.setUnavailable().catch(() => {});
-        })
-      }
     } catch (err: any) {
       this.homey.log(err);
       throw err;
@@ -237,20 +225,29 @@ export default class WattsLiveDevice extends Homey.Device {
       // Reinitialize the MQTT wrapper with the new settings
       const homeyApp = this.homey;
       this.mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
-      this.mqttWrapper.connect().then(() => {
-        // Re-subscribe to the device's topic
-        const { deviceId } = this.getDeviceSettings();
-        this.mqttWrapper?.subscribe(
-          `watts/${deviceId}/measurement`,
-        ).then(() => {
-          this.mqttWrapper?.on('message', (topic: string, message: any) => {
-            this.onMessage(topic, message).catch((ex) => { throw ex });
+      if (!this.mqttWrapper) {
+        throw new Error('MQTT wrapper is not initialized');
+      } else {
+        this.mqttWrapper.on('connect', () => {
+          this.homey.log("MQTT connect signal received")
+
+          // Re-subscribe to the device's topic
+          const { deviceId } = this.getDeviceSettings();
+          this.mqttWrapper?.subscribe(
+            `watts/${deviceId}/measurement`,
+          ).then(() => {
+            this.mqttWrapper?.on('message', (topic: string, message: any) => {
+              this.onMessage(topic, message).catch((ex) => { throw ex });
+            });
           });
-          this.setAvailable().catch((ex) => { throw ex });
-        }).catch(() => { });
-      }).catch(() => {
-        this.setUnavailable().catch((ex) => { throw ex });
-      });
+
+          this.setAvailable().catch(() => {});
+        });
+        this.mqttWrapper.on('disconnect',() => {
+          this.setUnavailable().catch(() => {});
+        })
+      }
+      this.mqttWrapper.connect().then().catch(() => { this.setUnavailable().catch((ex) => { throw ex })})
       return resolve();
     });
   }

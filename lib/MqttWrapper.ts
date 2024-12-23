@@ -3,8 +3,8 @@
 import Homey from 'homey/lib/Homey';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import IMqttConnector from '../types/IMqttConnector';
-import CustomMqttConnector from './CustomMqttConnector';
-import HomeyMqttConnector from './HomeyMqttConnector';
+import CustomMqttConnector from '../lib/CustomMqttConnector';
+import HomeyMqttConnector from '../lib/HomeyMqttConnector';
 import DriverSettings from '../types/DriverSettings';
 
 export default class MqttWrapper extends EventEmitter {
