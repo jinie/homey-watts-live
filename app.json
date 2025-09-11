@@ -30,6 +30,10 @@
     "email": "jimmy.selgen@gmail.com"
   },
   "homeyCommunityTopicId": 109554,
+  "source": "https://github.com/jinie/homey-watts-live",
+  "bugs": {
+    "url": "https://github.com/jinie/homey-watts-live/issues"
+  },
   "drivers": [
     {
       "name": {
