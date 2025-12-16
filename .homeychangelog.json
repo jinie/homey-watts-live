@@ -103,5 +103,8 @@
   },
   "2.0.20": {
     "en": "Updated with source code availability as well as bug tracker on Github. Minor bug fixes in app."
+  },
+  "2.0.21": {
+    "en": "Minor bugfixes and updated updated dependencies."
   }
 }
