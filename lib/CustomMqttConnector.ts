@@ -46,7 +46,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
 
       // If TLS is enabled and self-signed certificates are allowed
       if (this.driverSettings.useTls && this.driverSettings.acceptSelfSignedCert) {
-        options.rejectUnauthorized = false;  // Accept self-signed certificates
+        options.rejectUnauthorized = false; // Accept self-signed certificates
       }
 
       this.mqttClient = mqtt.connect(options);
@@ -75,7 +75,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   // Disconnect from the MQTT broker
   async disconnect(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.mqttClient!==null) {
+      if (this.mqttClient !== null) {
         this.mqttClient.end(() => {
           this.mqttClient = null;
           this.isConnected = false;

@@ -110,7 +110,7 @@ export default class WattsLiveDevice extends Homey.Device {
       msg = message;
     }
 
-    if(msg === null) {
+    if (msg === null) {
       this.log(`Message converted to null : ${message}`)
       return;
     }
@@ -229,7 +229,7 @@ export default class WattsLiveDevice extends Homey.Device {
         throw new Error('MQTT wrapper is not initialized');
       } else {
         this.mqttWrapper.on('connect', () => {
-          this.homey.log("MQTT connect signal received")
+          this.homey.log('MQTT connect signal received')
 
           // Re-subscribe to the device's topic
           const { deviceId } = this.getDeviceSettings();
@@ -239,11 +239,11 @@ export default class WattsLiveDevice extends Homey.Device {
             this.mqttWrapper?.on('message', (topic: string, message: any) => {
               this.onMessage(topic, message).catch((ex) => { throw ex });
             });
-          });
+          }).catch(() => {});
 
           this.setAvailable().catch(() => {});
         });
-        this.mqttWrapper.on('disconnect',() => {
+        this.mqttWrapper.on('disconnect', () => {
           this.setUnavailable().catch(() => {});
         })
       }

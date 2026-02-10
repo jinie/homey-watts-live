@@ -69,9 +69,13 @@ class WattsLiveDriver extends Homey.Driver {
         try {
           // Initialize MqttWrapper with Homey.app['homey'] and the constructed DriverSettings
           this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
-          await this.mqttWrapper.connect().then((_) => { return true }).catch((err) => {
+          await this.mqttWrapper.connect().then((_) => {
+            return true;
+          }).catch((err) => {
             this.homey.log('Selected pairing method failed :', this.driverSettings);
-            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.' }).catch((ex) => { throw Error(ex.message); });
+            session.emit('showViewNotification', { type: 'error', message: err.message || 'An unexpected error occurred during pairing.' }).catch((ex) => {
+              throw Error(ex.message);
+            });
             this.mqttWrapper = null;
             throw new Error(err.message);
           });

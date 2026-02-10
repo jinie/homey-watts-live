@@ -45,7 +45,11 @@ export default class MqttWrapper extends EventEmitter {
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.mqttConnector?.connect().then((_) => { return resolve(); }).catch((err) => { return reject(new Error(err.message)); });
+      this.mqttConnector?.connect().then((_) => {
+        return resolve();
+      }).catch((err) => {
+        return reject(new Error(err.message));
+      });
     });
   }
 
@@ -54,7 +58,9 @@ export default class MqttWrapper extends EventEmitter {
       if (this.mqttConnector !== null) {
         this.subscribedTopics.forEach((topic) => {
           this.mqttConnector?.unsubscribe(topic).then(() => {
-          }).catch(() => { this.homey.log(`Error unsubscribing from topic ${topic}`); });
+          }).catch(() => {
+            this.homey.log(`Error unsubscribing from topic ${topic}`);
+          });
         });
         this.mqttConnector?.disconnect().then(() => {
           this.mqttConnector = null;
