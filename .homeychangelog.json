@@ -106,5 +106,8 @@
   },
   "2.0.21": {
     "en": "Minor bugfixes and updated updated dependencies."
+  },
+  "2.0.22": {
+    "en": "Minor bugfix during session pairing, and updated dependencies."
   }
 }
