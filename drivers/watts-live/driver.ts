@@ -27,7 +27,6 @@ class WattsLiveDriver extends Homey.Driver {
     // Try making a request to the ApiApp service
     let apiAppAvailable = false;
 
-
     try {
       // Try to communicate with the ApiApp using an API request, if available
       const mqttApiApp = this.homey.api.getApiApp('nl.scanno.mqtt');
@@ -38,10 +37,12 @@ class WattsLiveDriver extends Homey.Driver {
       apiAppAvailable = false;
     }
 
-    this.homey.emit('apiAppInstalledState', { apiAppAvailable });
-
     // Continue with the pairing view
     await session.showView('choose_mqtt_method');
+
+    session.setHandler('get_api_state', async () => ({
+      apiAppAvailable,
+    }));
 
     session.setHandler('error', async (errorMessage: string) => {
       // Emit a view notification in response to the error event
@@ -84,12 +85,21 @@ class WattsLiveDriver extends Homey.Driver {
 
           // Enforce a timeout so the pairing UI gets an error response instead of hanging.
           const connectTimeoutMs = 10000;
-          await Promise.race([
-            this.mqttWrapper.connect(),
-            new Promise((_, reject) => {
-              setTimeout(() => reject(new Error(`MQTT connection timeout after ${connectTimeoutMs}ms`)), connectTimeoutMs);
-            }),
-          ]);
+          let timeoutId: ReturnType<typeof setTimeout> | null = null;
+          try {
+            await Promise.race([
+              this.mqttWrapper.connect(),
+              new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(() => {
+                  reject(new Error(`MQTT connection timeout after ${connectTimeoutMs}ms`));
+                }, connectTimeoutMs);
+              }),
+            ]);
+          } finally {
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+          }
           // Proceed to the next step if successful
         } catch (err: any) {
           this.homey.log('Selected pairing method failed :', this.driverSettings);

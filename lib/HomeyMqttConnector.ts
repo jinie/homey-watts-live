@@ -6,14 +6,15 @@ import IMqttConnector from '../types/IMqttConnector';
 import delay from '../lib/delay';
 
 export default class HomeyMqttConnector extends EventEmitter implements IMqttConnector {
-
   private MQTTClient: Homey.ApiApp | null = null;
   private isConnected: boolean = false;
   readonly homey: Homey.App['homey'];
   private topics: string[] = [];
   private devices: any[] = [];
   private realtimeListenerBound: boolean = false;
-
+  private readonly onRealtimeMessage = (incomingTopic: string, message: object) => {
+    this.emit('message', incomingTopic, message);
+  };
 
   constructor(homey: Homey.App['homey']) { // Pass Homey instance to the constructor
     super();
@@ -49,9 +50,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     }
 
     if (!this.realtimeListenerBound) {
-      this.MQTTClient.on('realtime', (incomingTopic: string, message: object) => {
-        this.emit('message', incomingTopic, message);
-      });
+      this.MQTTClient.on('realtime', this.onRealtimeMessage);
       this.realtimeListenerBound = true;
     }
   }
@@ -120,6 +119,11 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
   }
 
   async disconnect(): Promise<void> {
+    if (this.MQTTClient && this.realtimeListenerBound) {
+      this.MQTTClient.removeListener('realtime', this.onRealtimeMessage);
+      this.realtimeListenerBound = false;
+    }
+
     const topics = [...this.topics];
     for (const topic of topics) {
       await this.unsubscribe(topic).catch((error) => {
@@ -130,10 +134,8 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     this.topics = [];
     this.isConnected = false;
     this.MQTTClient = null;
-    this.realtimeListenerBound = false;
     this.emit('disconnect');
   }
-
 
   publish(topic: string, message: string): void {
     this.homey.log(`sendMessage: ${topic} <= ${message}`);
@@ -141,7 +143,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       qos: 0,
       retain: false,
       mqttTopic: topic,
-      mqttMessage: message
+      mqttMessage: message,
     }).catch((error: any) => {
       if (error) {
         this.homey.error(`Error sending ${topic} <= '${message}'`);

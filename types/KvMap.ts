@@ -5,4 +5,4 @@
 */
 export default interface KvMap {
     [key: string]: any;
-}
+};

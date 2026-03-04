@@ -30,4 +30,4 @@ export default class MeterReading {
       Object.assign(this, settings);
     }
   }
-};
+}

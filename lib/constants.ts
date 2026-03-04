@@ -22,10 +22,8 @@ export const Capabilities: string[] = [
   'meter_power.negative_reactive',
   'measure_power.negative_reactive',
   'meter_power.positive_reactive',
-  'measure_power.positive_reactive'
+  'measure_power.positive_reactive',
 ];
-
-
 export const ReadingToCapabilityMap: KvMap = {
   positive_active_energy: 'meter_power.imported',
   positive_active_power: 'measure_power',
@@ -46,10 +44,8 @@ export const ReadingToCapabilityMap: KvMap = {
   negative_reactive_energy: 'meter_power.negative_reactive',
   negative_reactive_power: 'measure_power.negative_reactive',
   positive_reactive_energy: 'meter_power.positive_reactive',
-  positive_reactive_power: 'measure_power.positive_reactive'
+  positive_reactive_power: 'measure_power.positive_reactive',
 };
-
-
 export const addedCapabilitiesV1toV2: string[] = [
   'meter_power.exported',
   'measure_power.negative_active',
@@ -68,8 +64,8 @@ export const addedCapabilitiesV1toV2: string[] = [
   'meter_power.negative_reactive',
   'measure_power.negative_reactive',
   'meter_power.positive_reactive',
-  'measure_power.positive_reactive'
-]
+  'measure_power.positive_reactive',
+];
 
 export const removedCapabilitiesV1toV2: string[] = [
   'measure_power_l1',
@@ -86,5 +82,5 @@ export const removedCapabilitiesV1toV2: string[] = [
   'measure_negative_power_l2',
   'measure_negative_power_l3',
   'measure_positive_reactive_energy',
-  'measure_negative_reactive_energy'
+  'measure_negative_reactive_energy',
 ];

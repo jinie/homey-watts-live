@@ -5,14 +5,14 @@ module.exports.init = function () {
   Homey.on('apiAppInstalledState', (data) => {
     console.log('apiAppInstalledState received:', data);
     const apiAppAvailable = data.apiAppAvailable;
-  
+
     // Pass the data to the HTML
     Homey.emit('disable_homey_mqtt_option', { disable: !apiAppAvailable });
   });
 
   Homey.on('apiAppNotInstalled', (data) => {
-    Homey.Alert('MQTT Client App is not installed');
-  })
+    Homey.alert('MQTT Client App is not installed');
+  });
 
   // Handle the MQTT method selection event
   Homey.on('choose_mqtt_method', function (data, callback) {

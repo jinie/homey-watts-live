@@ -9,4 +9,4 @@ export default interface IMqttConnector extends EventEmitter {
     unsubscribe(topic: string): Promise<void>;
     publish(topic: string, message: string): void;
     discoverDevices(topic: string, timeout: number): Promise<any[]>;
-}
+};

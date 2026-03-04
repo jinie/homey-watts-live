@@ -10,6 +10,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
 
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
+  private connectPromise: Promise<void> | null = null;
   private devices: any[] = [];
   readonly homey: any; // Instance of Homey for logging
   readonly driverSettings: DriverSettings; // Connection parameters for the broker
@@ -30,7 +31,12 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       return;
     }
 
-    return new Promise((resolve, reject) => {
+    if (this.connectPromise) {
+      await this.connectPromise;
+      return;
+    }
+
+    this.connectPromise = new Promise<void>((resolve, reject) => {
       let settled = false;
 
       // Configure MQTT client options using DriverSettings
@@ -83,6 +89,12 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
         }
       });
     });
+
+    try {
+      await this.connectPromise;
+    } finally {
+      this.connectPromise = null;
+    }
   }
 
   // Disconnect from the MQTT broker

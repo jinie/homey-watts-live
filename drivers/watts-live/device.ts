@@ -12,11 +12,8 @@ import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
-
   private readonly debug: boolean = process.env.DEBUG !== undefined;
   private mqttWrapper: MqttWrapper | null = null;
-
-
   /**
    * onInit is called when the device is initialized.
    */
@@ -39,7 +36,6 @@ export default class WattsLiveDevice extends Homey.Device {
       throw err;
     }
   }
-
 
   async onMessage(topic: string, message: any) {
     this.log(`onMessage: Message received on topic ${topic}: ${message}`);
@@ -106,7 +102,7 @@ export default class WattsLiveDevice extends Homey.Device {
     }
 
     if (msg === null) {
-      this.log(`Message converted to null : ${message}`)
+      this.log(`Message converted to null : ${message}`);
       return;
     }
     try {
@@ -196,7 +192,6 @@ export default class WattsLiveDevice extends Homey.Device {
   getMqttTopic() {
     return this.getSettings()['deviceId'];
   }
-
 
   /**
    * Invalidate the device status, typically when the connection is lost or an error occurs.
