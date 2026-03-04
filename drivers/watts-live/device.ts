@@ -38,10 +38,6 @@ export default class WattsLiveDevice extends Homey.Device {
       this.homey.log(err);
       throw err;
     }
-
-    process.on('unhandledRejection', (reason, p) => {
-      this.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-    });
   }
 
 
@@ -55,15 +51,11 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   async onDeleted(): Promise<void> {
     // Perform cleanup by disconnecting MQTT and freeing any resources.
-    return new Promise((resolve, reject) => {
-      if (this.mqttWrapper) {
-        this.mqttWrapper.disconnect().then(() => {
-          resolve()
-        }).catch(() => {
-          reject()
-        });
-      }
-    });
+    if (!this.mqttWrapper) {
+      return;
+    }
+
+    await this.mqttWrapper.disconnect();
   }
 
   /**
@@ -102,12 +94,15 @@ export default class WattsLiveDevice extends Homey.Device {
 
   public async processMqttMessage(topic: string, message: any) {
     let msg: object = {};
-    if (typeof message === typeof Buffer) {
+    if (Buffer.isBuffer(message)) {
       msg = JSON.parse(message.toString());
-    } else if (typeof message === typeof String) {
-      msg = JSON.parse(message as string);
-    } else {
+    } else if (typeof message === 'string') {
+      msg = JSON.parse(message);
+    } else if (message && typeof message === 'object') {
       msg = message;
+    } else {
+      this.log(`Skipping unsupported MQTT message type on ${topic}`);
+      return;
     }
 
     if (msg === null) {
@@ -216,40 +211,34 @@ export default class WattsLiveDevice extends Homey.Device {
    * Handles disconnection and reconnection logic.
    */
   private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.mqttWrapper?.disconnect().catch((error) => { this.homey.error((error)); });
+    if (this.mqttWrapper) {
+      await this.mqttWrapper.disconnect().catch((error) => {
+        this.homey.error(error);
+      });
+    }
 
-      // Use new settings if provided, otherwise use current device settings
-      const driverSettings = newSettings || this.getDeviceSettings();
+    // Use new settings if provided, otherwise use current device settings
+    const driverSettings = newSettings || this.getDeviceSettings();
 
-      // Reinitialize the MQTT wrapper with the new settings
-      const homeyApp = this.homey;
-      this.mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
-      if (!this.mqttWrapper) {
-        throw new Error('MQTT wrapper is not initialized');
-      } else {
-        this.mqttWrapper.on('connect', () => {
-          this.homey.log('MQTT connect signal received')
+    // Reinitialize the MQTT wrapper with the new settings
+    const homeyApp = this.homey;
+    const mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
+    this.mqttWrapper = mqttWrapper;
 
-          // Re-subscribe to the device's topic
-          const { deviceId } = this.getDeviceSettings();
-          this.mqttWrapper?.subscribe(
-            `watts/${deviceId}/measurement`,
-          ).then(() => {
-            this.mqttWrapper?.on('message', (topic: string, message: any) => {
-              this.onMessage(topic, message).catch((ex) => { throw ex });
-            });
-          }).catch(() => {});
-
-          this.setAvailable().catch(() => {});
-        });
-        this.mqttWrapper.on('disconnect', () => {
-          this.setUnavailable().catch(() => {});
-        })
-      }
-      this.mqttWrapper.connect().then().catch(() => { this.setUnavailable().catch((ex) => { throw ex })})
-      return resolve();
+    mqttWrapper.on('disconnect', () => {
+      this.setUnavailable().catch(() => {});
     });
+
+    mqttWrapper.on('message', (topic: string, message: any) => {
+      this.onMessage(topic, message).catch((error) => {
+        this.homey.error(`Error handling message on topic ${topic}`, error);
+      });
+    });
+
+    await mqttWrapper.connect();
+    this.homey.log('MQTT connect signal received');
+    await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
+    await this.setAvailable();
   }
 
   /**

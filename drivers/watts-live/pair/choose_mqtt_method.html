@@ -46,7 +46,10 @@
   
   <script>
     // Hide Homey's default 'Continue' button initially
-    document.getElementById('hy-nav-continue').style.display = 'none';
+    const defaultContinueButton = document.getElementById('hy-nav-continue');
+    if (defaultContinueButton) {
+      defaultContinueButton.style.display = 'none';
+    }
     
     // Event listener for selecting the MQTT method
     document.getElementById('mqttMethod').addEventListener('change', function () {
@@ -58,22 +61,11 @@
         customMqttFields.style.display = 'none';   // Hide custom MQTT settings
       }
     });
-    
-  
-    
-    // Event listener for selecting the MQTT method
-    document.getElementById('mqttMethod').addEventListener('change', function () {
-      const customMqttFields = document.getElementById('customMqttSettings');
-      
-      if (this.value === 'custom_mqtt_client') {
-        customMqttFields.style.display = 'block';  // Show custom MQTT settings
-      } else {
-        customMqttFields.style.display = 'none';   // Hide custom MQTT settings
-      }
-    });
-    
     // Event listener for the custom 'Continue' button click
     document.getElementById('continue').addEventListener('click', function () {
+      const continueButton = document.getElementById('continue');
+      continueButton.disabled = true;
+
       const mqttMethod = document.getElementById('mqttMethod').value;
       let data = {};
       
@@ -85,7 +77,7 @@
         data = {
           useHomeyMqttClient: 'custom',
           hostname: document.getElementById('hostname').value,
-          port: parseInt(document.getElementById('port').value),
+          port: parseInt(document.getElementById('port').value, 10),
           clientId: document.getElementById('clientId').value,
           username: document.getElementById('username').value,
           password: document.getElementById('password').value,
@@ -97,7 +89,8 @@
       // Emit the data to pairing.js and proceed to the next step
       Homey.emit('choose_mqtt_method', data, function (err) {
         if (err) {
-          alert('Error: ' + err.message);
+          continueButton.disabled = false;
+          Homey.alert('Connection failed: ' + (err.message || err), 'error');
         } else {
           Homey.nextView('loading');  // Proceed to the next step
         }

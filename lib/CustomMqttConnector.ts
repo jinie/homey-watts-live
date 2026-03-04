@@ -13,25 +13,26 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   private devices: any[] = [];
   readonly homey: any; // Instance of Homey for logging
   readonly driverSettings: DriverSettings; // Connection parameters for the broker
-  private readonly debug: boolean = process.env.DEBUG !== undefined;
-
+  private readonly onClientMessage = (topic: string, message: Buffer) => {
+    this.emit('message', topic, message);
+  };
 
   constructor(homey: any, driverSettings: DriverSettings) {
     super();
     this.homey = homey;
     this.driverSettings = driverSettings;
-    process.on('unhandledRejection', (reason, p) => {
-      this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-    });
   }
 
   // Connect to the specified MQTT broker using the DriverSettings
   async connect(): Promise<void> {
     if (this.mqttClient && this.isConnected) {
       this.homey.log('Already connected to the MQTT broker');
+      return;
     }
 
     return new Promise((resolve, reject) => {
+      let settled = false;
+
       // Configure MQTT client options using DriverSettings
       const options: IClientOptions = {
         host: this.driverSettings.hostname,
@@ -54,20 +55,32 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       this.mqttClient.on('connect', () => {
         this.isConnected = true;
         this.homey.log(`Connected to MQTT broker at ${this.driverSettings.hostname}:${this.driverSettings.port}`);
-        this.emit('connect'); // Emit 'connect' event
-        return resolve();
+        this.mqttClient?.removeListener('message', this.onClientMessage);
+        this.mqttClient?.on('message', this.onClientMessage);
+        this.emit('connect');
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
       });
 
-      this.mqttClient.on('disconnect', () => {
+      this.mqttClient.on('close', () => {
         this.isConnected = false;
         this.homey.log('Disconnected from MQTT broker');
-        this.emit('disconnect'); // Emit 'disconnect' event
+        this.emit('disconnect');
       });
 
       this.mqttClient.on('error', (err) => {
         this.homey.log('MQTT error:', err.message);
-        this.emit('error', err); // Emit 'error' event
-        return reject(err);
+        this.emit('error', err);
+        if (!settled) {
+          settled = true;
+          if (!this.isConnected) {
+            this.mqttClient?.end(true);
+            this.mqttClient = null;
+          }
+          reject(err);
+        }
       });
     });
   }
@@ -77,9 +90,11 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     return new Promise((resolve) => {
       if (this.mqttClient !== null) {
         this.mqttClient.end(() => {
+          this.mqttClient?.removeListener('message', this.onClientMessage);
           this.mqttClient = null;
           this.isConnected = false;
           this.homey.log('MQTT client disconnected');
+          this.emit('disconnect');
           return resolve();
         });
       } else {
@@ -93,9 +108,11 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     return new Promise((resolve, reject) => {
       if (!this.isConnected || !this.mqttClient) {
         this.homey.log('MQTT client is not connected');
-        reject();
+        reject(new Error('MQTT client is not connected'));
+        return;
       }
-      this.mqttClient?.subscribe(topic, (err) => {
+
+      this.mqttClient.subscribe(topic, (err) => {
         if (err) {
           this.homey.log(`Failed to subscribe to topic: ${topic}. Error: ${err.message}`);
           reject(err);
@@ -104,27 +121,12 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
           resolve();
         }
       });
-
-      this.mqttClient?.on('message', (receivedTopic, message) => {
-        if (receivedTopic === topic) {
-          try {
-            const convertedMessage = JSON.parse(message.toString());
-            if (convertedMessage !== null) {
-              this.emit('message', receivedTopic, convertedMessage);
-            } else {
-              this.homey.log(`Unknown message received : ${message}, convertedMessage: ${convertedMessage}`);
-            }
-          } catch (ex) {
-            this.homey.log(`Unknown message received : ${message}`);
-          }
-        }
-      });
     });
   }
 
   // Unsubscribe from a topic
   async unsubscribe(topic: string): Promise<void> {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve, reject) => {
       if (!this.mqttClient) {
         return reject(new Error('MQTT Client not initialized'));
       }
@@ -132,11 +134,12 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       this.mqttClient.unsubscribe(topic, (err) => {
         if (err) {
           this.homey.log(`Failed to unsubscribe from topic: ${topic}. Error: ${err.message}`);
+          reject(err);
         } else {
           this.homey.log(`Successfully unsubscribed from topic: ${topic}`);
+          resolve();
         }
       });
-      return resolve();
     });
   }
 
@@ -170,39 +173,39 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
           return reject(new Error(`Failed to subscribe to topic: ${topic}`));
         }
         this.homey.log(`Successfully subscribed to topic: ${topic}`);
-
-        // Listen for messages on the topic
-        this.mqttClient?.on('message', (receivedTopic, _) => {
-          this.homey.log('Message received on topic ', receivedTopic)
-          const match = RegExp(/\/?watts\/([^/]+)\/measurement/).exec(receivedTopic);
-          if (match) {
-            const deviceId = match[1];
-            if (!this.devices.find((device) => device.id === deviceId)) {
-              this.devices.push({
-                id: deviceId,
-                name: `Watts Live - Device ${deviceId}`,
-                data: { id: deviceId },
-                settings: { deviceId }
-              });
-              this.homey.log(`Discovered device: ${deviceId}`);
-            }
-          }
-        });
       });
 
+      const onDiscoveryMessage = (receivedTopic: string) => {
+        this.homey.log('Message received on topic ', receivedTopic);
+        const match = RegExp(/\/?watts\/([^/]+)\/measurement/).exec(receivedTopic);
+        if (!match) {
+          return;
+        }
+
+        const deviceId = match[1];
+        if (!this.devices.find((device) => device.id === deviceId)) {
+          this.devices.push({
+            id: deviceId,
+            name: `Watts Live - Device ${deviceId}`,
+            data: { id: deviceId },
+            settings: { deviceId },
+          });
+          this.homey.log(`Discovered device: ${deviceId}`);
+        }
+      };
+
+      this.on('message', onDiscoveryMessage);
+
       delay(timeout, undefined).then(() => {
+        this.off('message', onDiscoveryMessage);
         this.mqttClient?.unsubscribe(topic);
         this.homey.log(`Discovery complete. Devices found: ${this.devices.length}`);
         return resolve(this.devices);
       }).catch((error) => {
+        this.off('message', onDiscoveryMessage);
         this.homey.log(JSON.stringify(error));
         return reject(JSON.stringify(error));
       });
     });
-  }
-
-  // Default message handler for logging purposes
-  private onMessageReceived(topic: string, message: string): void {
-    this.homey.log(`Message received on topic ${topic}: ${message}`);
   }
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-import Homey from 'homey/lib/Homey';
+import Homey from 'homey';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import IMqttConnector from '../types/IMqttConnector';
 import CustomMqttConnector from '../lib/CustomMqttConnector';
@@ -12,7 +12,6 @@ export default class MqttWrapper extends EventEmitter {
   private mqttConnector: IMqttConnector | null;
   homey: Homey.App['homey'];
   private subscribedTopics: string[] = [];
-  private readonly debug: boolean = process.env.DEBUG !== undefined;
 
   constructor(homey: Homey.App['homey'], readonly settings: DriverSettings) {
     super();
@@ -31,68 +30,74 @@ export default class MqttWrapper extends EventEmitter {
 
     this.mqttConnector.on('disconnect', () => {
       this.homey.log('MQTT broker disconnected');
-      this.emit('disconnect')
+      this.emit('disconnect');
     });
 
     this.mqttConnector.on('error', (err) => {
       this.homey.log('MQTT error:', err.message);
     });
 
-    process.on('unhandledRejection', (reason, p) => {
-      this.homey.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    this.mqttConnector.on('message', (topic: string, message: any) => {
+      this.emit('message', topic, message);
     });
   }
 
   async connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.mqttConnector?.connect().then((_) => {
-        return resolve();
-      }).catch((err) => {
-        return reject(new Error(err.message));
-      });
-    });
+    if (!this.mqttConnector) {
+      throw new Error('MQTT connector is not initialized');
+    }
+    await this.mqttConnector.connect();
   }
 
   async disconnect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.mqttConnector !== null) {
-        this.subscribedTopics.forEach((topic) => {
-          this.mqttConnector?.unsubscribe(topic).then(() => {
-          }).catch(() => {
-            this.homey.log(`Error unsubscribing from topic ${topic}`);
-          });
-        });
-        this.mqttConnector?.disconnect().then(() => {
-          this.mqttConnector = null;
-          return resolve();
-        }).catch(() => { });
+    if (!this.mqttConnector) {
+      return;
+    }
+
+    const topicsToUnsubscribe = [...this.subscribedTopics];
+    for (const topic of topicsToUnsubscribe) {
+      try {
+        await this.mqttConnector.unsubscribe(topic);
+      } catch (error) {
+        this.homey.log(`Error unsubscribing from topic ${topic}`, error);
       }
-    });
+    }
+
+    await this.mqttConnector.disconnect();
+    this.subscribedTopics = [];
+    this.mqttConnector = null;
   }
 
   async subscribe(topic: string): Promise<void> {
+    if (!this.mqttConnector) {
+      throw new Error('MQTT connector is not initialized');
+    }
+    if (this.subscribedTopics.includes(topic)) {
+      return;
+    }
+    await this.mqttConnector.subscribe(topic);
     this.subscribedTopics.push(topic);
-    await this.mqttConnector?.subscribe(topic).then(() => {
-      this.mqttConnector?.on('message', (topic: string, message: any) => {
-        this.emit('message', topic, message);
-      });
-    });
   }
 
   async unsubscribe(topic: string): Promise<void> {
-    if (this.subscribedTopics.indexOf(topic) >= 0) {
-      this.subscribedTopics = this.subscribedTopics.splice(this.subscribedTopics.indexOf(topic), 1);
-      await this.mqttConnector?.unsubscribe(topic);
+    if (!this.mqttConnector) {
+      return;
     }
+    if (!this.subscribedTopics.includes(topic)) {
+      return;
+    }
+
+    await this.mqttConnector.unsubscribe(topic);
+    this.subscribedTopics = this.subscribedTopics.filter((t) => t !== topic);
   }
 
   publish(topic: string, message: string): void {
     this.mqttConnector?.publish(topic, message);
   }
 
-  async discoverDevices(topic: string, timeout:number = 10000): Promise<any[]> {
+  async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
     if (this.mqttConnector !== null) {
-      return this.mqttConnector.discoverDevices(topic, timeout)!;
+      return this.mqttConnector.discoverDevices(topic, timeout);
     }
     return [];
   }
