@@ -115,5 +115,8 @@
   },
   "2.0.24": {
     "en": "Fix MQTT connectivity bug during setup."
+  },
+  "2.0.25": {
+    "en": "Performance updates and smaller memory footprint"
   }
 }
