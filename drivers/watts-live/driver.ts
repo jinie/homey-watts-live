@@ -92,7 +92,7 @@ class WattsLiveDriver extends Homey.Driver {
 
           // Create an instance of DriverSettings based on the emitted data
           this.driverSettings = new DriverSettings(settings);
-          this.log(settings);
+          this.log(`Pairing settings: ${this.driverSettings.toSafeJSON()}`);
 
           // Initialize MqttWrapper with Homey.app['homey'] and the constructed DriverSettings
           this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
@@ -116,7 +116,7 @@ class WattsLiveDriver extends Homey.Driver {
           }
           // Proceed to the next step if successful
         } catch (err: any) {
-          this.homey.log('Selected pairing method failed :', this.driverSettings);
+          this.homey.log(`Selected pairing method failed: ${this.driverSettings?.toSafeJSON()}`);
           if (this.mqttWrapper) {
             await this.mqttWrapper.disconnect().catch((disconnectError) => {
               this.homey.log('Error during failed pairing cleanup', disconnectError);

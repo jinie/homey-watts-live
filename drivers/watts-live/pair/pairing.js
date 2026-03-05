@@ -1,6 +1,20 @@
 'use strict';
 
 module.exports.init = function () {
+  const toSafeSettings = function (data) {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+    // eslint-disable-next-line prefer-object-spread
+    const safe = Object.assign({}, data);
+    if (typeof safe.username === 'string') {
+      safe.username = '*'.repeat(safe.username.length);
+    }
+    if (typeof safe.password === 'string') {
+      safe.password = '*'.repeat(safe.password.length);
+    }
+    return safe;
+  };
 
   Homey.on('apiAppInstalledState', (data) => {
     console.log('apiAppInstalledState received:', data);
@@ -16,7 +30,7 @@ module.exports.init = function () {
 
   // Handle the MQTT method selection event
   Homey.on('choose_mqtt_method', function (data, callback) {
-    console.log('Received MQTT settings:', data);
+    console.log('Received MQTT settings:', toSafeSettings(data));
 
     // Emit the data to the driver
     Homey.emit('choose_mqtt_method', data, function (err) {

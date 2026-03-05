@@ -12,14 +12,34 @@ import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
-  private readonly debug: boolean = process.env.DEBUG !== undefined;
+  private debug: boolean = false;
   private mqttWrapper: MqttWrapper | null = null;
+  private logBufferWritePromise: Promise<void> = Promise.resolve();
+  private readonly maxDebugLogLines: number = 100;
+  private debugLogLines: string[] = [];
+  private lastDebugLogPersistAt: number = 0;
+  private readonly debugLogPersistIntervalMs: number = 5 * 1000;
+  private isHandlingSettings: boolean = false;
+  private pendingDebugLogPersist: boolean = false;
+  private scheduledDebugPersistTimer: ReturnType<typeof setTimeout> | null = null;
+  private messageCount: number = 0;
+  private readonly heartbeatIntervalMessages: number = 50;
+  private isEnvDebugEnabled(): boolean {
+    return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
+  }
+
   /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
     await this.migrateToNewMqttConnectivity();
     await this.migrateCapabilities(); // Update capabilities from V1 to V2
+    this.debug = this.isEnvDebugEnabled() || this.getSetting('debugLogging') === true;
+    const existingDebugLog = this.getSetting('debugLog');
+    if (typeof existingDebugLog === 'string' && existingDebugLog.length > 0) {
+      this.debugLogLines = existingDebugLog.split('\n').slice(-this.maxDebugLogLines);
+    }
+    await this.appendDebugLog('Device initialized');
 
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
@@ -33,11 +53,64 @@ export default class WattsLiveDevice extends Homey.Device {
       await this.reconnectMqtt();
     } catch (err: any) {
       this.homey.log(err);
+      await this.appendDebugLog(
+        `Initial MQTT connection failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw err;
     }
   }
 
+  private async appendDebugLog(message: string): Promise<void> {
+    if (!this.debug) {
+      return;
+    }
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}`;
+    this.log(logEntry);
+    this.debugLogLines.push(logEntry);
+    this.debugLogLines = this.debugLogLines.slice(-this.maxDebugLogLines);
+    await this.persistDebugLog(false);
+  }
+
+  private async persistDebugLog(force: boolean): Promise<void> {
+    if (this.isHandlingSettings) {
+      this.pendingDebugLogPersist = true;
+      return;
+    }
+
+    const now = Date.now();
+    if (!force && (now - this.lastDebugLogPersistAt) < this.debugLogPersistIntervalMs) {
+      return;
+    }
+
+    this.logBufferWritePromise = this.logBufferWritePromise.then(async () => {
+      await this.setSettings({
+        debugLog: this.debugLogLines.join('\n'),
+      });
+      this.lastDebugLogPersistAt = Date.now();
+    }).catch((error) => {
+      this.homey.error('Failed to persist debug log', error);
+    });
+    await this.logBufferWritePromise;
+  }
+
+  private scheduleDebugLogPersist(force: boolean): void {
+    if (this.scheduledDebugPersistTimer) {
+      clearTimeout(this.scheduledDebugPersistTimer);
+    }
+    this.scheduledDebugPersistTimer = setTimeout(() => {
+      this.scheduledDebugPersistTimer = null;
+      this.persistDebugLog(force).catch((error) => {
+        this.homey.error('Deferred debug log persist failed', error);
+      });
+    }, 0);
+  }
+
   async onMessage(topic: string, message: unknown) {
+    this.messageCount += 1;
+    if (!this.debug && this.messageCount % this.heartbeatIntervalMessages === 0) {
+      this.log(`MQTT heartbeat: processed ${this.messageCount} messages`);
+    }
     if (this.debug) {
       this.log(`onMessage: Message received on topic ${topic}: ${message}`);
     }
@@ -53,6 +126,8 @@ export default class WattsLiveDevice extends Homey.Device {
       return;
     }
 
+    await this.appendDebugLog('Device deleted; disconnecting MQTT');
+    await this.persistDebugLog(true);
     await this.mqttWrapper.disconnect();
   }
 
@@ -66,6 +141,7 @@ export default class WattsLiveDevice extends Homey.Device {
     this.log(`Device added: ${deviceId}`);
     // Optionally: Publish an MQTT message or perform any initialization specific to being added.
     await this.setAvailable();
+    await this.appendDebugLog(`Device added: ${deviceId}`);
   }
 
   /**
@@ -75,6 +151,7 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   async onRenamed(name: string) {
     this.log('WattsLiveDevice was renamed');
+    await this.appendDebugLog(`Device renamed: ${name}`);
   }
 
   /**
@@ -82,11 +159,11 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   getDeviceSettings(): DriverSettings {
     const settings = this.getSettings();
+    const newSettings = new DriverSettings(settings);
     if (this.debug) {
-      this.log(`Reading device settings ${JSON.stringify(settings)}`);
+      this.log(`Reading device settings ${newSettings.toSafeJSON()}`);
     }
     // Construct and return a DriverSettings object using the device's settings
-    const newSettings = new DriverSettings(settings);
     return newSettings;
   }
 
@@ -164,6 +241,9 @@ export default class WattsLiveDevice extends Homey.Device {
     } catch (error: unknown) {
       if (this.debug) throw error;
       else this.log(`processMqttMessage error: ${error instanceof Error ? error.message : String(error)}`);
+      await this.appendDebugLog(
+        `processMqttMessage error on ${topic}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -184,30 +264,62 @@ export default class WattsLiveDevice extends Homey.Device {
     };
     changedKeys: string[];
   }): Promise<void> {
-    this.log('Settings updated:', changedKeys);
-
-    // Check if any MQTT-related settings have changed that require reconnecting
-    const needsReconnect = changedKeys.some((key) => [
-      'hostname',
-      'port',
-      'clientId',
-      'username',
-      'password',
-      'useTls',
-      'useHomeyMqttClient',
-      'deviceId',
-    ].includes(key));
-
-    if (needsReconnect) {
-      try {
-        this.log('Reconnecting due to changed MQTT settings...');
-        const driverSettings = new DriverSettings(newSettings);
-        await this.reconnectMqtt(driverSettings);
-      } catch (ex: any) {
-        this.log('Error reconnecting: ', ex);
-        await this.reconnectMqtt(new DriverSettings(oldSettings));
-        throw ex;
+    if (changedKeys.length === 1 && changedKeys[0] === 'debugLog') {
+      return;
+    }
+    this.isHandlingSettings = true;
+    try {
+      this.log('Settings updated:', changedKeys);
+      const nextDebug = this.isEnvDebugEnabled() || newSettings.debugLogging === true;
+      const wasDebug = this.debug;
+      if (!wasDebug && nextDebug) {
+        this.debug = true;
+        await this.appendDebugLog('Debug logging enabled');
+      } else if (wasDebug && !nextDebug) {
+        await this.appendDebugLog('Debug logging disabled');
+        this.debug = false;
+      } else {
+        this.debug = nextDebug;
       }
+      await this.appendDebugLog(`Settings updated: ${changedKeys.join(', ')}`);
+      if (changedKeys.includes('debugLogging')) {
+        this.pendingDebugLogPersist = true;
+      }
+
+      // Check if any MQTT-related settings have changed that require reconnecting
+      const needsReconnect = changedKeys.some((key) => [
+        'hostname',
+        'port',
+        'clientId',
+        'username',
+        'password',
+        'useTls',
+        'useHomeyMqttClient',
+        'deviceId',
+      ].includes(key));
+
+      if (needsReconnect) {
+        try {
+          this.log('Reconnecting due to changed MQTT settings...');
+          await this.appendDebugLog('Reconnecting due to MQTT setting changes');
+          const driverSettings = new DriverSettings(newSettings);
+          await this.reconnectMqtt(driverSettings);
+        } catch (ex: any) {
+          this.log('Error reconnecting: ', ex);
+          await this.appendDebugLog(
+            `Reconnect failed; restoring previous settings: ${ex instanceof Error ? ex.message : String(ex)}`,
+          );
+          await this.reconnectMqtt(new DriverSettings(oldSettings));
+          throw ex;
+        }
+      }
+    } finally {
+      this.isHandlingSettings = false;
+    }
+
+    if (this.pendingDebugLogPersist) {
+      this.pendingDebugLogPersist = false;
+      this.scheduleDebugLogPersist(true);
     }
   }
 
@@ -232,6 +344,7 @@ export default class WattsLiveDevice extends Homey.Device {
       await this.mqttWrapper.disconnect().catch((error) => {
         this.homey.error(error);
       });
+      await this.appendDebugLog('Disconnected previous MQTT wrapper');
     }
 
     // Use new settings if provided, otherwise use current device settings
@@ -244,6 +357,7 @@ export default class WattsLiveDevice extends Homey.Device {
 
     mqttWrapper.on('disconnect', () => {
       this.setUnavailable().catch(() => {});
+      this.appendDebugLog('MQTT disconnect event received').catch(() => {});
     });
 
     mqttWrapper.on('message', (topic: string, message: unknown) => {
@@ -254,7 +368,9 @@ export default class WattsLiveDevice extends Homey.Device {
 
     await mqttWrapper.connect();
     this.homey.log('MQTT connect signal received');
+    await this.appendDebugLog('MQTT connected');
     await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
+    await this.appendDebugLog(`Subscribed to watts/${driverSettings.deviceId}/measurement`);
     await this.setAvailable();
   }
 

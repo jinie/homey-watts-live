@@ -145,5 +145,27 @@
       "id": "useHomeyMqttClient",
       "value": "custom"
     }
+  },
+  {
+    "id": "debugLogging",
+    "type": "checkbox",
+    "label": {
+      "en": "Enable Debug Logging"
+    },
+    "hint": {
+      "en": "Enable verbose logs and store recent entries below."
+    },
+    "value": false
+  },
+  {
+    "id": "debugLog",
+    "type": "textarea",
+    "label": {
+      "en": "Debug Log"
+    },
+    "hint": {
+      "en": "Recent debug log entries. You can clear this field manually."
+    },
+    "value": ""
   }
 ]
