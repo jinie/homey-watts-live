@@ -118,5 +118,8 @@
   },
   "2.0.25": {
     "en": "Performance updates and smaller memory footprint"
+  },
+  "2.0.26": {
+    "en": "Performance Updates, Smaller memory consumption, and logs displayed in settings window."
   }
 }
