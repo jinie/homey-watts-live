@@ -12,7 +12,8 @@ import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
 
 export default class WattsLiveDevice extends Homey.Device {
-  private debug: boolean = false;
+  private runtimeDebug: boolean = false;
+  private settingsDebug: boolean = false;
   private mqttWrapper: MqttWrapper | null = null;
   private logBufferWritePromise: Promise<void> = Promise.resolve();
   private readonly maxDebugLogLines: number = 100;
@@ -24,7 +25,9 @@ export default class WattsLiveDevice extends Homey.Device {
   private scheduledDebugPersistTimer: ReturnType<typeof setTimeout> | null = null;
   private messageCount: number = 0;
   private readonly heartbeatIntervalMessages: number = 50;
-  private isEnvDebugEnabled(): boolean {
+  private readonly debugLogFlushEveryMessages: number = 10;
+
+  private isRuntimeDebugEnabled(): boolean {
     return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
   }
 
@@ -34,7 +37,8 @@ export default class WattsLiveDevice extends Homey.Device {
   async onInit() {
     await this.migrateToNewMqttConnectivity();
     await this.migrateCapabilities(); // Update capabilities from V1 to V2
-    this.debug = this.isEnvDebugEnabled() || this.getSetting('debugLogging') === true;
+    this.runtimeDebug = this.isRuntimeDebugEnabled();
+    this.settingsDebug = this.getSetting('debugLogging') === true;
     const existingDebugLog = this.getSetting('debugLog');
     if (typeof existingDebugLog === 'string' && existingDebugLog.length > 0) {
       this.debugLogLines = existingDebugLog.split('\n').slice(-this.maxDebugLogLines);
@@ -61,12 +65,11 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
   private async appendDebugLog(message: string): Promise<void> {
-    if (!this.debug) {
+    if (!this.settingsDebug) {
       return;
     }
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] ${message}`;
-    this.log(logEntry);
     this.debugLogLines.push(logEntry);
     this.debugLogLines = this.debugLogLines.slice(-this.maxDebugLogLines);
     await this.persistDebugLog(false);
@@ -108,13 +111,16 @@ export default class WattsLiveDevice extends Homey.Device {
 
   async onMessage(topic: string, message: unknown) {
     this.messageCount += 1;
-    if (!this.debug && this.messageCount % this.heartbeatIntervalMessages === 0) {
+    if (!this.runtimeDebug && this.messageCount % this.heartbeatIntervalMessages === 0) {
       this.log(`MQTT heartbeat: processed ${this.messageCount} messages`);
     }
-    if (this.debug) {
+    if (this.runtimeDebug) {
       this.log(`onMessage: Message received on topic ${topic}: ${message}`);
     }
     await this.processMqttMessage(topic, message);
+    if (this.settingsDebug && this.messageCount % this.debugLogFlushEveryMessages === 0) {
+      this.scheduleDebugLogPersist(true);
+    }
   }
 
   /**
@@ -160,7 +166,7 @@ export default class WattsLiveDevice extends Homey.Device {
   getDeviceSettings(): DriverSettings {
     const settings = this.getSettings();
     const newSettings = new DriverSettings(settings);
-    if (this.debug) {
+    if (this.runtimeDebug) {
       this.log(`Reading device settings ${newSettings.toSafeJSON()}`);
     }
     // Construct and return a DriverSettings object using the device's settings
@@ -187,8 +193,13 @@ export default class WattsLiveDevice extends Homey.Device {
     try {
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = new MeterReading(msg);
-      if (this.debug) {
+      if (this.runtimeDebug) {
         this.log(
+          `processMqttMessage: received reading ${JSON.stringify(readings)}`,
+        );
+      }
+      if (this.settingsDebug) {
+        await this.appendDebugLog(
           `processMqttMessage: received reading ${JSON.stringify(readings)}`,
         );
       }
@@ -230,7 +241,7 @@ export default class WattsLiveDevice extends Homey.Device {
 
       if (capabilityUpdates.length > 0) {
         const updateResults = await Promise.allSettled(capabilityUpdates);
-        if (this.debug) {
+        if (this.runtimeDebug) {
           updateResults.forEach((result, idx) => {
             if (result.status === 'rejected') {
               this.log(`setCapabilityValue failed at index ${idx}: ${result.reason}`);
@@ -239,7 +250,7 @@ export default class WattsLiveDevice extends Homey.Device {
         }
       }
     } catch (error: unknown) {
-      if (this.debug) throw error;
+      if (this.runtimeDebug) throw error;
       else this.log(`processMqttMessage error: ${error instanceof Error ? error.message : String(error)}`);
       await this.appendDebugLog(
         `processMqttMessage error on ${topic}: ${error instanceof Error ? error.message : String(error)}`,
@@ -270,16 +281,16 @@ export default class WattsLiveDevice extends Homey.Device {
     this.isHandlingSettings = true;
     try {
       this.log('Settings updated:', changedKeys);
-      const nextDebug = this.isEnvDebugEnabled() || newSettings.debugLogging === true;
-      const wasDebug = this.debug;
-      if (!wasDebug && nextDebug) {
-        this.debug = true;
+      const nextSettingsDebug = newSettings.debugLogging === true;
+      const wasSettingsDebug = this.settingsDebug;
+      if (!wasSettingsDebug && nextSettingsDebug) {
+        this.settingsDebug = true;
         await this.appendDebugLog('Debug logging enabled');
-      } else if (wasDebug && !nextDebug) {
+      } else if (wasSettingsDebug && !nextSettingsDebug) {
         await this.appendDebugLog('Debug logging disabled');
-        this.debug = false;
+        this.settingsDebug = false;
       } else {
-        this.debug = nextDebug;
+        this.settingsDebug = nextSettingsDebug;
       }
       await this.appendDebugLog(`Settings updated: ${changedKeys.join(', ')}`);
       if (changedKeys.includes('debugLogging')) {
@@ -417,12 +428,12 @@ export default class WattsLiveDevice extends Homey.Device {
     if (this.getCapabilities().includes('meter_power')) {
       this.log('Removing meter_power capability');
       await this.removeCapability('meter_power').catch((error) => {
-        if (this.debug) throw error;
+        if (this.runtimeDebug) throw error;
         else this.log(`migrateCapabilites, removeCapability error: ${error}`);
       });
       this.log('Adding meter_power.imported capability');
       await this.addCapability('meter_power.imported').catch((error) => {
-        if (this.debug) throw error;
+        if (this.runtimeDebug) throw error;
         else this.log(`migrateCapabilites, addCapability error: ${error}`);
       });
     }
@@ -430,13 +441,13 @@ export default class WattsLiveDevice extends Homey.Device {
       this.log('removing measure_negative_active_energy capability');
       await this.removeCapability('measure_negative_active_energy').catch(
         (error) => {
-          if (this.debug) throw error;
+          if (this.runtimeDebug) throw error;
           else this.log(`migrateCapabilites, removeCapability error: ${error}`);
         },
       );
       this.log('Adding metwer_power.exported capability');
       await this.addCapability('meter_power.exported').catch((error) => {
-        if (this.debug) throw error;
+        if (this.runtimeDebug) throw error;
         else this.log(`migrateCapabilites, addCapability error: ${error}`);
       });
     }
@@ -449,7 +460,7 @@ export default class WattsLiveDevice extends Homey.Device {
       try {
         await this.removeCapability(capability);
       } catch (error) {
-        if (this.debug) {
+        if (this.runtimeDebug) {
           throw error;
         } else {
           this.log(`migrateCapabilites, removeCapability error: ${error}`);
@@ -465,7 +476,7 @@ export default class WattsLiveDevice extends Homey.Device {
       try {
         await this.addCapability(capability);
       } catch (error) {
-        if (this.debug) {
+        if (this.runtimeDebug) {
           throw error;
         } else {
           this.log(
