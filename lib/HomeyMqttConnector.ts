@@ -4,13 +4,19 @@ import Homey from 'homey';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import IMqttConnector from '../types/IMqttConnector';
 import delay from '../lib/delay';
+import DiscoveredDevice from '../types/DiscoveredDevice';
+
+interface HomeyMqttApiResponse {
+  result: number;
+  [key: string]: unknown;
+}
 
 export default class HomeyMqttConnector extends EventEmitter implements IMqttConnector {
   private MQTTClient: Homey.ApiApp | null = null;
   private isConnected: boolean = false;
   readonly homey: Homey.App['homey'];
   private topics: string[] = [];
-  private devices: any[] = [];
+  private devices: DiscoveredDevice[] = [];
   private realtimeListenerBound: boolean = false;
   private readonly onRealtimeMessage = (incomingTopic: string, message: object) => {
     this.emit('message', incomingTopic, message);
@@ -39,7 +45,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     if (!this.MQTTClient) {
       throw new Error('MQTT client is not initialized');
     }
-    const response: any = await this.MQTTClient.post('subscribe', { topic });
+    const response = await this.MQTTClient.post('subscribe', { topic }) as HomeyMqttApiResponse;
     if (response.result !== 0) {
       throw new Error(`Cannot subscribe to topic ${topic}: ${JSON.stringify(response)}`);
     }
@@ -60,7 +66,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       throw new Error('MQTT client is not initialized');
     }
 
-    const response: any = await this.MQTTClient.post('unsubscribe', { topic });
+    const response = await this.MQTTClient.post('unsubscribe', { topic }) as HomeyMqttApiResponse;
     if (response.result !== 0) {
       throw new Error(`Cannot unsubscribe from topic ${topic}: ${JSON.stringify(response)}`);
     }
@@ -69,7 +75,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     this.topics = this.topics.filter((subscribedTopic) => subscribedTopic !== topic);
   }
 
-  async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
+  async discoverDevices(topic: string, timeout: number = 10000): Promise<DiscoveredDevice[]> {
     this.homey.log('Discovering devices');
     if (!this.isConnected) {
       throw new Error('MQTT client is not connected');
@@ -144,8 +150,10 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
       retain: false,
       mqttTopic: topic,
       mqttMessage: message,
-    }).catch((error: any) => {
-      if (error) {
+    }).catch((error: unknown) => {
+      if (error instanceof Error) {
+        this.homey.error(`Error sending ${topic} <= '${message}': ${error.message}`);
+      } else if (error) {
         this.homey.error(`Error sending ${topic} <= '${message}'`);
       }
     });

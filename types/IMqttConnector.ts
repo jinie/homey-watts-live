@@ -1,6 +1,7 @@
 'use strict';
 
 import { EventEmitter } from 'events'; // Import EventEmitter
+import DiscoveredDevice from './DiscoveredDevice';
 
 export default interface IMqttConnector extends EventEmitter {
     connect(): Promise<void>;
@@ -8,5 +9,5 @@ export default interface IMqttConnector extends EventEmitter {
     subscribe(topic: string): Promise<void>;
     unsubscribe(topic: string): Promise<void>;
     publish(topic: string, message: string): void;
-    discoverDevices(topic: string, timeout: number): Promise<any[]>;
+    discoverDevices(topic: string, timeout: number): Promise<DiscoveredDevice[]>;
 };

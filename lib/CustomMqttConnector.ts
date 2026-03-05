@@ -1,27 +1,57 @@
 'use strict';
 
+import Homey from 'homey';
 import mqtt, { IClientOptions } from 'mqtt';
 import { EventEmitter } from 'events'; // Import EventEmitter
 import DriverSettings from '../types/DriverSettings';
 import IMqttConnector from '../types/IMqttConnector';
 import delay from '../lib/delay';
+import DiscoveredDevice from '../types/DiscoveredDevice';
 
 export default class CustomMqttConnector extends EventEmitter implements IMqttConnector {
 
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
   private connectPromise: Promise<void> | null = null;
-  private devices: any[] = [];
-  readonly homey: any; // Instance of Homey for logging
+  private devices: DiscoveredDevice[] = [];
+  readonly homey: Homey.App['homey']; // Instance of Homey for logging
   readonly driverSettings: DriverSettings; // Connection parameters for the broker
   private readonly onClientMessage = (topic: string, message: Buffer) => {
     this.emit('message', topic, message);
   };
 
-  constructor(homey: any, driverSettings: DriverSettings) {
+  constructor(homey: Homey.App['homey'], driverSettings: DriverSettings) {
     super();
     this.homey = homey;
     this.driverSettings = driverSettings;
+  }
+
+  private getInitializedClient(): mqtt.MqttClient {
+    if (!this.mqttClient) {
+      throw new Error('MQTT client is not initialized');
+    }
+    return this.mqttClient;
+  }
+
+  private getConnectedClient(): mqtt.MqttClient {
+    if (!this.mqttClient || !this.isConnected) {
+      throw new Error('MQTT client is not connected');
+    }
+    return this.mqttClient;
+  }
+
+  private waitForClientCallback(
+    register: (done: (error?: Error | null) => void) => void,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      register((error?: Error | null) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
   }
 
   // Connect to the specified MQTT broker using the DriverSettings
@@ -31,7 +61,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       return;
     }
 
-    if (this.connectPromise) {
+    if (this.connectPromise !== null) {
       await this.connectPromise;
       return;
     }
@@ -99,60 +129,48 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
 
   // Disconnect from the MQTT broker
   async disconnect(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.mqttClient !== null) {
-        this.mqttClient.end(() => {
-          this.mqttClient?.removeListener('message', this.onClientMessage);
-          this.mqttClient = null;
-          this.isConnected = false;
-          this.homey.log('MQTT client disconnected');
-          this.emit('disconnect');
-          return resolve();
-        });
-      } else {
-        return resolve();
-      }
+    if (this.mqttClient === null) {
+      return;
+    }
+
+    const client = this.mqttClient;
+    await new Promise<void>((resolve) => {
+      client.end(() => resolve());
     });
+
+    client.removeListener('message', this.onClientMessage);
+    this.mqttClient = null;
+    this.isConnected = false;
+    this.homey.log('MQTT client disconnected');
+    this.emit('disconnect');
   }
 
   // Subscribe to a topic with a message handler
   async subscribe(topic: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.isConnected || !this.mqttClient) {
-        this.homey.log('MQTT client is not connected');
-        reject(new Error('MQTT client is not connected'));
-        return;
-      }
-
-      this.mqttClient.subscribe(topic, (err) => {
-        if (err) {
-          this.homey.log(`Failed to subscribe to topic: ${topic}. Error: ${err.message}`);
-          reject(err);
-        } else {
-          this.homey.log(`Successfully subscribed to topic: ${topic}`);
-          resolve();
-        }
+    const client = this.getConnectedClient();
+    try {
+      await this.waitForClientCallback((done) => {
+        client.subscribe(topic, done);
       });
-    });
+      this.homey.log(`Successfully subscribed to topic: ${topic}`);
+    } catch (error) {
+      this.homey.log(`Failed to subscribe to topic: ${topic}. Error: ${(error as Error).message}`);
+      throw error;
+    }
   }
 
   // Unsubscribe from a topic
   async unsubscribe(topic: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.mqttClient) {
-        return reject(new Error('MQTT Client not initialized'));
-      }
-
-      this.mqttClient.unsubscribe(topic, (err) => {
-        if (err) {
-          this.homey.log(`Failed to unsubscribe from topic: ${topic}. Error: ${err.message}`);
-          reject(err);
-        } else {
-          this.homey.log(`Successfully unsubscribed from topic: ${topic}`);
-          resolve();
-        }
+    const client = this.getInitializedClient();
+    try {
+      await this.waitForClientCallback((done) => {
+        client.unsubscribe(topic, done);
       });
-    });
+      this.homey.log(`Successfully unsubscribed from topic: ${topic}`);
+    } catch (error) {
+      this.homey.log(`Failed to unsubscribe from topic: ${topic}. Error: ${(error as Error).message}`);
+      throw error;
+    }
   }
 
   // Publish a message to a specific topic
@@ -172,52 +190,45 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   }
 
   // Discover devices by subscribing to a discovery topic and listening for messages
-  async discoverDevices(topic: string, timeout: number = 10000): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      if (!this.mqttClient || !this.isConnected) {
-        return reject(new Error('MQTT client not connected'));
+  async discoverDevices(topic: string, timeout: number = 10000): Promise<DiscoveredDevice[]> {
+    this.getConnectedClient();
+    this.devices = []; // Clear any previously discovered devices
+    const discoveredDeviceIds = new Set<string>();
+    const onDiscoveryMessage = (receivedTopic: string) => {
+      this.homey.log('Message received on topic ', receivedTopic);
+      const match = receivedTopic.match(/\/?watts\/([^/]+)\/measurement/);
+      if (!match) {
+        return;
       }
 
-      this.devices = []; // Clear any previously discovered devices
+      const deviceId = match[1];
+      if (discoveredDeviceIds.has(deviceId)) {
+        return;
+      }
 
-      this.mqttClient.subscribe(topic, (err) => {
-        if (err) {
-          return reject(new Error(`Failed to subscribe to topic: ${topic}`));
-        }
-        this.homey.log(`Successfully subscribed to topic: ${topic}`);
+      discoveredDeviceIds.add(deviceId);
+      this.devices.push({
+        id: deviceId,
+        name: `Watts Live - Device ${deviceId}`,
+        data: { id: deviceId },
+        settings: { deviceId },
       });
+      this.homey.log(`Discovered device: ${deviceId}`);
+    };
 
-      const onDiscoveryMessage = (receivedTopic: string) => {
-        this.homey.log('Message received on topic ', receivedTopic);
-        const match = RegExp(/\/?watts\/([^/]+)\/measurement/).exec(receivedTopic);
-        if (!match) {
-          return;
-        }
+    this.on('message', onDiscoveryMessage);
+    await this.subscribe(topic);
 
-        const deviceId = match[1];
-        if (!this.devices.find((device) => device.id === deviceId)) {
-          this.devices.push({
-            id: deviceId,
-            name: `Watts Live - Device ${deviceId}`,
-            data: { id: deviceId },
-            settings: { deviceId },
-          });
-          this.homey.log(`Discovered device: ${deviceId}`);
-        }
-      };
-
-      this.on('message', onDiscoveryMessage);
-
-      delay(timeout, undefined).then(() => {
-        this.off('message', onDiscoveryMessage);
-        this.mqttClient?.unsubscribe(topic);
-        this.homey.log(`Discovery complete. Devices found: ${this.devices.length}`);
-        return resolve(this.devices);
-      }).catch((error) => {
-        this.off('message', onDiscoveryMessage);
-        this.homey.log(JSON.stringify(error));
-        return reject(JSON.stringify(error));
+    try {
+      await delay(timeout, undefined);
+    } finally {
+      this.off('message', onDiscoveryMessage);
+      await this.unsubscribe(topic).catch((error: unknown) => {
+        this.homey.log(error);
       });
-    });
+    }
+
+    this.homey.log(`Discovery complete. Devices found: ${this.devices.length}`);
+    return this.devices;
   }
 }

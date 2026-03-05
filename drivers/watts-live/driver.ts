@@ -5,13 +5,27 @@
 import Homey from 'homey';
 import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
+import DiscoveredDevice from '../../types/DiscoveredDevice';
+
+interface PairedDevice {
+  id: string;
+}
+
+interface PairableDevice {
+  id: string;
+  name: string;
+  data: {
+    id: string;
+  };
+  settings: DriverSettings;
+}
 
 class WattsLiveDriver extends Homey.Driver {
 
   private mqttWrapper: MqttWrapper | null = null;
   readonly topic: string = 'watts/+/measurement';
-  readonly devices: any[] = [];
-  private discoveredDevices: any[] = [];
+  readonly devices: PairableDevice[] = [];
+  private discoveredDevices: PairableDevice[] = [];
   private driverSettings: DriverSettings | undefined = undefined;
   private isPairingConnectionInProgress: boolean = false;
 
@@ -117,7 +131,7 @@ class WattsLiveDriver extends Homey.Driver {
     );
 
     // Handler for starting device discovery
-    session.setHandler('start_discovery', async (data) => {
+    session.setHandler('start_discovery', async () => {
       try {
         if (this.mqttWrapper === null) {
           throw new Error('MQTT wrapper is not initialized');
@@ -138,23 +152,23 @@ class WattsLiveDriver extends Homey.Driver {
           .filter((device) => {
             // Exclude already paired devices
             return !pairedDevices.some(
-              (pairedDevice: { id: string }) => pairedDevice.id === device.id,
+              (pairedDevice: PairedDevice) => pairedDevice.id === device.id,
             );
           })
           .reduce(
-            (acc, device) => {
+            (acc: DiscoveredDevice[], device: DiscoveredDevice) => {
               // Ensure the device is unique based on its id
-              if (!acc.some((d: { id: string }) => d.id === device.id)) {
+              if (!acc.some((d) => d.id === device.id)) {
                 acc.push(device);
               }
               return acc;
             },
-            [] as Array<{ id: string; name: string }>,
+            [],
           );
 
         // Store the unique, unpaired devices
         this.discoveredDevices = uniqueDiscoveredDevices.map(
-          (device: { id: string; name: string; data: object; settings: object }) => ({
+          (device: DiscoveredDevice): PairableDevice => ({
             id: device.id,
             name: device.name,
             data: { id: device.id },
@@ -168,8 +182,8 @@ class WattsLiveDriver extends Homey.Driver {
 
         // Return a successful response
         return true;
-      } catch (err:any) {
-        throw new Error(`Failed to discover devices: ${err.message}`);
+      } catch (err: unknown) {
+        throw new Error(`Failed to discover devices: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
 
@@ -192,7 +206,7 @@ class WattsLiveDriver extends Homey.Driver {
   }
 
   // Helper function to get already paired devices
-  private async getPairedDevices() {
+  private async getPairedDevices(): Promise<PairedDevice[]> {
     // Assuming this.getDevices() returns the list of paired devices from Homey Pro
     const pairedDevices = this.getDevices();
     return pairedDevices.map((device) => ({
@@ -204,7 +218,7 @@ class WattsLiveDriver extends Homey.Driver {
   * Helper method to create a DriverSettings object from the pairing data.
   */
   private createDriverSettingsFromData(
-    device: { id: string; name: string; data: object; settings: object },
+    device: DiscoveredDevice,
     settings: DriverSettings,
   ): DriverSettings {
     const newSettings = new DriverSettings(settings);

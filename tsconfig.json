@@ -1,11 +1,14 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2023",
+    "moduleResolution": "NodeNext",
+    "strict": false,
     "allowJs": true,
     "outDir": ".homeybuild/",
     "paths": {
-      "lib/*" : ["./lib/*"],
-      "types/*" : ["./types/*"],
+      "lib/*": ["./lib/*"],
+      "types/*": ["./types/*"],
       "drivers/watts-live": ["./drivers/watts-live/*"]
     }
   }

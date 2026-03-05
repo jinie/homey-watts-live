@@ -1,5 +1,10 @@
 {
   "extends": "athom/homey-app",
+  "settings": {
+    "node": {
+      "version": ">=20.0.0"
+    }
+  },
   "rules": {
     "quotes": [ 2, "single" ],
     "node/no-missing-import": ["error", {
@@ -22,6 +27,7 @@
         "import/no-unresolved": "off",
         "import/extensions": "off",
         "node/no-unsupported-features/es-syntax": "off",
+        "node/no-unsupported-features/es-builtins": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "consistent-return": "off",
         "homey-app/global-timers": "off"

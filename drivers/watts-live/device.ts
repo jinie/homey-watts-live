@@ -37,8 +37,10 @@ export default class WattsLiveDevice extends Homey.Device {
     }
   }
 
-  async onMessage(topic: string, message: any) {
-    this.log(`onMessage: Message received on topic ${topic}: ${message}`);
+  async onMessage(topic: string, message: unknown) {
+    if (this.debug) {
+      this.log(`onMessage: Message received on topic ${topic}: ${message}`);
+    }
     await this.processMqttMessage(topic, message);
   }
 
@@ -88,7 +90,7 @@ export default class WattsLiveDevice extends Homey.Device {
     return newSettings;
   }
 
-  public async processMqttMessage(topic: string, message: any) {
+  public async processMqttMessage(topic: string, message: unknown) {
     let msg: object = {};
     if (Buffer.isBuffer(message)) {
       msg = JSON.parse(message.toString());
@@ -117,7 +119,11 @@ export default class WattsLiveDevice extends Homey.Device {
       const kMap: KvMap = {};
       Object.keys(ReadingToCapabilityMap).forEach((value) => {
         const key = ReadingToCapabilityMap[value];
-        kMap[key] = readings[value as unknown as keyof MeterReading] ?? 0;
+        const reading = readings[value as unknown as keyof MeterReading];
+        if (reading === undefined || reading === null) {
+          return;
+        }
+        kMap[key] = reading;
         // Convert from Watts to kW
         if (
           [
@@ -132,16 +138,32 @@ export default class WattsLiveDevice extends Homey.Device {
       });
 
       // Set capabilities
+      const capabilityUpdates: Array<Promise<void>> = [];
       Object.keys(kMap).forEach((key) => {
         if (this.hasCapability(key) && kMap[key] !== undefined) {
-          this.setCapabilityValue(key, kMap[key] as number).catch(() => { });
+          const currentValue = this.getCapabilityValue(key);
+          if (currentValue === kMap[key]) {
+            return;
+          }
+          capabilityUpdates.push(this.setCapabilityValue(key, kMap[key] as number));
         } else {
           this.log(`processMqttMessage: unknown capability ${key}`);
         }
       });
-    } catch (error: any) {
+
+      if (capabilityUpdates.length > 0) {
+        const updateResults = await Promise.allSettled(capabilityUpdates);
+        if (this.debug) {
+          updateResults.forEach((result, idx) => {
+            if (result.status === 'rejected') {
+              this.log(`setCapabilityValue failed at index ${idx}: ${result.reason}`);
+            }
+          });
+        }
+      }
+    } catch (error: unknown) {
       if (this.debug) throw error;
-      else this.log(`processMqttMessage error: ${error}`);
+      else this.log(`processMqttMessage error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -224,7 +246,7 @@ export default class WattsLiveDevice extends Homey.Device {
       this.setUnavailable().catch(() => {});
     });
 
-    mqttWrapper.on('message', (topic: string, message: any) => {
+    mqttWrapper.on('message', (topic: string, message: unknown) => {
       this.onMessage(topic, message).catch((error) => {
         this.homey.error(`Error handling message on topic ${topic}`, error);
       });
