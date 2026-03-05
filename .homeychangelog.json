@@ -112,5 +112,8 @@
   },
   "2.0.23": {
     "en": "Fixed MQTT (re)connect bugs, and potential listener leakage."
+  },
+  "2.0.24": {
+    "en": "Fix MQTT connectivity bug during setup."
   }
 }
