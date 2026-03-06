@@ -26,6 +26,10 @@ export default class WattsLiveDevice extends Homey.Device {
   private messageCount: number = 0;
   private readonly heartbeatIntervalMessages: number = 50;
   private readonly debugLogFlushEveryMessages: number = 10;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt: number = 0;
+  private isReconnectInProgress: boolean = false;
+  private isDeleted: boolean = false;
 
   private isRuntimeDebugEnabled(): boolean {
     return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
@@ -35,6 +39,7 @@ export default class WattsLiveDevice extends Homey.Device {
    * onInit is called when the device is initialized.
    */
   async onInit() {
+    this.isDeleted = false;
     await this.migrateToNewMqttConnectivity();
     await this.migrateCapabilities(); // Update capabilities from V1 to V2
     this.runtimeDebug = this.isRuntimeDebugEnabled();
@@ -60,7 +65,8 @@ export default class WattsLiveDevice extends Homey.Device {
       await this.appendDebugLog(
         `Initial MQTT connection failed: ${err instanceof Error ? err.message : String(err)}`,
       );
-      throw err;
+      this.invalidateStatus();
+      this.scheduleReconnect('initial connection failed');
     }
   }
 
@@ -127,6 +133,12 @@ export default class WattsLiveDevice extends Homey.Device {
    * Called when the device is deleted from Homey.
    */
   async onDeleted(): Promise<void> {
+    this.isDeleted = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     // Perform cleanup by disconnecting MQTT and freeing any resources.
     if (!this.mqttWrapper) {
       return;
@@ -346,11 +358,43 @@ export default class WattsLiveDevice extends Homey.Device {
     this.setUnavailable('Device disconnected or unavailable').catch(() => {});
   }
 
+  private scheduleReconnect(reason: string): void {
+    if (this.isDeleted) {
+      return;
+    }
+
+    if (this.reconnectTimer || this.isReconnectInProgress) {
+      return;
+    }
+
+    const delayMs = Math.min(30000, 2000 * (2 ** this.reconnectAttempt));
+    this.reconnectAttempt += 1;
+    this.log(`Scheduling MQTT reconnect in ${delayMs}ms (${reason})`);
+    this.appendDebugLog(`Scheduling MQTT reconnect in ${delayMs}ms (${reason})`).catch(() => {});
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.reconnectMqtt().catch((error) => {
+        this.homey.error('MQTT reconnect attempt failed', error);
+        this.appendDebugLog(
+          `MQTT reconnect attempt failed: ${error instanceof Error ? error.message : String(error)}`,
+        ).catch(() => {});
+        this.invalidateStatus();
+        this.scheduleReconnect('retry failed');
+      });
+    }, delayMs);
+  }
+
   /**
    * Helper method to reconnect the device to the MQTT server.
    * Handles disconnection and reconnection logic.
    */
   private async reconnectMqtt(newSettings?: DriverSettings): Promise<void> {
+    if (this.isDeleted) {
+      return;
+    }
+
+    this.isReconnectInProgress = true;
     if (this.mqttWrapper) {
       await this.mqttWrapper.disconnect().catch((error) => {
         this.homey.error(error);
@@ -366,8 +410,13 @@ export default class WattsLiveDevice extends Homey.Device {
     const mqttWrapper = new MqttWrapper(homeyApp, driverSettings);
     this.mqttWrapper = mqttWrapper;
 
+    mqttWrapper.on('connect', () => {
+      this.setAvailable().catch(() => {});
+      this.appendDebugLog('MQTT connect event received').catch(() => {});
+    });
+
     mqttWrapper.on('disconnect', () => {
-      this.setUnavailable().catch(() => {});
+      this.invalidateStatus();
       this.appendDebugLog('MQTT disconnect event received').catch(() => {});
     });
 
@@ -377,12 +426,17 @@ export default class WattsLiveDevice extends Homey.Device {
       });
     });
 
-    await mqttWrapper.connect();
-    this.homey.log('MQTT connect signal received');
-    await this.appendDebugLog('MQTT connected');
-    await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
-    await this.appendDebugLog(`Subscribed to watts/${driverSettings.deviceId}/measurement`);
-    await this.setAvailable();
+    try {
+      await mqttWrapper.connect();
+      this.homey.log('MQTT connect signal received');
+      await this.appendDebugLog('MQTT connected');
+      await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
+      await this.appendDebugLog(`Subscribed to watts/${driverSettings.deviceId}/measurement`);
+      this.reconnectAttempt = 0;
+      await this.setAvailable();
+    } finally {
+      this.isReconnectInProgress = false;
+    }
   }
 
   /**
