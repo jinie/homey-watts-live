@@ -121,5 +121,8 @@
   },
   "2.0.26": {
     "en": "Performance Updates, Smaller memory consumption, and logs displayed in settings window."
+  },
+  "2.0.27": {
+    "en": "Fix regression in mqtt reconnect when mqtt server isn't available when Homey restarts."
   }
 }
