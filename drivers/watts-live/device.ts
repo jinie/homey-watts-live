@@ -394,6 +394,11 @@ export default class WattsLiveDevice extends Homey.Device {
       return;
     }
 
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     this.isReconnectInProgress = true;
     if (this.mqttWrapper) {
       await this.mqttWrapper.disconnect().catch((error) => {
@@ -411,16 +416,33 @@ export default class WattsLiveDevice extends Homey.Device {
     this.mqttWrapper = mqttWrapper;
 
     mqttWrapper.on('connect', () => {
+      if (this.mqttWrapper !== mqttWrapper) {
+        return;
+      }
       this.setAvailable().catch(() => {});
       this.appendDebugLog('MQTT connect event received').catch(() => {});
     });
 
     mqttWrapper.on('disconnect', () => {
+      if (this.mqttWrapper !== mqttWrapper || this.isDeleted) {
+        return;
+      }
       this.invalidateStatus();
       this.appendDebugLog('MQTT disconnect event received').catch(() => {});
+      this.scheduleReconnect('disconnect event');
+    });
+
+    mqttWrapper.on('error', (error: Error) => {
+      if (this.mqttWrapper !== mqttWrapper || this.isDeleted) {
+        return;
+      }
+      this.appendDebugLog(`MQTT error event received: ${error.message}`).catch(() => {});
     });
 
     mqttWrapper.on('message', (topic: string, message: unknown) => {
+      if (this.mqttWrapper !== mqttWrapper) {
+        return;
+      }
       this.onMessage(topic, message).catch((error) => {
         this.homey.error(`Error handling message on topic ${topic}`, error);
       });
