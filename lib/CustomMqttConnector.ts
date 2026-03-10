@@ -13,6 +13,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
   private mqttClient: mqtt.MqttClient | null = null;
   private isConnected: boolean = false;
   private connectPromise: Promise<void> | null = null;
+  private isDisconnecting: boolean = false;
   private devices: DiscoveredDevice[] = [];
   readonly homey: Homey.App['homey']; // Instance of Homey for logging
   readonly driverSettings: DriverSettings; // Connection parameters for the broker
@@ -24,6 +25,15 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     super();
     this.homey = homey;
     this.driverSettings = driverSettings;
+  }
+
+  private emitDisconnected(): void {
+    if (this.isDisconnecting || (!this.mqttClient && !this.isConnected)) {
+      return;
+    }
+
+    this.isConnected = false;
+    this.emit('disconnect');
   }
 
   private getInitializedClient(): mqtt.MqttClient {
@@ -77,7 +87,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
         username: this.driverSettings.username,
         password: this.driverSettings.password,
         protocol: this.driverSettings.useTls ? 'mqtts' : 'mqtt',
-        reconnectPeriod: 1000, // Attempt to reconnect every 1000ms
+        reconnectPeriod: 0, // Device-level reconnect logic owns retries/backoff
         connectTimeout: 30 * 1000, // Timeout after 30 seconds
       };
 
@@ -101,9 +111,8 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       });
 
       this.mqttClient.on('close', () => {
-        this.isConnected = false;
         this.homey.log('Disconnected from MQTT broker');
-        this.emit('disconnect');
+        this.emitDisconnected();
       });
 
       this.mqttClient.on('error', (err) => {
@@ -134,6 +143,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     }
 
     const client = this.mqttClient;
+    this.isDisconnecting = true;
     await new Promise<void>((resolve) => {
       client.end(() => resolve());
     });
@@ -141,6 +151,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     client.removeListener('message', this.onClientMessage);
     this.mqttClient = null;
     this.isConnected = false;
+    this.isDisconnecting = false;
     this.homey.log('MQTT client disconnected');
     this.emit('disconnect');
   }
