@@ -186,23 +186,24 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
   public async processMqttMessage(topic: string, message: unknown) {
-    let msg: object = {};
-    if (Buffer.isBuffer(message)) {
-      msg = JSON.parse(message.toString());
-    } else if (typeof message === 'string') {
-      msg = JSON.parse(message);
-    } else if (message && typeof message === 'object') {
-      msg = message;
-    } else {
-      this.log(`Skipping unsupported MQTT message type on ${topic}`);
-      return;
-    }
-
-    if (msg === null) {
-      this.log(`Message converted to null : ${message}`);
-      return;
-    }
     try {
+      let msg: object = {};
+      if (Buffer.isBuffer(message)) {
+        msg = JSON.parse(message.toString());
+      } else if (typeof message === 'string') {
+        msg = JSON.parse(message);
+      } else if (message && typeof message === 'object') {
+        msg = message;
+      } else {
+        this.log(`Skipping unsupported MQTT message type on ${topic}`);
+        return;
+      }
+
+      if (msg === null) {
+        this.log(`Message converted to null : ${message}`);
+        return;
+      }
+
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = new MeterReading(msg);
       if (this.runtimeDebug) {
@@ -419,7 +420,6 @@ export default class WattsLiveDevice extends Homey.Device {
       if (this.mqttWrapper !== mqttWrapper) {
         return;
       }
-      this.setAvailable().catch(() => {});
       this.appendDebugLog('MQTT connect event received').catch(() => {});
     });
 
