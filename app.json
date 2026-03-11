@@ -2,7 +2,7 @@
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "dk.thoughtcrime.wattslive-mqtt",
   "version": "2.0.27",
-  "compatibility": ">=5.0.0",
+  "compatibility": ">=12.2.0",
   "sdk": 3,
   "platforms": [
     "local"
@@ -34,6 +34,13 @@
   "bugs": {
     "url": "https://github.com/jinie/homey-watts-live/issues"
   },
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "JimmySelgenNielsen"
+      }
+    }
+  },
   "drivers": [
     {
       "name": {
@@ -57,6 +64,7 @@
         "measure_current.l1",
         "measure_current.l2",
         "measure_current.l3",
+        "measure_frequency",
         "measure_power.negative_active",
         "measure_power.negative_l1",
         "measure_power.negative_l2",
@@ -105,6 +113,11 @@
         "measure_current.l3": {
           "title": {
             "en": "Current L3"
+          }
+        },
+        "measure_frequency": {
+          "title": {
+            "en": "Frequency"
           }
         },
         "measure_power": {

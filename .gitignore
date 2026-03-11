@@ -2,6 +2,8 @@
 /node_modules/
 /.homeybuild/
 
+.skill-staging/
+python_packages
 .DS_Store
 
 # Logs
