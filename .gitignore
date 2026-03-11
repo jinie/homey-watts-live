@@ -1,7 +1,9 @@
 /env.json
 /node_modules/
 /.homeybuild/
+/python_packages/
 
+.skill-staging/
 .DS_Store
 
 # Logs

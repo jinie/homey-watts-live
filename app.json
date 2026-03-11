@@ -2,8 +2,13 @@
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "dk.thoughtcrime.wattslive-mqtt",
   "version": "2.0.27",
-  "compatibility": ">=5.0.0",
+  "compatibility": ">=13.0.0",
   "sdk": 3,
+  "runtime": "python",
+  "pythonVersion": "3.13",
+  "pythonPackages": [
+    "paho-mqtt==2.1.0"
+  ],
   "platforms": [
     "local"
   ],
@@ -57,6 +62,7 @@
         "measure_current.l1",
         "measure_current.l2",
         "measure_current.l3",
+        "measure_frequency",
         "measure_power.negative_active",
         "measure_power.negative_l1",
         "measure_power.negative_l2",
@@ -105,6 +111,11 @@
         "measure_current.l3": {
           "title": {
             "en": "Current L3"
+          }
+        },
+        "measure_frequency": {
+          "title": {
+            "en": "Frequency"
           }
         },
         "measure_power": {
@@ -190,15 +201,6 @@
             "showNextButton": false
           },
           "navigation": {
-            "next": "loading"
-          }
-        },
-        {
-          "id": "loading",
-          "title": {
-            "en": "Discovering Devices"
-          },
-          "navigation": {
             "next": "list_devices"
           }
         },
@@ -221,9 +223,7 @@
           "template": "add_devices"
         }
       ],
-      "options": {
-        "template": "pairing.js"
-      },
+      "options": {},
       "id": "watts-live",
       "settings": [
         {
@@ -239,29 +239,15 @@
           "required": true
         },
         {
-          "id": "useHomeyMqttClient",
-          "type": "dropdown",
+          "id": "useCustomMqttClient",
+          "type": "checkbox",
           "label": {
-            "en": "MQTT Connection Type"
+            "en": "Use Custom MQTT Client"
           },
           "hint": {
-            "en": "Select whether to use Homey MQTT Client or Custom MQTT Client"
+            "en": "Enable this to use your own MQTT broker instead of the Homey MQTT Client app."
           },
-          "values": [
-            {
-              "id": "homey",
-              "label": {
-                "en": "Homey MQTT Client"
-              }
-            },
-            {
-              "id": "custom",
-              "label": {
-                "en": "Custom MQTT Client"
-              }
-            }
-          ],
-          "value": "homey"
+          "value": false
         },
         {
           "id": "hostname",
@@ -275,8 +261,8 @@
           "value": "localhost",
           "required": true,
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -291,8 +277,8 @@
           "value": 1883,
           "required": true,
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -307,8 +293,8 @@
           "value": "homey-device",
           "required": true,
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -323,8 +309,8 @@
           "optional": true,
           "value": "",
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -339,8 +325,8 @@
           "optional": true,
           "value": "",
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -354,8 +340,8 @@
           },
           "value": false,
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -369,8 +355,8 @@
           },
           "value": false,
           "conditional": {
-            "id": "useHomeyMqttClient",
-            "value": "custom"
+            "id": "useCustomMqttClient",
+            "value": true
           }
         },
         {
@@ -380,20 +366,9 @@
             "en": "Enable Debug Logging"
           },
           "hint": {
-            "en": "Enable verbose logs and store recent entries below."
+            "en": "Enable verbose runtime logging for troubleshooting."
           },
           "value": false
-        },
-        {
-          "id": "debugLog",
-          "type": "textarea",
-          "label": {
-            "en": "Debug Log"
-          },
-          "hint": {
-            "en": "Recent debug log entries. You can clear this field manually."
-          },
-          "value": ""
         }
       ]
     }

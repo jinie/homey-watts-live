@@ -20,6 +20,7 @@
     "measure_current.l1",
     "measure_current.l2",
     "measure_current.l3",
+    "measure_frequency",
     "measure_power.negative_active",
     "measure_power.negative_l1",
     "measure_power.negative_l2",
@@ -53,6 +54,9 @@
     },
     "measure_current.l3": {
       "title": {"en": "Current L3"}
+    },
+    "measure_frequency": {
+      "title": {"en": "Frequency"}
     },
     "measure_power": {
       "title": {"en": "Total Power"}
@@ -111,15 +115,6 @@
         "showNextButton": false  
       },
       "navigation": {
-        "next": "loading"  
-      }
-    },
-    {
-      "id": "loading",  
-      "title": {
-        "en": "Discovering Devices"
-      },
-      "navigation": {
         "next": "list_devices"  
       }
     },
@@ -140,7 +135,5 @@
       "template": "add_devices"
     }
   ],
-  "options": {
-    "template": "pairing.js"
-  }
+  "options": {}
 }

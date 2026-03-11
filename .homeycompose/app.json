@@ -1,8 +1,13 @@
 {
   "id": "dk.thoughtcrime.wattslive-mqtt",
   "version": "2.0.27",
-  "compatibility": ">=5.0.0",
+  "compatibility": ">=13.0.0",
   "sdk": 3,
+  "runtime": "python",
+  "pythonVersion": "3.13",
+  "pythonPackages": [
+    "paho-mqtt==2.1.0"
+  ],
   "platforms": [
     "local"
   ],

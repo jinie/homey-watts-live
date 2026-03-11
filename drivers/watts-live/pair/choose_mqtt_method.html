@@ -105,21 +105,21 @@
           continueButton.disabled = false;
           Homey.alert('Connection failed: ' + (err.message || err), 'error');
         } else {
-          Homey.nextView('loading');  // Proceed to the next step
+          const navContinueButton = document.getElementById('hy-nav-continue');
+          if (navContinueButton) {
+            navContinueButton.style.display = 'block';
+          }
+          Homey.nextView('list_devices');
         }
       });
     });
     
     // Backward compatibility with older pairing flow event.
     Homey.on('disable_homey_mqtt_option', function (data) {
-      console.log('disable_homey_mqtt_option event received:', data);
       if (data.disable) {
         const homeyMqttOption = document.querySelector('option[value="homey_mqtt_client"]');
         if (homeyMqttOption) {
           homeyMqttOption.disabled = true;  // Disable the option
-          console.log('Homey MQTT Client option disabled');
-        } else {
-          console.log('Homey MQTT Client option not found');
         }
       }
     });
