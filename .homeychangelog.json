@@ -124,5 +124,8 @@
   },
   "2.0.27": {
     "en": "Fix regression in mqtt reconnect when mqtt server isn't available when Homey restarts."
+  },
+  "2.0.28": {
+    "en": "Add Frequency measurering. Set minimum Homey version to 12.2 for frequency support."
   }
 }
