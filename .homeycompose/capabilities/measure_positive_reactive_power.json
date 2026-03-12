@@ -2,10 +2,12 @@
   "type": "number",
   "units": "Var",
   "title": {
-    "en": "Reactive Consumption"
+    "en": "Reactive Consumption",
+    "da": "Reaktivt forbrug"
   },
   "desc": {
-    "en": "Reactive Power Consumption"
+    "en": "Reactive Power Consumption",
+    "da": "Reaktivt effektforbrug"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

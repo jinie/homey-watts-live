@@ -2,10 +2,12 @@
     "type": "number",
     "units": "W",
     "title": {
-      "en": "L2 Negative Power"
+      "en": "L2 Negative Power",
+      "da": "L2 negativ effekt"
     },
     "desc": {
-      "en": "Power production of L2"
+      "en": "Power production of L2",
+      "da": "Effektproduktion pa L2"
     },  
     "uiComponent": "sensor",
     "uiQuickAction": true,

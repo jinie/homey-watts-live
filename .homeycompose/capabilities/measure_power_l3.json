@@ -2,10 +2,12 @@
     "type": "number",
     "units": "W",
     "title": {
-      "en": "L3 Power"
+      "en": "L3 Power",
+      "da": "L3 effekt"
     },
     "desc": {
-      "en": "Power consumption of L3"
+      "en": "Power consumption of L3",
+      "da": "Effektforbrug pa L3"
     },  
     "uiComponent": "sensor",
     "uiQuickAction": true,

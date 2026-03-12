@@ -2,10 +2,12 @@
   "type": "number",
   "units": "W",
   "title": {
-    "en": "Power Production"
+    "en": "Power Production",
+    "da": "Effektproduktion"
   },
   "desc": {
-    "en": "Cumulative Power Production"
+    "en": "Cumulative Power Production",
+    "da": "Akkumuleret effektproduktion"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

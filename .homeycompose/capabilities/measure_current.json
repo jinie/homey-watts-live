@@ -2,10 +2,12 @@
   "type": "number",
   "units": "A",
   "title": {
-    "en": "Current"
+    "en": "Current",
+    "da": "Strøm"
   },
   "desc": {
-    "en": "Current of specific phase"
+    "en": "Current of specific phase",
+    "da": "Strøm for en bestemt fase"
   },
   "uiComponent": "sensor",
   "uiQuickAction": true,

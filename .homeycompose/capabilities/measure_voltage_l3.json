@@ -2,10 +2,12 @@
     "type": "number",
     "units": "V",
     "title": {
-      "en": "L3 Voltage"
+      "en": "L3 Voltage",
+      "da": "L3 spænding"
     },
     "desc": {
-      "en": "Voltage of L3"
+      "en": "Voltage of L3",
+      "da": "spænding pa L3"
     },
     "uiComponent": "sensor",
     "uiQuickAction": true,

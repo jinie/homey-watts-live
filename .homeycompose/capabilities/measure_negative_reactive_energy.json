@@ -2,10 +2,12 @@
   "type": "number",
   "units": "KVarh",
   "title": {
-    "en": "Reactive Energy"
+    "en": "Reactive Energy",
+    "da": "Reaktiv energi"
   },
   "desc": {
-    "en": "Reactive energy produced by the system"
+    "en": "Reactive energy produced by the system",
+    "da": "Reaktiv energi produceret af systemet"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

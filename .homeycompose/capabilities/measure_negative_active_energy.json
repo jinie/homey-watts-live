@@ -2,10 +2,12 @@
   "type": "number",
   "units": "kWh",
   "title": {
-    "en": "Energy Production"
+    "en": "Energy Production",
+    "da": "Energiproduktion"
   },
   "desc": {
-    "en": "Cumulative Energy Production"
+    "en": "Cumulative Energy Production",
+    "da": "Akkumuleret energiproduktion"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

@@ -1,6 +1,7 @@
 {
   "name": {
-    "en": "Watts live"
+    "en": "Watts live",
+    "da": "Watts live"
   },
   "images": {
     "large": "{{driverAssetsPath}}/images/large.png",
@@ -32,69 +33,69 @@
   ],
   "capabilitiesOptions": {
     "meter_power.imported": {
-      "title": { "en": "Imported Energy" }
+      "title": { "en": "Imported Energy", "da": "Importeret energi" }
     },
     "meter_power.exported": {
-      "title": { "en": "Exported Energy" }
+      "title": { "en": "Exported Energy", "da": "Eksporteret energi" }
     },
     "measure_voltage.l1": {
-      "title": {"en": "Voltage L1"}
+      "title": {"en": "Voltage L1", "da": "Spænding L1"}
     },
     "measure_voltage.l2": {
-      "title": {"en": "Voltage L2"}
+      "title": {"en": "Voltage L2", "da": "Spænding L2"}
     },
     "measure_voltage.l3": {
-      "title": {"en": "Voltage L3"}
+      "title": {"en": "Voltage L3", "da": "Spænding L3"}
     },
     "measure_current.l1": {
-      "title": {"en": "Current L1"}
+      "title": {"en": "Current L1", "da": "Strøm L1"}
     },
     "measure_current.l2": {
-      "title": {"en": "Current L2"}
+      "title": {"en": "Current L2", "da": "Strøm L2"}
     },
     "measure_current.l3": {
-      "title": {"en": "Current L3"}
+      "title": {"en": "Current L3", "da": "Strøm L3"}
     },
     "measure_frequency": {
-      "title": {"en": "Frequency"}
+      "title": {"en": "Frequency", "da": "Frekvens"}
     },
     "measure_power": {
-      "title": {"en": "Total Power"}
+      "title": {"en": "Total Power", "da": "Samlet effekt"}
     },
     "measure_power.l1": {
-      "title": {"en": "Power L1"}
+      "title": {"en": "Power L1", "da": "Effekt L1"}
     },
     "measure_power.l2": {
-      "title": {"en": "Power L2"}
+      "title": {"en": "Power L2", "da": "Effekt L2"}
     },
     "measure_power.l3": {
-      "title": {"en": "Power L3"}
+      "title": {"en": "Power L3", "da": "Effekt L3"}
     },
     "measure_power.negative_active": {
-      "title": {"en": "Total Negative Power"}
+      "title": {"en": "Total Negative Power", "da": "Samlet negativ effekt"}
     },
     "measure_power.negative_l1": {
-      "title": {"en": "Negative Power L1"}
+      "title": {"en": "Negative Power L1", "da": "Negativ effekt L1"}
     },
     "measure_power.negative_l2": {
-      "title": {"en": "Negative Power L2"}
+      "title": {"en": "Negative Power L2", "da": "Negativ effekt L2"}
     },
     "measure_power.negative_l3": {
-      "title": {"en": "Negative Power L3"}
+      "title": {"en": "Negative Power L3", "da": "Negativ effekt L3"}
     },
     "measure_power.negative_reactive": {
-      "title": {"en": "Negative Reactive Power"}
+      "title": {"en": "Negative Reactive Power", "da": "Negativ reaktiv effekt"}
     },
     "measure_power.positive_reactive": {
-      "title": {"en": "Positive Reactive Power"}
+      "title": {"en": "Positive Reactive Power", "da": "Positiv reaktiv effekt"}
     },
     "meter_power.positive_reactive": {
-      "title": {"en": "Positive Reactive Energy"}
+      "title": {"en": "Positive Reactive Energy", "da": "Positiv reaktiv energi"}
     },
     "meter_power.negative_reactive": {
-      "title": {"en": "Negative Reactive Energy"}
+      "title": {"en": "Negative Reactive Energy", "da": "Negativ reaktiv energi"}
     }
-    
+
   },
   "energy": {
     "cumulative": true,
@@ -107,32 +108,35 @@
   "connectivity": ["lan","cloud"],
   "pair": [
     {
-      "id": "choose_mqtt_method",  
+      "id": "choose_mqtt_method",
       "title": {
-        "en": "Select MQTT Connection Method"
+        "en": "Select MQTT Connection Method",
+        "da": "Vælg MQTT-forbindelsesmetode"
       },
       "options": {
-        "showNextButton": false  
+        "showNextButton": false
       },
       "navigation": {
-        "next": "loading"  
+        "next": "loading"
       }
     },
     {
-      "id": "loading",  
+      "id": "loading",
       "title": {
-        "en": "Discovering Devices"
+        "en": "Discovering Devices",
+        "da": "Finder enheder"
       },
       "navigation": {
-        "next": "list_devices"  
+        "next": "list_devices"
       }
     },
     {
-      "id": "list_devices",  
+      "id": "list_devices",
       "template": "list_devices",
       "navigation": { "next": "add_devices" },
       "title": {
-        "en": "Select Devices to Pair"
+        "en": "Select Devices to Pair",
+        "da": "Vælg enheder der skal parres"
       },
       "options": {
         "showNextButton": true,

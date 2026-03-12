@@ -3,10 +3,12 @@
     "id": "deviceId",
     "type": "text",
     "label": {
-      "en": "Device ID"
+      "en": "Device ID",
+      "da": "Enheds-ID"
     },
     "hint": {
-      "en": "The unique device ID for this device, used to derive the MQTT topic."
+      "en": "The unique device ID for this device, used to derive the MQTT topic.",
+      "da": "Det unikke enheds-ID for denne enhed, som bruges til at aflede MQTT-emnet."
     },
     "value": "",
     "required": true
@@ -15,22 +17,26 @@
     "id": "useHomeyMqttClient",
     "type": "dropdown",
     "label": {
-      "en": "MQTT Connection Type"
+      "en": "MQTT Connection Type",
+      "da": "MQTT-forbindelsestype"
     },
     "hint": {
-      "en": "Select whether to use Homey MQTT Client or Custom MQTT Client"
+      "en": "Select whether to use Homey MQTT Client or Custom MQTT Client",
+      "da": "Vælg om Homey MQTT Client eller en brugerdefineret MQTT-klient skal bruges"
     },
     "values": [
       {
         "id": "homey",
         "label": {
-          "en": "Homey MQTT Client"
+          "en": "Homey MQTT Client",
+          "da": "Homey MQTT Client"
         }
       },
       {
         "id": "custom",
         "label": {
-          "en": "Custom MQTT Client"
+          "en": "Custom MQTT Client",
+          "da": "Brugerdefineret MQTT-klient"
         }
       }
     ],
@@ -40,10 +46,12 @@
     "id": "hostname",
     "type": "text",
     "label": {
-      "en": "MQTT Hostname"
+      "en": "MQTT Hostname",
+      "da": "MQTT-værtsnavn"
     },
     "hint": {
-      "en": "The hostname of the MQTT broker (required for Custom MQTT Client)"
+      "en": "The hostname of the MQTT broker (required for Custom MQTT Client)",
+      "da": "Værtsnavnet pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
     },
     "value": "localhost",
     "required": true,
@@ -56,10 +64,12 @@
     "id": "port",
     "type": "number",
     "label": {
-      "en": "MQTT Port"
+      "en": "MQTT Port",
+      "da": "MQTT-port"
     },
     "hint": {
-      "en": "The port of the MQTT broker (required for Custom MQTT Client)"
+      "en": "The port of the MQTT broker (required for Custom MQTT Client)",
+      "da": "Porten pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
     },
     "value": 1883,
     "required": true,
@@ -72,10 +82,12 @@
     "id": "clientId",
     "type": "text",
     "label": {
-      "en": "Client ID"
+      "en": "Client ID",
+      "da": "Klient-ID"
     },
     "hint": {
-      "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)"
+      "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)",
+      "da": "Unikt klient-ID til MQTT-forbindelsen (krævet for brugerdefineret MQTT-klient)"
     },
     "value": "homey-device",
     "required": true,
@@ -88,10 +100,12 @@
     "id": "username",
     "type": "text",
     "label": {
-      "en": "MQTT Username"
+      "en": "MQTT Username",
+      "da": "MQTT-brugernavn"
     },
     "hint": {
-      "en": "Username for authenticating with the MQTT broker (optional)"
+      "en": "Username for authenticating with the MQTT broker (optional)",
+      "da": "Brugernavn til godkendelse mod MQTT-brokeren (valgfrit)"
     },
     "optional": true,
     "value": "",
@@ -104,10 +118,12 @@
     "id": "password",
     "type": "password",
     "label": {
-      "en": "MQTT Password"
+      "en": "MQTT Password",
+      "da": "MQTT-adgangskode"
     },
     "hint": {
-      "en": "Password for authenticating with the MQTT broker (optional)"
+      "en": "Password for authenticating with the MQTT broker (optional)",
+      "da": "Adgangskode til godkendelse mod MQTT-brokeren (valgfrit)"
     },
     "optional": true,
     "value": "",
@@ -120,10 +136,12 @@
     "id": "useTls",
     "type": "checkbox",
     "label": {
-      "en": "Use TLS"
+      "en": "Use TLS",
+      "da": "Brug TLS"
     },
     "hint": {
-      "en": "Enable TLS for secure MQTT communication (optional)"
+      "en": "Enable TLS for secure MQTT communication (optional)",
+      "da": "Aktiver TLS for sikker MQTT-kommunikation (valgfrit)"
     },
     "value": false,
     "conditional": {
@@ -135,10 +153,12 @@
     "id": "acceptSelfSignedCert",
     "type": "checkbox",
     "label": {
-      "en": "Accept Self Signed Certificates"
+      "en": "Accept Self Signed Certificates",
+      "da": "Accepter selvsignerede certifikater"
     },
     "hint": {
-      "en": "Accept Self Signed Certificates presented by the broker"
+      "en": "Accept Self Signed Certificates presented by the broker",
+      "da": "Accepter selvsignerede certifikater præsenteret af brokeren"
     },
     "value": false,
     "conditional": {
@@ -150,10 +170,12 @@
     "id": "debugLogging",
     "type": "checkbox",
     "label": {
-      "en": "Enable Debug Logging"
+      "en": "Enable Debug Logging",
+      "da": "Aktiver fejlsogningslog"
     },
     "hint": {
-      "en": "Enable verbose logs and store recent entries below."
+      "en": "Enable verbose logs and store recent entries below.",
+      "da": "Aktiver detaljerede logninger og gem de seneste poster nedenfor."
     },
     "value": false
   },
@@ -161,10 +183,12 @@
     "id": "debugLog",
     "type": "textarea",
     "label": {
-      "en": "Debug Log"
+      "en": "Debug Log",
+      "da": "Fejlsogningslog"
     },
     "hint": {
-      "en": "Recent debug log entries. You can clear this field manually."
+      "en": "Recent debug log entries. You can clear this field manually.",
+      "da": "Seneste logposter. Du kan rydde feltet manuelt."
     },
     "value": ""
   }

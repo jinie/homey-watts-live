@@ -2,10 +2,12 @@
     "type": "number",
     "units": "V",
     "title": {
-      "en": "L1 Voltage"
+      "en": "L1 Voltage",
+      "da": "L1 spænding"
     },
     "desc": {
-      "en": "Voltage of L1"
+      "en": "Voltage of L1",
+      "da": "spænding pa L1"
     },
     "uiComponent": "sensor",
     "uiQuickAction": true,

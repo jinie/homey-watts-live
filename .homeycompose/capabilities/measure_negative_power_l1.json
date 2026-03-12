@@ -2,10 +2,12 @@
     "type": "number",
     "units": "W",
     "title": {
-      "en": "L1 Negative Power"
+      "en": "L1 Negative Power",
+      "da": "L1 negativ effekt"
     },
     "desc": {
-      "en": "Power production of L1"
+      "en": "Power production of L1",
+      "da": "Effektproduktion pa L1"
     },  
     "uiComponent": "sensor",
     "uiQuickAction": true,

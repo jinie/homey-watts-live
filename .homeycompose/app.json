@@ -7,10 +7,12 @@
     "local"
   ],
   "name": {
-    "en": "Watts Live MQTT"
+    "en": "Watts Live MQTT",
+    "da": "Watts Live MQTT"
   },
   "description": {
-    "en": "Monitor your home power consumtion with Watts Live through MQTT."
+    "en": "Monitor your home power consumtion with Watts Live through MQTT.",
+    "da": "Overvåg dit hjems Strømforbrug med Watts Live via MQTT."
   },
   "category": [
     "energy"

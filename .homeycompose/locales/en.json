@@ -2,5 +2,11 @@
     "mqtt_client.no_messages":"No messages received on MQTT Topic",
     "mqtt_client.no_new_devices":"No new devices found while searching",
     "device.unavailable.update":"Device is unavailable, please try again later",
-    "device.unavailable.offline":"Device is offline"
+    "device.unavailable.offline":"Device is offline",
+    "device.unavailable.mqtt_authorization_failed":"MQTT authorization failed; check broker credentials and ACLs",
+    "device.unavailable.mqtt_connection_refused":"MQTT broker refused the connection; retrying automatically",
+    "device.unavailable.mqtt_timeout":"MQTT broker timed out; retrying automatically",
+    "device.unavailable.mqtt_connection_error":"MQTT connection error",
+    "device.unavailable.mqtt_connection_lost":"MQTT connection lost; retrying automatically",
+    "device.unavailable.mqtt_disconnected":"MQTT disconnected; retrying automatically"
 }

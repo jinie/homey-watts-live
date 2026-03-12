@@ -2,10 +2,12 @@
   "type": "number",
   "units": "Var",
   "title": {
-    "en": "Reactive Production"
+    "en": "Reactive Production",
+    "da": "Reaktiv produktion"
   },
   "desc": {
-    "en": "Reactive Power Production"
+    "en": "Reactive Power Production",
+    "da": "Reaktiv effektproduktion"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

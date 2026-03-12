@@ -2,10 +2,12 @@
   "type": "number",
   "units": "A",
   "title": {
-    "en": "Current L3"
+    "en": "Current L3",
+    "da": "Strøm L3"
   },
   "desc": {
-    "en": "Current of L3"
+    "en": "Current of L3",
+    "da": "Strøm pa L3"
   },
   "uiComponent": "sensor",
   "uiQuickAction": true,

@@ -2,10 +2,12 @@
   "type": "number",
   "units": "W",
   "title": {
-    "en": "Phase Power"
+    "en": "Phase Power",
+    "da": "Faseeffekt"
   },
   "desc": {
-    "en": "Power consumption of specific phase"
+    "en": "Power consumption of specific phase",
+    "da": "Effektforbrug for en bestemt fase"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

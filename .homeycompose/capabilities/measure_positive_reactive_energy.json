@@ -2,10 +2,12 @@
   "type": "number",
   "units": "KVarh",
   "title": {
-    "en": "Reactive Consumption"
+    "en": "Reactive Consumption",
+    "da": "Reaktivt forbrug"
   },
   "desc": {
-    "en": "Reactive energy consumed by the system"
+    "en": "Reactive energy consumed by the system",
+    "da": "Reaktiv energi forbrugt af systemet"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

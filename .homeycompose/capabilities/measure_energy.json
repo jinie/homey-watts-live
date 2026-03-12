@@ -2,10 +2,12 @@
   "type": "number",
   "units": "kWh",
   "title": {
-    "en": "Energy"
+    "en": "Energy",
+    "da": "Energi"
   },
   "desc": {
-    "en": "Cumulative Energy"
+    "en": "Cumulative Energy",
+    "da": "Akkumuleret energi"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

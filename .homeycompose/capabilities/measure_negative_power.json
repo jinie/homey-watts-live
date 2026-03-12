@@ -2,10 +2,12 @@
   "type": "number",
   "units": "W",
   "title": {
-    "en": "Phase Negative Power"
+    "en": "Phase Negative Power",
+    "da": "Fase negativ effekt"
   },
   "desc": {
-    "en": "Power production of specific phase"
+    "en": "Power production of specific phase",
+    "da": "Effektproduktion for en bestemt fase"
   },  
   "uiComponent": "sensor",
   "uiQuickAction": true,

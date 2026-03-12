@@ -2,10 +2,12 @@
     "type": "number",
     "units": "W",
     "title": {
-      "en": "L2 Power"
+      "en": "L2 Power",
+      "da": "L2 effekt"
     },
     "desc": {
-      "en": "Power consumption of L2"
+      "en": "Power consumption of L2",
+      "da": "Effektforbrug pa L2"
     },  
     "uiComponent": "sensor",
     "uiQuickAction": true,
