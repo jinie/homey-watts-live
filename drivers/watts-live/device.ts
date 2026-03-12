@@ -10,6 +10,7 @@ import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import KvMap from '../../types/KvMap';
 import MeterReading from '../../types/MeterReading';
+import DebugLogLevel from '../../types/DebugLogLevel';
 
 export default class WattsLiveDevice extends Homey.Device {
   private runtimeDebug: boolean = false;
@@ -48,37 +49,100 @@ export default class WattsLiveDevice extends Homey.Device {
     if (typeof existingDebugLog === 'string' && existingDebugLog.length > 0) {
       this.debugLogLines = existingDebugLog.split('\n').slice(-this.maxDebugLogLines);
     }
-    await this.appendDebugLog('Device initialized');
+    await this.logMessage(DebugLogLevel.INFO, 'Device initialized');
 
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
 
-    this.homey.log(
+    await this.logMessage(
+      DebugLogLevel.INFO,
       `Initializing Device with settings : ${driverSettings.toSafeJSON()}`,
+      undefined,
+      { persistToSettings: false },
     );
     // Initialize the MQTT wrapper with the device's settings
 
     try {
       await this.reconnectMqtt();
     } catch (err: any) {
-      this.homey.log(err);
-      await this.appendDebugLog(
-        `Initial MQTT connection failed: ${err instanceof Error ? err.message : String(err)}`,
+      await this.logMessage(
+        DebugLogLevel.ERROR,
+        'Initial MQTT connection setup failed',
+        err,
       );
-      this.invalidateStatus();
+      this.invalidateStatus(this.getConnectionIssueMessage(err));
       this.scheduleReconnect('initial connection failed');
     }
   }
 
-  private async appendDebugLog(message: string): Promise<void> {
-    if (!this.settingsDebug) {
+  private shouldPersistLog(level: DebugLogLevel): boolean {
+    return level <= DebugLogLevel.INFO || this.settingsDebug;
+  }
+
+  private sanitizeLogText(message: string): string {
+    return message
+      .replace(
+        /("?(?:username|password)"?\s*:\s*")([^"]*)(")/gi,
+        '$1***$3',
+      )
+      .replace(
+        /(\b(?:username|password)\b\s*[=:]\s*)([^,\s;]+)/gi,
+        '$1***',
+      )
+      .replace(
+        /(mqtts?:\/\/)([^:@/\s]+)(?::[^@/\s]*)?@/gi,
+        '$1***:***@',
+      );
+  }
+
+  private formatLogError(error: unknown): string {
+    if (error instanceof Error) {
+      const errorDetails = error.stack || error.message || String(error);
+      return this.sanitizeLogText(errorDetails);
+    }
+
+    return this.sanitizeLogText(String(error));
+  }
+
+  private async appendDebugLog(
+    message: string,
+    level: DebugLogLevel = DebugLogLevel.INFO,
+  ): Promise<void> {
+    if (!this.shouldPersistLog(level)) {
       return;
     }
     const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${message}`;
+    const logLevelLabel = DebugLogLevel[level];
+    const logEntry = `[${timestamp}] [${logLevelLabel}] ${message}`;
     this.debugLogLines.push(logEntry);
     this.debugLogLines = this.debugLogLines.slice(-this.maxDebugLogLines);
     await this.persistDebugLog(false);
+  }
+
+  private async logMessage(
+    level: DebugLogLevel,
+    message: string,
+    error?: unknown,
+    options?: {
+      persistToSettings?: boolean;
+    },
+  ): Promise<void> {
+    const persistToSettings = options?.persistToSettings ?? true;
+    const sanitizedMessage = this.sanitizeLogText(message);
+    const sanitizedError = error === undefined ? '' : this.formatLogError(error);
+    const combinedMessage = sanitizedError.length > 0
+      ? `${sanitizedMessage}: ${sanitizedError}`
+      : sanitizedMessage;
+
+    if (level === DebugLogLevel.ERROR) {
+      this.homey.error(combinedMessage);
+    } else {
+      this.homey.log(combinedMessage);
+    }
+
+    if (persistToSettings) {
+      await this.appendDebugLog(combinedMessage, level);
+    }
   }
 
   private async persistDebugLog(force: boolean): Promise<void> {
@@ -98,7 +162,12 @@ export default class WattsLiveDevice extends Homey.Device {
       });
       this.lastDebugLogPersistAt = Date.now();
     }).catch((error) => {
-      this.homey.error('Failed to persist debug log', error);
+      this.logMessage(
+        DebugLogLevel.ERROR,
+        'Failed to persist debug log',
+        error,
+        { persistToSettings: false },
+      ).catch(() => {});
     });
     await this.logBufferWritePromise;
   }
@@ -110,7 +179,12 @@ export default class WattsLiveDevice extends Homey.Device {
     this.scheduledDebugPersistTimer = setTimeout(() => {
       this.scheduledDebugPersistTimer = null;
       this.persistDebugLog(force).catch((error) => {
-        this.homey.error('Deferred debug log persist failed', error);
+        this.logMessage(
+          DebugLogLevel.ERROR,
+          'Deferred debug log persist failed',
+          error,
+          { persistToSettings: false },
+        ).catch(() => {});
       });
     }, 0);
   }
@@ -118,10 +192,16 @@ export default class WattsLiveDevice extends Homey.Device {
   async onMessage(topic: string, message: unknown) {
     this.messageCount += 1;
     if (!this.runtimeDebug && this.messageCount % this.heartbeatIntervalMessages === 0) {
-      this.log(`MQTT heartbeat: processed ${this.messageCount} messages`);
+      this.logMessage(
+        DebugLogLevel.INFO,
+        `MQTT heartbeat: processed ${this.messageCount} messages`,
+      ).catch(() => {});
     }
     if (this.runtimeDebug) {
-      this.log(`onMessage: Message received on topic ${topic}: ${message}`);
+      this.logMessage(
+        DebugLogLevel.DEBUG,
+        `onMessage: Message received on topic ${topic}: ${String(message)}`,
+      ).catch(() => {});
     }
     await this.processMqttMessage(topic, message);
     if (this.settingsDebug && this.messageCount % this.debugLogFlushEveryMessages === 0) {
@@ -144,7 +224,7 @@ export default class WattsLiveDevice extends Homey.Device {
       return;
     }
 
-    await this.appendDebugLog('Device deleted; disconnecting MQTT');
+    await this.logMessage(DebugLogLevel.INFO, 'Device deleted; disconnecting MQTT');
     await this.persistDebugLog(true);
     await this.mqttWrapper.disconnect();
   }
@@ -156,10 +236,9 @@ export default class WattsLiveDevice extends Homey.Device {
     // This is where you can implement any setup logic after the device is paired or added.
     // For example, sending an MQTT message to let the server know this device was added
     const { deviceId } = this.getDeviceSettings();
-    this.log(`Device added: ${deviceId}`);
+    await this.logMessage(DebugLogLevel.INFO, `Device added: ${deviceId}`);
     // Optionally: Publish an MQTT message or perform any initialization specific to being added.
     await this.setAvailable();
-    await this.appendDebugLog(`Device added: ${deviceId}`);
   }
 
   /**
@@ -168,8 +247,7 @@ export default class WattsLiveDevice extends Homey.Device {
    * @param {string} name The new name
    */
   async onRenamed(name: string) {
-    this.log('WattsLiveDevice was renamed');
-    await this.appendDebugLog(`Device renamed: ${name}`);
+    await this.logMessage(DebugLogLevel.INFO, 'WattsLiveDevice was renamed');
   }
 
   /**
@@ -179,7 +257,10 @@ export default class WattsLiveDevice extends Homey.Device {
     const settings = this.getSettings();
     const newSettings = new DriverSettings(settings);
     if (this.runtimeDebug) {
-      this.log(`Reading device settings ${newSettings.toSafeJSON()}`);
+      this.logMessage(
+        DebugLogLevel.DEBUG,
+        `Reading device settings ${newSettings.toSafeJSON()}`,
+      ).catch(() => {});
     }
     // Construct and return a DriverSettings object using the device's settings
     return newSettings;
@@ -195,27 +276,27 @@ export default class WattsLiveDevice extends Homey.Device {
       } else if (message && typeof message === 'object') {
         msg = message;
       } else {
-        this.log(`Skipping unsupported MQTT message type on ${topic}`);
+        await this.logMessage(
+          DebugLogLevel.INFO,
+          `Skipping unsupported MQTT message type on ${topic}`,
+        );
         return;
       }
 
       if (msg === null) {
-        this.log(`Message converted to null : ${message}`);
+        await this.logMessage(
+          DebugLogLevel.INFO,
+          `Message converted to null: ${String(message)}`,
+        );
         return;
       }
 
       // Extract device id from topic where device id is /watts/<device_id>/measurement
       const readings: MeterReading = new MeterReading(msg);
-      if (this.runtimeDebug) {
-        this.log(
-          `processMqttMessage: received reading ${JSON.stringify(readings)}`,
-        );
-      }
-      if (this.settingsDebug) {
-        await this.appendDebugLog(
-          `processMqttMessage: received reading ${JSON.stringify(readings)}`,
-        );
-      }
+      this.logMessage(
+        DebugLogLevel.DEBUG,
+        `processMqttMessage: received reading ${JSON.stringify(readings)}`,
+      ).catch(() => {});
       // Map readings to capabilities, convert undefined to 0
       const kMap: KvMap = {};
       Object.keys(ReadingToCapabilityMap).forEach((value) => {
@@ -248,7 +329,10 @@ export default class WattsLiveDevice extends Homey.Device {
           }
           capabilityUpdates.push(this.setCapabilityValue(key, kMap[key] as number));
         } else {
-          this.log(`processMqttMessage: unknown capability ${key}`);
+          this.logMessage(
+            DebugLogLevel.DEBUG,
+            `processMqttMessage: unknown capability ${key}`,
+          ).catch(() => {});
         }
       });
 
@@ -257,16 +341,20 @@ export default class WattsLiveDevice extends Homey.Device {
         if (this.runtimeDebug) {
           updateResults.forEach((result, idx) => {
             if (result.status === 'rejected') {
-              this.log(`setCapabilityValue failed at index ${idx}: ${result.reason}`);
+              this.logMessage(
+                DebugLogLevel.DEBUG,
+                `setCapabilityValue failed at index ${idx}: ${String(result.reason)}`,
+              ).catch(() => {});
             }
           });
         }
       }
     } catch (error: unknown) {
       if (this.runtimeDebug) throw error;
-      else this.log(`processMqttMessage error: ${error instanceof Error ? error.message : String(error)}`);
-      await this.appendDebugLog(
-        `processMqttMessage error on ${topic}: ${error instanceof Error ? error.message : String(error)}`,
+      await this.logMessage(
+        DebugLogLevel.ERROR,
+        `processMqttMessage error on ${topic}`,
+        error,
       );
     }
   }
@@ -293,19 +381,21 @@ export default class WattsLiveDevice extends Homey.Device {
     }
     this.isHandlingSettings = true;
     try {
-      this.log('Settings updated:', changedKeys);
+      await this.logMessage(
+        DebugLogLevel.INFO,
+        `Settings updated: ${changedKeys.join(', ')}`,
+      );
       const nextSettingsDebug = newSettings.debugLogging === true;
       const wasSettingsDebug = this.settingsDebug;
       if (!wasSettingsDebug && nextSettingsDebug) {
         this.settingsDebug = true;
-        await this.appendDebugLog('Debug logging enabled');
+        await this.logMessage(DebugLogLevel.INFO, 'Debug logging enabled');
       } else if (wasSettingsDebug && !nextSettingsDebug) {
-        await this.appendDebugLog('Debug logging disabled');
+        await this.logMessage(DebugLogLevel.INFO, 'Debug logging disabled');
         this.settingsDebug = false;
       } else {
         this.settingsDebug = nextSettingsDebug;
       }
-      await this.appendDebugLog(`Settings updated: ${changedKeys.join(', ')}`);
       if (changedKeys.includes('debugLogging')) {
         this.pendingDebugLogPersist = true;
       }
@@ -324,15 +414,19 @@ export default class WattsLiveDevice extends Homey.Device {
 
       if (needsReconnect) {
         try {
-          this.log('Reconnecting due to changed MQTT settings...');
-          await this.appendDebugLog('Reconnecting due to MQTT setting changes');
+          await this.logMessage(
+            DebugLogLevel.INFO,
+            'Reconnecting due to changed MQTT settings',
+          );
           const driverSettings = new DriverSettings(newSettings);
           await this.reconnectMqtt(driverSettings);
         } catch (ex: any) {
-          this.log('Error reconnecting: ', ex);
-          await this.appendDebugLog(
-            `Reconnect failed; restoring previous settings: ${ex instanceof Error ? ex.message : String(ex)}`,
+          await this.logMessage(
+            DebugLogLevel.ERROR,
+            'Reconnect failed; restoring previous settings',
+            ex,
           );
+          this.invalidateStatus(this.getConnectionIssueMessage(ex));
           await this.reconnectMqtt(new DriverSettings(oldSettings));
           throw ex;
         }
@@ -351,12 +445,39 @@ export default class WattsLiveDevice extends Homey.Device {
     return this.getSettings()['deviceId'];
   }
 
+  private getConnectionIssueMessage(error?: unknown): string {
+    const rawMessage = error instanceof Error ? error.message : String(error ?? '');
+    const normalizedMessage = rawMessage.toLowerCase();
+
+    if (normalizedMessage.includes('not authorized')) {
+      return 'MQTT authorization failed; check broker credentials and ACLs';
+    }
+
+    if (normalizedMessage.includes('econnrefused') || normalizedMessage.includes('connection refused')) {
+      return 'MQTT broker refused the connection; retrying automatically';
+    }
+
+    if (normalizedMessage.includes('timeout')) {
+      return 'MQTT broker timed out; retrying automatically';
+    }
+
+    if (normalizedMessage.length > 0) {
+      return `MQTT connection error: ${rawMessage}`;
+    }
+
+    return 'MQTT connection lost; retrying automatically';
+  }
+
   /**
    * Invalidate the device status, typically when the connection is lost or an error occurs.
    */
-  invalidateStatus(): void {
-    this.log('Device status invalidated');
-    this.setUnavailable('Device disconnected or unavailable').catch(() => {});
+  invalidateStatus(reason?: string): void {
+    const unavailableMessage = reason ?? 'MQTT connection lost; retrying automatically';
+    this.logMessage(
+      DebugLogLevel.INFO,
+      `Device status invalidated: ${unavailableMessage}`,
+    ).catch(() => {});
+    this.setUnavailable(unavailableMessage).catch(() => {});
   }
 
   private scheduleReconnect(reason: string): void {
@@ -370,17 +491,20 @@ export default class WattsLiveDevice extends Homey.Device {
 
     const delayMs = Math.min(30000, 2000 * (2 ** this.reconnectAttempt));
     this.reconnectAttempt += 1;
-    this.log(`Scheduling MQTT reconnect in ${delayMs}ms (${reason})`);
-    this.appendDebugLog(`Scheduling MQTT reconnect in ${delayMs}ms (${reason})`).catch(() => {});
+    this.logMessage(
+      DebugLogLevel.DEBUG,
+      `Scheduling MQTT reconnect in ${delayMs}ms (${reason})`,
+    ).catch(() => {});
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.reconnectMqtt().catch((error) => {
-        this.homey.error('MQTT reconnect attempt failed', error);
-        this.appendDebugLog(
-          `MQTT reconnect attempt failed: ${error instanceof Error ? error.message : String(error)}`,
+        this.logMessage(
+          DebugLogLevel.ERROR,
+          'MQTT reconnect attempt failed',
+          error,
         ).catch(() => {});
-        this.invalidateStatus();
+        this.invalidateStatus(this.getConnectionIssueMessage(error));
         this.scheduleReconnect('retry failed');
       });
     }, delayMs);
@@ -403,9 +527,16 @@ export default class WattsLiveDevice extends Homey.Device {
     this.isReconnectInProgress = true;
     if (this.mqttWrapper) {
       await this.mqttWrapper.disconnect().catch((error) => {
-        this.homey.error(error);
+        this.logMessage(
+          DebugLogLevel.ERROR,
+          'Failed to disconnect previous MQTT wrapper',
+          error,
+        ).catch(() => {});
       });
-      await this.appendDebugLog('Disconnected previous MQTT wrapper');
+      await this.logMessage(
+        DebugLogLevel.DEBUG,
+        'Disconnected previous MQTT wrapper',
+      );
     }
 
     // Use new settings if provided, otherwise use current device settings
@@ -420,15 +551,21 @@ export default class WattsLiveDevice extends Homey.Device {
       if (this.mqttWrapper !== mqttWrapper) {
         return;
       }
-      this.appendDebugLog('MQTT connect event received').catch(() => {});
+      this.logMessage(
+        DebugLogLevel.DEBUG,
+        'MQTT connect event received',
+      ).catch(() => {});
     });
 
     mqttWrapper.on('disconnect', () => {
       if (this.mqttWrapper !== mqttWrapper || this.isDeleted) {
         return;
       }
-      this.invalidateStatus();
-      this.appendDebugLog('MQTT disconnect event received').catch(() => {});
+      this.invalidateStatus('MQTT disconnected; retrying automatically');
+      this.logMessage(
+        DebugLogLevel.ERROR,
+        'MQTT disconnect event received',
+      ).catch(() => {});
       this.scheduleReconnect('disconnect event');
     });
 
@@ -436,7 +573,12 @@ export default class WattsLiveDevice extends Homey.Device {
       if (this.mqttWrapper !== mqttWrapper || this.isDeleted) {
         return;
       }
-      this.appendDebugLog(`MQTT error event received: ${error.message}`).catch(() => {});
+      this.invalidateStatus(this.getConnectionIssueMessage(error));
+      this.logMessage(
+        DebugLogLevel.ERROR,
+        `MQTT error event received: ${error.message}`,
+      ).catch(() => {});
+      this.scheduleReconnect(`error event: ${error.message}`);
     });
 
     mqttWrapper.on('message', (topic: string, message: unknown) => {
@@ -444,16 +586,23 @@ export default class WattsLiveDevice extends Homey.Device {
         return;
       }
       this.onMessage(topic, message).catch((error) => {
-        this.homey.error(`Error handling message on topic ${topic}`, error);
+        this.logMessage(
+          DebugLogLevel.ERROR,
+          `Error handling message on topic ${topic}`,
+          error,
+        ).catch(() => {});
       });
     });
 
     try {
       await mqttWrapper.connect();
-      this.homey.log('MQTT connect signal received');
-      await this.appendDebugLog('MQTT connected');
+      await this.logMessage(DebugLogLevel.INFO, 'MQTT connect signal received');
+      await this.logMessage(DebugLogLevel.INFO, 'MQTT connected');
       await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
-      await this.appendDebugLog(`Subscribed to watts/${driverSettings.deviceId}/measurement`);
+      await this.logMessage(
+        DebugLogLevel.INFO,
+        `Subscribed to watts/${driverSettings.deviceId}/measurement`,
+      );
       this.reconnectAttempt = 0;
       await this.setAvailable();
     } finally {
@@ -471,7 +620,8 @@ export default class WattsLiveDevice extends Homey.Device {
 
       // Check if the `useHomeyMqttClient` key is missing, indicating the old format
       if (!settings.useHomeyMqttClient) {
-        this.log(
+        await this.logMessage(
+          DebugLogLevel.INFO,
           `Migrating device ${this.getSetting('deviceId')} to the new MQTT connectivity...`,
         );
 
@@ -482,16 +632,22 @@ export default class WattsLiveDevice extends Homey.Device {
         // Apply the new settings to the device
         await this.setSettings(newSettings);
 
-        this.log(
+        await this.logMessage(
+          DebugLogLevel.INFO,
           `Device ${this.getSetting('deviceId')} successfully migrated to the new MQTT connectivity.`,
         );
       } else {
-        this.log(
+        await this.logMessage(
+          DebugLogLevel.INFO,
           `Device ${this.getSetting('deviceId')} is already using the new MQTT connectivity.`,
         );
       }
     } catch (error) {
-      this.error(`Error migrating device ${this.getData().id}:`, error);
+      await this.logMessage(
+        DebugLogLevel.ERROR,
+        `Error migrating device ${this.getData().id}`,
+        error,
+      );
     }
   }
 
@@ -502,35 +658,59 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   async migrateCapabilities() {
     if (this.getCapabilities().includes('meter_power')) {
-      this.log('Removing meter_power capability');
+      await this.logMessage(DebugLogLevel.INFO, 'Removing meter_power capability');
       await this.removeCapability('meter_power').catch((error) => {
         if (this.runtimeDebug) throw error;
-        else this.log(`migrateCapabilites, removeCapability error: ${error}`);
+        else {
+          this.logMessage(
+            DebugLogLevel.ERROR,
+            'migrateCapabilites, removeCapability error',
+            error,
+          ).catch(() => {});
+        }
       });
-      this.log('Adding meter_power.imported capability');
+      await this.logMessage(DebugLogLevel.INFO, 'Adding meter_power.imported capability');
       await this.addCapability('meter_power.imported').catch((error) => {
         if (this.runtimeDebug) throw error;
-        else this.log(`migrateCapabilites, addCapability error: ${error}`);
+        else {
+          this.logMessage(
+            DebugLogLevel.ERROR,
+            'migrateCapabilites, addCapability error',
+            error,
+          ).catch(() => {});
+        }
       });
     }
     if (this.getCapabilities().includes('measure_negative_active_energy')) {
-      this.log('removing measure_negative_active_energy capability');
+      await this.logMessage(DebugLogLevel.INFO, 'Removing measure_negative_active_energy capability');
       await this.removeCapability('measure_negative_active_energy').catch(
         (error) => {
           if (this.runtimeDebug) throw error;
-          else this.log(`migrateCapabilites, removeCapability error: ${error}`);
+          else {
+            this.logMessage(
+              DebugLogLevel.ERROR,
+              'migrateCapabilites, removeCapability error',
+              error,
+            ).catch(() => {});
+          }
         },
       );
-      this.log('Adding metwer_power.exported capability');
+      await this.logMessage(DebugLogLevel.INFO, 'Adding metwer_power.exported capability');
       await this.addCapability('meter_power.exported').catch((error) => {
         if (this.runtimeDebug) throw error;
-        else this.log(`migrateCapabilites, addCapability error: ${error}`);
+        else {
+          this.logMessage(
+            DebugLogLevel.ERROR,
+            'migrateCapabilites, addCapability error',
+            error,
+          ).catch(() => {});
+        }
       });
     }
 
     for (const capability of removedCapabilitiesV1toV2) {
       if (this.getCapabilities().includes(capability)) {
-        this.log(`Removing capability ${capability}`);
+        await this.logMessage(DebugLogLevel.INFO, `Removing capability ${capability}`);
       }
 
       try {
@@ -539,14 +719,18 @@ export default class WattsLiveDevice extends Homey.Device {
         if (this.runtimeDebug) {
           throw error;
         } else {
-          this.log(`migrateCapabilites, removeCapability error: ${error}`);
+          await this.logMessage(
+            DebugLogLevel.ERROR,
+            'migrateCapabilites, removeCapability error',
+            error,
+          );
         }
       }
     }
 
     for (const capability of addedCapabilitiesV1toV2) {
       if (!this.getCapabilities().includes(capability)) {
-        this.log(`Adding capability ${capability}`);
+        await this.logMessage(DebugLogLevel.INFO, `Adding capability ${capability}`);
       }
 
       try {
@@ -555,8 +739,10 @@ export default class WattsLiveDevice extends Homey.Device {
         if (this.runtimeDebug) {
           throw error;
         } else {
-          this.log(
-            `migrateCapabilites, Production addCapability error: ${error}`,
+          await this.logMessage(
+            DebugLogLevel.ERROR,
+            'migrateCapabilites, Production addCapability error',
+            error,
           );
         }
       }

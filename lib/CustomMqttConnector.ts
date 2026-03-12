@@ -27,6 +27,22 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     this.driverSettings = driverSettings;
   }
 
+  private resetClientState(options?: { emitDisconnect?: boolean }): void {
+    const client = this.mqttClient;
+    const wasConnected = this.isConnected;
+
+    if (client) {
+      client.removeListener('message', this.onClientMessage);
+    }
+
+    this.mqttClient = null;
+    this.isConnected = false;
+
+    if (options?.emitDisconnect === true && wasConnected) {
+      this.emit('disconnect');
+    }
+  }
+
   private emitDisconnected(): void {
     if (this.isDisconnecting || (!this.mqttClient && !this.isConnected)) {
       return;
@@ -118,12 +134,15 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       this.mqttClient.on('error', (err) => {
         this.homey.log('MQTT error:', err.message);
         this.emit('error', err);
+        if (!this.isDisconnecting) {
+          const client = this.mqttClient;
+          this.resetClientState({
+            emitDisconnect: settled,
+          });
+          client?.end(true);
+        }
         if (!settled) {
           settled = true;
-          if (!this.isConnected) {
-            this.mqttClient?.end(true);
-            this.mqttClient = null;
-          }
           reject(err);
         }
       });
@@ -148,9 +167,7 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       client.end(() => resolve());
     });
 
-    client.removeListener('message', this.onClientMessage);
-    this.mqttClient = null;
-    this.isConnected = false;
+    this.resetClientState();
     this.isDisconnecting = false;
     this.homey.log('MQTT client disconnected');
     this.emit('disconnect');
