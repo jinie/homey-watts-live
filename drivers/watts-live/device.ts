@@ -445,34 +445,38 @@ export default class WattsLiveDevice extends Homey.Device {
     return this.getSettings()['deviceId'];
   }
 
+  private translate(key: string): string {
+    return this.homey.__(key);
+  }
+
   private getConnectionIssueMessage(error?: unknown): string {
     const rawMessage = error instanceof Error ? error.message : String(error ?? '');
     const normalizedMessage = rawMessage.toLowerCase();
 
     if (normalizedMessage.includes('not authorized')) {
-      return 'MQTT authorization failed; check broker credentials and ACLs';
+      return this.translate('device.unavailable.mqtt_authorization_failed');
     }
 
     if (normalizedMessage.includes('econnrefused') || normalizedMessage.includes('connection refused')) {
-      return 'MQTT broker refused the connection; retrying automatically';
+      return this.translate('device.unavailable.mqtt_connection_refused');
     }
 
     if (normalizedMessage.includes('timeout')) {
-      return 'MQTT broker timed out; retrying automatically';
+      return this.translate('device.unavailable.mqtt_timeout');
     }
 
     if (normalizedMessage.length > 0) {
-      return `MQTT connection error: ${rawMessage}`;
+      return `${this.translate('device.unavailable.mqtt_connection_error')}: ${this.sanitizeLogText(rawMessage)}`;
     }
 
-    return 'MQTT connection lost; retrying automatically';
+    return this.translate('device.unavailable.mqtt_connection_lost');
   }
 
   /**
    * Invalidate the device status, typically when the connection is lost or an error occurs.
    */
   invalidateStatus(reason?: string): void {
-    const unavailableMessage = reason ?? 'MQTT connection lost; retrying automatically';
+    const unavailableMessage = reason ?? this.translate('device.unavailable.mqtt_connection_lost');
     this.logMessage(
       DebugLogLevel.INFO,
       `Device status invalidated: ${unavailableMessage}`,
@@ -561,7 +565,7 @@ export default class WattsLiveDevice extends Homey.Device {
       if (this.mqttWrapper !== mqttWrapper || this.isDeleted) {
         return;
       }
-      this.invalidateStatus('MQTT disconnected; retrying automatically');
+      this.invalidateStatus(this.translate('device.unavailable.mqtt_disconnected'));
       this.logMessage(
         DebugLogLevel.ERROR,
         'MQTT disconnect event received',

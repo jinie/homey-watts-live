@@ -1,0 +1,12 @@
+{
+  "mqtt_client.no_messages": "Ingen beskeder modtaget pa MQTT-emnet",
+  "mqtt_client.no_new_devices": "Ingen nye enheder fundet",
+  "device.unavailable.update": "Enheden er utilgængelig, prøv igen senere",
+  "device.unavailable.offline": "Enheden er offline",
+  "device.unavailable.mqtt_authorization_failed": "MQTT-godkendelse mislykkedes; kontroller broker-login og ACL'er",
+  "device.unavailable.mqtt_connection_refused": "MQTT-brokeren afviste forbindelsen; prøver automatisk igen",
+  "device.unavailable.mqtt_timeout": "MQTT-brokeren fik timeout; prøver automatisk igen",
+  "device.unavailable.mqtt_connection_error": "MQTT-forbindelsesfejl",
+  "device.unavailable.mqtt_connection_lost": "MQTT-forbindelsen blev afbrudt; prøver automatisk igen",
+  "device.unavailable.mqtt_disconnected": "MQTT blev afbrudt; prøver automatisk igen"
+}
