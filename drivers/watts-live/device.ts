@@ -457,6 +457,10 @@ export default class WattsLiveDevice extends Homey.Device {
       return this.translate('device.unavailable.mqtt_authorization_failed');
     }
 
+    if (normalizedMessage.includes('enotfound') || normalizedMessage.includes('getaddrinfo')) {
+      return this.translate('device.unavailable.mqtt_hostname_not_found');
+    }
+
     if (normalizedMessage.includes('econnrefused') || normalizedMessage.includes('connection refused')) {
       return this.translate('device.unavailable.mqtt_connection_refused');
     }

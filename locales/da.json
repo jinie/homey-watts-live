@@ -4,6 +4,7 @@
   "device.unavailable.update": "Enheden er utilgængelig, prøv igen senere",
   "device.unavailable.offline": "Enheden er offline",
   "device.unavailable.mqtt_authorization_failed": "MQTT-godkendelse mislykkedes; kontroller broker-login og ACL'er",
+  "device.unavailable.mqtt_hostname_not_found": "MQTT-vaertsnavnet kunne ikke findes; kontroller brokerens vaertsnavn",
   "device.unavailable.mqtt_connection_refused": "MQTT-brokeren afviste forbindelsen; prøver automatisk igen",
   "device.unavailable.mqtt_timeout": "MQTT-brokeren fik timeout; prøver automatisk igen",
   "device.unavailable.mqtt_connection_error": "MQTT-forbindelsesfejl",

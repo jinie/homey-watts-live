@@ -33,7 +33,9 @@ export default class MqttWrapper extends EventEmitter {
 
     connector.on('error', (err) => {
       this.homey.log('MQTT error:', err.message);
-      this.emit('error', err);
+      if (this.listenerCount('error') > 0) {
+        this.emit('error', err);
+      }
     });
 
     connector.on('message', (topic: string, message: unknown) => {

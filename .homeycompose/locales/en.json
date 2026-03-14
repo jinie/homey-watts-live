@@ -4,6 +4,7 @@
     "device.unavailable.update":"Device is unavailable, please try again later",
     "device.unavailable.offline":"Device is offline",
     "device.unavailable.mqtt_authorization_failed":"MQTT authorization failed; check broker credentials and ACLs",
+    "device.unavailable.mqtt_hostname_not_found":"MQTT hostname could not be resolved; check the broker hostname",
     "device.unavailable.mqtt_connection_refused":"MQTT broker refused the connection; retrying automatically",
     "device.unavailable.mqtt_timeout":"MQTT broker timed out; retrying automatically",
     "device.unavailable.mqtt_connection_error":"MQTT connection error",
