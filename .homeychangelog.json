@@ -130,5 +130,8 @@
   },
   "2.0.29": {
     "en": "Add Frequency measurering. Set minimum Homey version to 12.2 for frequency support."
+  },
+  "2.0.30": {
+    "en": "Add Frequency measurering. Set minimum Homey version to 12.2 for frequency support."
   }
 }
