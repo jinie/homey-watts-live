@@ -89,7 +89,7 @@
       "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)",
       "da": "Unikt klient-ID til MQTT-forbindelsen (krævet for brugerdefineret MQTT-klient)"
     },
-    "value": "homey-device",
+    "value": "homey-watts-live",
     "required": true,
     "conditional": {
       "id": "useHomeyMqttClient",

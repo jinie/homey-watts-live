@@ -8,6 +8,14 @@ import IMqttConnector from '../types/IMqttConnector';
 import delay from '../lib/delay';
 import DiscoveredDevice from '../types/DiscoveredDevice';
 
+interface DiagnosticStream extends EventEmitter {
+  authorized?: boolean;
+  authorizationError?: Error | string | null;
+  encrypted?: boolean;
+  remoteAddress?: string;
+  remotePort?: number;
+}
+
 export default class CustomMqttConnector extends EventEmitter implements IMqttConnector {
 
   private mqttClient: mqtt.MqttClient | null = null;
@@ -80,6 +88,73 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
     });
   }
 
+  private logDiagnostic(message: string, details?: Record<string, unknown>): void {
+    if (details) {
+      this.homey.log(`[MQTT pairing] ${message}`, details);
+      return;
+    }
+    this.homey.log(`[MQTT pairing] ${message}`);
+  }
+
+  private attachConnectionDiagnostics(client: mqtt.MqttClient): void {
+    const diagnosticClient = client as mqtt.MqttClient & {
+      on(event: 'packetreceive', listener: (packet: { cmd?: string }) => void): mqtt.MqttClient;
+      stream?: DiagnosticStream;
+    };
+
+    this.logDiagnostic('connect requested', {
+      host: this.driverSettings.hostname,
+      port: this.driverSettings.port,
+      clientId: this.driverSettings.clientId,
+      useTls: this.driverSettings.useTls,
+      acceptSelfSignedCert: this.driverSettings.acceptSelfSignedCert,
+      usernamePresent: this.driverSettings.username.length > 0,
+      passwordPresent: this.driverSettings.password.length > 0,
+    });
+
+    diagnosticClient.on('packetreceive', (packet) => {
+      if (packet.cmd === 'connack') {
+        this.logDiagnostic('received connack packet');
+      }
+    });
+
+    const { stream } = diagnosticClient;
+    if (!stream) {
+      this.logDiagnostic('transport stream not available at connect setup');
+      return;
+    }
+
+    stream.on('connect', () => {
+      this.logDiagnostic('tcp socket connected', {
+        remoteAddress: stream.remoteAddress,
+        remotePort: stream.remotePort,
+      });
+    });
+
+    stream.on('secureConnect', () => {
+      this.logDiagnostic('tls secureConnect', {
+        authorized: stream.authorized ?? null,
+        authorizationError: stream.authorizationError
+          ? String(stream.authorizationError)
+          : null,
+      });
+    });
+
+    stream.on('timeout', () => {
+      this.logDiagnostic('transport socket timeout');
+    });
+
+    stream.on('error', (error: Error) => {
+      this.logDiagnostic('transport socket error', {
+        message: error.message,
+      });
+    });
+
+    stream.on('close', () => {
+      this.logDiagnostic('transport socket closed');
+    });
+  }
+
   // Connect to the specified MQTT broker using the DriverSettings
   async connect(): Promise<void> {
     if (this.mqttClient && this.isConnected) {
@@ -113,9 +188,11 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       }
 
       this.mqttClient = mqtt.connect(options);
+      this.attachConnectionDiagnostics(this.mqttClient);
 
       this.mqttClient.on('connect', () => {
         this.isConnected = true;
+        this.logDiagnostic('mqtt connect acknowledged');
         this.homey.log(`Connected to MQTT broker at ${this.driverSettings.hostname}:${this.driverSettings.port}`);
         this.mqttClient?.removeListener('message', this.onClientMessage);
         this.mqttClient?.on('message', this.onClientMessage);

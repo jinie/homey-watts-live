@@ -8,10 +8,12 @@
     "local"
   ],
   "name": {
-    "en": "Watts Live MQTT"
+    "en": "Watts Live MQTT",
+    "da": "Watts Live MQTT"
   },
   "description": {
-    "en": "Monitor your home power consumtion with Watts Live through MQTT."
+    "en": "Monitor your home power consumtion with Watts Live through MQTT.",
+    "da": "Overvåg dit hjems Strømforbrug med Watts Live via MQTT."
   },
   "category": [
     "energy"
@@ -44,7 +46,8 @@
   "drivers": [
     {
       "name": {
-        "en": "Watts live"
+        "en": "Watts live",
+        "da": "Watts live"
       },
       "images": {
         "large": "/drivers/watts-live/assets/images/large.png",
@@ -77,107 +80,128 @@
       "capabilitiesOptions": {
         "meter_power.imported": {
           "title": {
-            "en": "Imported Energy"
+            "en": "Imported Energy",
+            "da": "Importeret energi"
           }
         },
         "meter_power.exported": {
           "title": {
-            "en": "Exported Energy"
+            "en": "Exported Energy",
+            "da": "Eksporteret energi"
           }
         },
         "measure_voltage.l1": {
           "title": {
-            "en": "Voltage L1"
+            "en": "Voltage L1",
+            "da": "Spænding L1"
           }
         },
         "measure_voltage.l2": {
           "title": {
-            "en": "Voltage L2"
+            "en": "Voltage L2",
+            "da": "Spænding L2"
           }
         },
         "measure_voltage.l3": {
           "title": {
-            "en": "Voltage L3"
+            "en": "Voltage L3",
+            "da": "Spænding L3"
           }
         },
         "measure_current.l1": {
           "title": {
-            "en": "Current L1"
+            "en": "Current L1",
+            "da": "Strøm L1"
           }
         },
         "measure_current.l2": {
           "title": {
-            "en": "Current L2"
+            "en": "Current L2",
+            "da": "Strøm L2"
           }
         },
         "measure_current.l3": {
           "title": {
-            "en": "Current L3"
+            "en": "Current L3",
+            "da": "Strøm L3"
           }
         },
         "measure_frequency": {
           "title": {
-            "en": "Frequency"
+            "en": "Frequency",
+            "da": "Frekvens"
           }
         },
         "measure_power": {
           "title": {
-            "en": "Total Power"
+            "en": "Total Power",
+            "da": "Samlet effekt"
           }
         },
         "measure_power.l1": {
           "title": {
-            "en": "Power L1"
+            "en": "Power L1",
+            "da": "Effekt L1"
           }
         },
         "measure_power.l2": {
           "title": {
-            "en": "Power L2"
+            "en": "Power L2",
+            "da": "Effekt L2"
           }
         },
         "measure_power.l3": {
           "title": {
-            "en": "Power L3"
+            "en": "Power L3",
+            "da": "Effekt L3"
           }
         },
         "measure_power.negative_active": {
           "title": {
-            "en": "Total Negative Power"
+            "en": "Total Negative Power",
+            "da": "Samlet negativ effekt"
           }
         },
         "measure_power.negative_l1": {
           "title": {
-            "en": "Negative Power L1"
+            "en": "Negative Power L1",
+            "da": "Negativ effekt L1"
           }
         },
         "measure_power.negative_l2": {
           "title": {
-            "en": "Negative Power L2"
+            "en": "Negative Power L2",
+            "da": "Negativ effekt L2"
           }
         },
         "measure_power.negative_l3": {
           "title": {
-            "en": "Negative Power L3"
+            "en": "Negative Power L3",
+            "da": "Negativ effekt L3"
           }
         },
         "measure_power.negative_reactive": {
           "title": {
-            "en": "Negative Reactive Power"
+            "en": "Negative Reactive Power",
+            "da": "Negativ reaktiv effekt"
           }
         },
         "measure_power.positive_reactive": {
           "title": {
-            "en": "Positive Reactive Power"
+            "en": "Positive Reactive Power",
+            "da": "Positiv reaktiv effekt"
           }
         },
         "meter_power.positive_reactive": {
           "title": {
-            "en": "Positive Reactive Energy"
+            "en": "Positive Reactive Energy",
+            "da": "Positiv reaktiv energi"
           }
         },
         "meter_power.negative_reactive": {
           "title": {
-            "en": "Negative Reactive Energy"
+            "en": "Negative Reactive Energy",
+            "da": "Negativ reaktiv energi"
           }
         }
       },
@@ -197,7 +221,8 @@
         {
           "id": "choose_mqtt_method",
           "title": {
-            "en": "Select MQTT Connection Method"
+            "en": "Select MQTT Connection Method",
+            "da": "Vælg MQTT-forbindelsesmetode"
           },
           "options": {
             "showNextButton": false
@@ -209,7 +234,8 @@
         {
           "id": "loading",
           "title": {
-            "en": "Discovering Devices"
+            "en": "Discovering Devices",
+            "da": "Finder enheder"
           },
           "navigation": {
             "next": "list_devices"
@@ -222,7 +248,8 @@
             "next": "add_devices"
           },
           "title": {
-            "en": "Select Devices to Pair"
+            "en": "Select Devices to Pair",
+            "da": "Vælg enheder der skal parres"
           },
           "options": {
             "showNextButton": true,
@@ -243,10 +270,12 @@
           "id": "deviceId",
           "type": "text",
           "label": {
-            "en": "Device ID"
+            "en": "Device ID",
+            "da": "Enheds-ID"
           },
           "hint": {
-            "en": "The unique device ID for this device, used to derive the MQTT topic."
+            "en": "The unique device ID for this device, used to derive the MQTT topic.",
+            "da": "Det unikke enheds-ID for denne enhed, som bruges til at aflede MQTT-emnet."
           },
           "value": "",
           "required": true
@@ -255,22 +284,26 @@
           "id": "useHomeyMqttClient",
           "type": "dropdown",
           "label": {
-            "en": "MQTT Connection Type"
+            "en": "MQTT Connection Type",
+            "da": "MQTT-forbindelsestype"
           },
           "hint": {
-            "en": "Select whether to use Homey MQTT Client or Custom MQTT Client"
+            "en": "Select whether to use Homey MQTT Client or Custom MQTT Client",
+            "da": "Vælg om Homey MQTT Client eller en brugerdefineret MQTT-klient skal bruges"
           },
           "values": [
             {
               "id": "homey",
               "label": {
-                "en": "Homey MQTT Client"
+                "en": "Homey MQTT Client",
+                "da": "Homey MQTT Client"
               }
             },
             {
               "id": "custom",
               "label": {
-                "en": "Custom MQTT Client"
+                "en": "Custom MQTT Client",
+                "da": "Brugerdefineret MQTT-klient"
               }
             }
           ],
@@ -280,10 +313,12 @@
           "id": "hostname",
           "type": "text",
           "label": {
-            "en": "MQTT Hostname"
+            "en": "MQTT Hostname",
+            "da": "MQTT-værtsnavn"
           },
           "hint": {
-            "en": "The hostname of the MQTT broker (required for Custom MQTT Client)"
+            "en": "The hostname of the MQTT broker (required for Custom MQTT Client)",
+            "da": "Værtsnavnet pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
           },
           "value": "localhost",
           "required": true,
@@ -296,10 +331,12 @@
           "id": "port",
           "type": "number",
           "label": {
-            "en": "MQTT Port"
+            "en": "MQTT Port",
+            "da": "MQTT-port"
           },
           "hint": {
-            "en": "The port of the MQTT broker (required for Custom MQTT Client)"
+            "en": "The port of the MQTT broker (required for Custom MQTT Client)",
+            "da": "Porten pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
           },
           "value": 1883,
           "required": true,
@@ -312,12 +349,14 @@
           "id": "clientId",
           "type": "text",
           "label": {
-            "en": "Client ID"
+            "en": "Client ID",
+            "da": "Klient-ID"
           },
           "hint": {
-            "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)"
+            "en": "Unique client ID for MQTT connection (required for Custom MQTT Client)",
+            "da": "Unikt klient-ID til MQTT-forbindelsen (krævet for brugerdefineret MQTT-klient)"
           },
-          "value": "homey-device",
+          "value": "homey-watts-live",
           "required": true,
           "conditional": {
             "id": "useHomeyMqttClient",
@@ -328,10 +367,12 @@
           "id": "username",
           "type": "text",
           "label": {
-            "en": "MQTT Username"
+            "en": "MQTT Username",
+            "da": "MQTT-brugernavn"
           },
           "hint": {
-            "en": "Username for authenticating with the MQTT broker (optional)"
+            "en": "Username for authenticating with the MQTT broker (optional)",
+            "da": "Brugernavn til godkendelse mod MQTT-brokeren (valgfrit)"
           },
           "optional": true,
           "value": "",
@@ -344,10 +385,12 @@
           "id": "password",
           "type": "password",
           "label": {
-            "en": "MQTT Password"
+            "en": "MQTT Password",
+            "da": "MQTT-adgangskode"
           },
           "hint": {
-            "en": "Password for authenticating with the MQTT broker (optional)"
+            "en": "Password for authenticating with the MQTT broker (optional)",
+            "da": "Adgangskode til godkendelse mod MQTT-brokeren (valgfrit)"
           },
           "optional": true,
           "value": "",
@@ -360,10 +403,12 @@
           "id": "useTls",
           "type": "checkbox",
           "label": {
-            "en": "Use TLS"
+            "en": "Use TLS",
+            "da": "Brug TLS"
           },
           "hint": {
-            "en": "Enable TLS for secure MQTT communication (optional)"
+            "en": "Enable TLS for secure MQTT communication (optional)",
+            "da": "Aktiver TLS for sikker MQTT-kommunikation (valgfrit)"
           },
           "value": false,
           "conditional": {
@@ -375,10 +420,12 @@
           "id": "acceptSelfSignedCert",
           "type": "checkbox",
           "label": {
-            "en": "Accept Self Signed Certificates"
+            "en": "Accept Self Signed Certificates",
+            "da": "Accepter selvsignerede certifikater"
           },
           "hint": {
-            "en": "Accept Self Signed Certificates presented by the broker"
+            "en": "Accept Self Signed Certificates presented by the broker",
+            "da": "Accepter selvsignerede certifikater præsenteret af brokeren"
           },
           "value": false,
           "conditional": {
@@ -390,10 +437,12 @@
           "id": "debugLogging",
           "type": "checkbox",
           "label": {
-            "en": "Enable Debug Logging"
+            "en": "Enable Debug Logging",
+            "da": "Aktiver fejlsogningslog"
           },
           "hint": {
-            "en": "Enable verbose logs and store recent entries below."
+            "en": "Enable verbose logs and store recent entries below.",
+            "da": "Aktiver detaljerede logninger og gem de seneste poster nedenfor."
           },
           "value": false
         },
@@ -401,10 +450,12 @@
           "id": "debugLog",
           "type": "textarea",
           "label": {
-            "en": "Debug Log"
+            "en": "Debug Log",
+            "da": "Fejlsogningslog"
           },
           "hint": {
-            "en": "Recent debug log entries. You can clear this field manually."
+            "en": "Recent debug log entries. You can clear this field manually.",
+            "da": "Seneste logposter. Du kan rydde feltet manuelt."
           },
           "value": ""
         }
@@ -416,10 +467,12 @@
       "type": "number",
       "units": "A",
       "title": {
-        "en": "Current"
+        "en": "Current",
+        "da": "Strøm"
       },
       "desc": {
-        "en": "Current of specific phase"
+        "en": "Current of specific phase",
+        "da": "Strøm for en bestemt fase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -432,10 +485,12 @@
       "type": "number",
       "units": "A",
       "title": {
-        "en": "Current L1"
+        "en": "Current L1",
+        "da": "Strøm L1"
       },
       "desc": {
-        "en": "Current of L1"
+        "en": "Current of L1",
+        "da": "Strøm pa L1"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -448,10 +503,12 @@
       "type": "number",
       "units": "A",
       "title": {
-        "en": "Current L2"
+        "en": "Current L2",
+        "da": "Strøm L2"
       },
       "desc": {
-        "en": "Current of L2"
+        "en": "Current of L2",
+        "da": "Strøm pa L2"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -464,10 +521,12 @@
       "type": "number",
       "units": "A",
       "title": {
-        "en": "Current L3"
+        "en": "Current L3",
+        "da": "Strøm L3"
       },
       "desc": {
-        "en": "Current of L3"
+        "en": "Current of L3",
+        "da": "Strøm pa L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -480,10 +539,12 @@
       "type": "number",
       "units": "kWh",
       "title": {
-        "en": "Energy"
+        "en": "Energy",
+        "da": "Energi"
       },
       "desc": {
-        "en": "Cumulative Energy"
+        "en": "Cumulative Energy",
+        "da": "Akkumuleret energi"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -496,10 +557,12 @@
       "type": "number",
       "units": "kWh",
       "title": {
-        "en": "Energy Production"
+        "en": "Energy Production",
+        "da": "Energiproduktion"
       },
       "desc": {
-        "en": "Cumulative Energy Production"
+        "en": "Cumulative Energy Production",
+        "da": "Akkumuleret energiproduktion"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -512,10 +575,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "Power Production"
+        "en": "Power Production",
+        "da": "Effektproduktion"
       },
       "desc": {
-        "en": "Cumulative Power Production"
+        "en": "Cumulative Power Production",
+        "da": "Akkumuleret effektproduktion"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -528,10 +593,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "Phase Negative Power"
+        "en": "Phase Negative Power",
+        "da": "Fase negativ effekt"
       },
       "desc": {
-        "en": "Power production of specific phase"
+        "en": "Power production of specific phase",
+        "da": "Effektproduktion for en bestemt fase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -544,10 +611,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L1 Negative Power"
+        "en": "L1 Negative Power",
+        "da": "L1 negativ effekt"
       },
       "desc": {
-        "en": "Power production of L1"
+        "en": "Power production of L1",
+        "da": "Effektproduktion pa L1"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -560,10 +629,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L2 Negative Power"
+        "en": "L2 Negative Power",
+        "da": "L2 negativ effekt"
       },
       "desc": {
-        "en": "Power production of L2"
+        "en": "Power production of L2",
+        "da": "Effektproduktion pa L2"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -576,10 +647,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L3 Negative Power"
+        "en": "L3 Negative Power",
+        "da": "L3 negativ effekt"
       },
       "desc": {
-        "en": "Power production of L3"
+        "en": "Power production of L3",
+        "da": "Effektproduktion pa L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -592,10 +665,12 @@
       "type": "number",
       "units": "KVarh",
       "title": {
-        "en": "Reactive Energy"
+        "en": "Reactive Energy",
+        "da": "Reaktiv energi"
       },
       "desc": {
-        "en": "Reactive energy produced by the system"
+        "en": "Reactive energy produced by the system",
+        "da": "Reaktiv energi produceret af systemet"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -608,10 +683,12 @@
       "type": "number",
       "units": "Var",
       "title": {
-        "en": "Reactive Production"
+        "en": "Reactive Production",
+        "da": "Reaktiv produktion"
       },
       "desc": {
-        "en": "Reactive Power Production"
+        "en": "Reactive Power Production",
+        "da": "Reaktiv effektproduktion"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -624,10 +701,12 @@
       "type": "number",
       "units": "KVarh",
       "title": {
-        "en": "Reactive Consumption"
+        "en": "Reactive Consumption",
+        "da": "Reaktivt forbrug"
       },
       "desc": {
-        "en": "Reactive energy consumed by the system"
+        "en": "Reactive energy consumed by the system",
+        "da": "Reaktiv energi forbrugt af systemet"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -640,10 +719,12 @@
       "type": "number",
       "units": "Var",
       "title": {
-        "en": "Reactive Consumption"
+        "en": "Reactive Consumption",
+        "da": "Reaktivt forbrug"
       },
       "desc": {
-        "en": "Reactive Power Consumption"
+        "en": "Reactive Power Consumption",
+        "da": "Reaktivt effektforbrug"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -656,10 +737,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "Phase Power"
+        "en": "Phase Power",
+        "da": "Faseeffekt"
       },
       "desc": {
-        "en": "Power consumption of specific phase"
+        "en": "Power consumption of specific phase",
+        "da": "Effektforbrug for en bestemt fase"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -672,10 +755,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L1 Power"
+        "en": "L1 Power",
+        "da": "L1 effekt"
       },
       "desc": {
-        "en": "Power consumption of L1"
+        "en": "Power consumption of L1",
+        "da": "Effektforbrug pa L1"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -688,10 +773,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L2 Power"
+        "en": "L2 Power",
+        "da": "L2 effekt"
       },
       "desc": {
-        "en": "Power consumption of L2"
+        "en": "Power consumption of L2",
+        "da": "Effektforbrug pa L2"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -704,10 +791,12 @@
       "type": "number",
       "units": "W",
       "title": {
-        "en": "L3 Power"
+        "en": "L3 Power",
+        "da": "L3 effekt"
       },
       "desc": {
-        "en": "Power consumption of L3"
+        "en": "Power consumption of L3",
+        "da": "Effektforbrug pa L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -720,10 +809,12 @@
       "type": "number",
       "units": "V",
       "title": {
-        "en": "L1 Voltage"
+        "en": "L1 Voltage",
+        "da": "L1 spænding"
       },
       "desc": {
-        "en": "Voltage of L1"
+        "en": "Voltage of L1",
+        "da": "spænding pa L1"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -736,10 +827,12 @@
       "type": "number",
       "units": "V",
       "title": {
-        "en": "L2 Voltage"
+        "en": "L2 Voltage",
+        "da": "L2 spænding"
       },
       "desc": {
-        "en": "Voltage of L2"
+        "en": "Voltage of L2",
+        "da": "spænding pa L2"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,
@@ -752,10 +845,12 @@
       "type": "number",
       "units": "V",
       "title": {
-        "en": "L3 Voltage"
+        "en": "L3 Voltage",
+        "da": "L3 spænding"
       },
       "desc": {
-        "en": "Voltage of L3"
+        "en": "Voltage of L3",
+        "da": "spænding pa L3"
       },
       "uiComponent": "sensor",
       "uiQuickAction": true,

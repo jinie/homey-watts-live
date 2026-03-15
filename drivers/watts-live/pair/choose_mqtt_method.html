@@ -5,50 +5,253 @@
   <meta charset="UTF-8">
   <title>Select MQTT Connection Method</title>
   <style>
-    .custom-mqtt-fields {
-      display: none;
+    body {
+      margin: 0;
+    }
+
+    .pair-layout {
+      display: grid;
+      gap: 16px;
+    }
+
+    .pair-card {
+      border: 1px solid var(--homey-color-line, #d8d8d8);
+      border-radius: 12px;
+      padding: 16px;
+      background: var(--homey-color-background, #fff);
+    }
+
+    .pair-card h2,
+    .pair-card h3,
+    .pair-card p {
+      margin: 0 0 12px;
+    }
+
+    .homey-form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .custom-mqtt-fields[hidden] {
+      display: none !important;
+    }
+
+    .pair-error[hidden] {
+      display: none !important;
+    }
+
+    .pair-error {
+      color: #b3261e;
+      font-size: 0.9em;
+      margin-top: 4px;
+    }
+
+    .pair-help {
+      color: var(--homey-color-text-light, #6b7280);
+      font-size: 0.9em;
+    }
+
+    .pair-actions {
+      margin-top: 8px;
     }
   </style>
 </head>
 
 <body>
-  
-  <header class="homey-header">
-    <h1 class="homey-title" data-i18n="settings.title">
-      <!-- This will be filled with the translated string with key 'settings.title'. -->
-    </h1>
-    <p class="homey-subtitle" data-i18n="settings.subtitle">
-      <!-- This will be filled with the translated string with key 'settings.subtitle'. -->
-    </p>
-  </header>
-  <h2>Select MQTT Connection Method</h2>
-  
-  <div class="homey-form-group">
-    
-    <label for="mqttMethod">Connection Type:</label>
-    <select id="mqttMethod">
-      <option value="homey_mqtt_client">Use Homey MQTT Client</option>
-      <option value="custom_mqtt_client">Use Custom MQTT Server</option>
-    </select>
-    
-    <div id="customMqttSettings" class="custom-mqtt-fields">
-      <h3>Custom MQTT Server Settings</h3>
-      <label>Hostname: <input type="text" id="hostname"></label><br>
-      <label>Port: <input type="number" id="port"></label><br>
-      <label>Client ID: <input type="text" id="clientId"></label><br>
-      <label>Username: <input type="text" id="username"></label><br>
-      <label>Password: <input type="password" id="password"></label><br>
-      <label>Use TLS: <input type="checkbox" id="useTls"></label><br>
-      <label>Accept Self-Signed Certificates: <input type="checkbox" id="acceptSelfSignedCert"></label><br>
+  <div class="pair-layout">
+    <header class="homey-header">
+      <h1 class="homey-title" id="pageTitle"></h1>
+      <p class="homey-subtitle" id="pageSubtitle"></p>
+    </header>
+
+    <div class="pair-card">
+      <div class="homey-form-group">
+        <label for="mqttMethod" id="mqttMethodLabel"></label>
+        <select id="mqttMethod">
+          <option value="homey_mqtt_client" id="homeyOption"></option>
+          <option value="custom_mqtt_client" id="customOption"></option>
+        </select>
+        <p class="pair-help" id="mqttMethodHelp"></p>
+      </div>
+
+      <div id="customMqttSettings" class="custom-mqtt-fields" hidden>
+        <h3 id="customSettingsTitle"></h3>
+
+        <div class="homey-form-group">
+          <label for="hostname" id="hostnameLabel"></label>
+          <input type="text" id="hostname" placeholder="mqtt.example.local" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="homey-form-group">
+          <label for="port" id="portLabel"></label>
+          <input type="number" id="port" value="1883" min="1" max="65535" inputmode="numeric">
+        </div>
+
+        <div class="homey-form-group">
+          <label for="clientId" id="clientIdLabel"></label>
+          <input type="text" id="clientId" value="homey-watts-live" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="homey-form-group">
+          <label for="username" id="usernameLabel"></label>
+          <input type="text" id="username" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="homey-form-group">
+          <label for="password" id="passwordLabel"></label>
+          <input type="password" id="password">
+        </div>
+
+        <div class="homey-form-group">
+          <label>
+            <input type="checkbox" id="useTls">
+            <span id="useTlsLabel"></span>
+          </label>
+        </div>
+
+        <div class="homey-form-group">
+          <label>
+            <input type="checkbox" id="acceptSelfSignedCert">
+            <span id="acceptSelfSignedLabel"></span>
+          </label>
+        </div>
+      </div>
+
+      <p id="formError" class="pair-error" hidden></p>
+
+      <div class="pair-actions">
+        <button id="continue" class="homey-button-primary-full"></button>
+      </div>
     </div>
   </div>
-  <button id="continue" class="homey-button-primary-full">Continue</button> <!-- This button remains visible -->
-  
+
   <script>
-    // Hide Homey's default 'Continue' button initially
     const defaultContinueButton = document.getElementById('hy-nav-continue');
+    const mqttMethodSelect = document.getElementById('mqttMethod');
+    const customMqttSettings = document.getElementById('customMqttSettings');
+    const continueButton = document.getElementById('continue');
+    const formError = document.getElementById('formError');
+    const hostnameInput = document.getElementById('hostname');
+    const portInput = document.getElementById('port');
+    const clientIdInput = document.getElementById('clientId');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const useTlsInput = document.getElementById('useTls');
+    const acceptSelfSignedCertInput = document.getElementById('acceptSelfSignedCert');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const mqttMethodLabel = document.getElementById('mqttMethodLabel');
+    const mqttMethodHelp = document.getElementById('mqttMethodHelp');
+    const homeyOption = document.getElementById('homeyOption');
+    const customOption = document.getElementById('customOption');
+    const customSettingsTitle = document.getElementById('customSettingsTitle');
+    const hostnameLabel = document.getElementById('hostnameLabel');
+    const portLabel = document.getElementById('portLabel');
+    const clientIdLabel = document.getElementById('clientIdLabel');
+    const usernameLabel = document.getElementById('usernameLabel');
+    const passwordLabel = document.getElementById('passwordLabel');
+    const useTlsLabel = document.getElementById('useTlsLabel');
+    const acceptSelfSignedLabel = document.getElementById('acceptSelfSignedLabel');
+
+    function t(key) {
+      return Homey.__(key);
+    }
+
+    function applyTranslations() {
+      document.title = t('pair.choose.title');
+      pageTitle.textContent = t('pair.choose.title');
+      pageSubtitle.textContent = t('pair.choose.subtitle');
+      mqttMethodLabel.textContent = t('pair.choose.connection_type');
+      mqttMethodHelp.textContent = t('pair.choose.connection_help');
+      homeyOption.textContent = t('pair.choose.option_homey');
+      customOption.textContent = t('pair.choose.option_custom');
+      customSettingsTitle.textContent = t('pair.choose.custom_title');
+      hostnameLabel.textContent = t('pair.choose.hostname');
+      portLabel.textContent = t('pair.choose.port');
+      clientIdLabel.textContent = t('pair.choose.client_id');
+      usernameLabel.textContent = t('pair.choose.username');
+      passwordLabel.textContent = t('pair.choose.password');
+      useTlsLabel.textContent = t('pair.choose.use_tls');
+      acceptSelfSignedLabel.textContent = t('pair.choose.accept_self_signed');
+      continueButton.textContent = t('pair.choose.continue');
+    }
+
     if (defaultContinueButton) {
       defaultContinueButton.style.display = 'none';
+    }
+
+    function setFormError(message) {
+      formError.textContent = message || '';
+      formError.hidden = !message;
+    }
+
+    function usingCustomMqtt() {
+      return mqttMethodSelect.value === 'custom_mqtt_client';
+    }
+
+    function buildSuggestedClientId() {
+      const suffix = Math.random().toString(16).slice(2, 8);
+      return 'homey-watts-live-' + suffix;
+    }
+
+    function ensureSuggestedClientId() {
+      const currentValue = clientIdInput.value.trim();
+      if (!currentValue || currentValue === 'homey-device' || currentValue === 'homey-watts-live') {
+        clientIdInput.value = buildSuggestedClientId();
+      }
+    }
+
+    function updateFormState() {
+      customMqttSettings.hidden = !usingCustomMqtt();
+      if (!customMqttSettings.hidden) {
+        ensureSuggestedClientId();
+      }
+      setFormError('');
+    }
+
+    function validateCustomSettings() {
+      const hostname = hostnameInput.value.trim();
+      const port = Number.parseInt(portInput.value, 10);
+      const clientId = clientIdInput.value.trim();
+
+      if (hostname.length === 0) {
+        return t('pair.choose.validation.hostname_required');
+      }
+      if (hostname.includes('://')) {
+        return t('pair.choose.validation.hostname_no_protocol');
+      }
+      if (/\s/.test(hostname)) {
+        return t('pair.choose.validation.hostname_no_spaces');
+      }
+      if (hostname.includes('/')) {
+        return t('pair.choose.validation.hostname_no_path');
+      }
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        return t('pair.choose.validation.port_invalid');
+      }
+      if (clientId.length === 0) {
+        return t('pair.choose.validation.client_id_required');
+      }
+
+      return '';
+    }
+
+    function buildSettingsPayload() {
+      if (!usingCustomMqtt()) {
+        return {
+          useHomeyMqttClient: 'homey'
+        };
+      }
+
+      return {
+        useHomeyMqttClient: 'custom',
+        hostname: hostnameInput.value,
+        port: Number.parseInt(portInput.value, 10),
+        clientId: clientIdInput.value,
+        username: usernameInput.value,
+        password: passwordInput.value,
+        useTls: useTlsInput.checked,
+        acceptSelfSignedCert: acceptSelfSignedCertInput.checked
+      };
     }
 
     Homey.emit('get_api_state', {}, function (err, state) {
@@ -63,67 +266,49 @@
         }
       }
     });
-    
-    // Event listener for selecting the MQTT method
-    document.getElementById('mqttMethod').addEventListener('change', function () {
-      const customMqttFields = document.getElementById('customMqttSettings');
-      
-      if (this.value === 'custom_mqtt_client') {
-        customMqttFields.style.display = 'block';  // Show custom MQTT settings
-      } else {
-        customMqttFields.style.display = 'none';   // Hide custom MQTT settings
-      }
-    });
-    // Event listener for the custom 'Continue' button click
-    document.getElementById('continue').addEventListener('click', function () {
-      const continueButton = document.getElementById('continue');
-      continueButton.disabled = true;
 
-      const mqttMethod = document.getElementById('mqttMethod').value;
-      let data = {};
-      
-      if (mqttMethod === 'homey_mqtt_client') {
-        data = {
-          useHomeyMqttClient: 'homey'
-        };
-      } else if (mqttMethod === 'custom_mqtt_client') {
-        data = {
-          useHomeyMqttClient: 'custom',
-          hostname: document.getElementById('hostname').value,
-          port: parseInt(document.getElementById('port').value, 10),
-          clientId: document.getElementById('clientId').value,
-          username: document.getElementById('username').value,
-          password: document.getElementById('password').value,
-          useTls: document.getElementById('useTls').checked,
-          acceptSelfSignedCert: document.getElementById('acceptSelfSignedCert').checked
-        };
+    mqttMethodSelect.addEventListener('change', updateFormState);
+
+    continueButton.addEventListener('click', function () {
+      setFormError('');
+
+      if (usingCustomMqtt()) {
+        const validationError = validateCustomSettings();
+        if (validationError) {
+          setFormError(validationError);
+          return;
+        }
       }
-      
-      // Emit the data to pairing.js and proceed to the next step
+
+      continueButton.disabled = true;
+      const data = buildSettingsPayload();
+
       Homey.emit('choose_mqtt_method', data, function (err) {
         if (err) {
           continueButton.disabled = false;
-          Homey.alert('Connection failed: ' + (err.message || err), 'error');
+          setFormError(err.message || String(err));
         } else {
-          Homey.nextView('loading');  // Proceed to the next step
+          Homey.nextView('loading');
         }
       });
     });
-    
-    // Backward compatibility with older pairing flow event.
+
     Homey.on('disable_homey_mqtt_option', function (data) {
-      console.log('disable_homey_mqtt_option event received:', data);
       if (data.disable) {
         const homeyMqttOption = document.querySelector('option[value="homey_mqtt_client"]');
         if (homeyMqttOption) {
-          homeyMqttOption.disabled = true;  // Disable the option
-          console.log('Homey MQTT Client option disabled');
-        } else {
-          console.log('Homey MQTT Client option not found');
+          homeyMqttOption.disabled = true;
+          if (mqttMethodSelect.value === 'homey_mqtt_client') {
+            mqttMethodSelect.value = 'custom_mqtt_client';
+            updateFormState();
+          }
         }
       }
     });
-    
+
+    applyTranslations();
+    ensureSuggestedClientId();
+    updateFormState();
   </script>
 </body>
 

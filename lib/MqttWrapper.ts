@@ -22,17 +22,14 @@ export default class MqttWrapper extends EventEmitter {
   private bindConnectorEvents(connector: IMqttConnector): void {
     // Listen for events
     connector.on('connect', () => {
-      this.homey.log('MQTT broker connected');
       this.emit('connect');
     });
 
     connector.on('disconnect', () => {
-      this.homey.log('MQTT broker disconnected');
       this.emit('disconnect');
     });
 
     connector.on('error', (err) => {
-      this.homey.log('MQTT error:', err.message);
       if (this.listenerCount('error') > 0) {
         this.emit('error', err);
       }

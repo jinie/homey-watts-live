@@ -9,5 +9,61 @@
   "device.unavailable.mqtt_timeout": "MQTT broker timed out; retrying automatically",
   "device.unavailable.mqtt_connection_error": "MQTT connection error",
   "device.unavailable.mqtt_connection_lost": "MQTT connection lost; retrying automatically",
-  "device.unavailable.mqtt_disconnected": "MQTT disconnected; retrying automatically"
+  "device.unavailable.mqtt_disconnected": "MQTT disconnected; retrying automatically",
+  "pair.choose.title": "Select MQTT Connection Method",
+  "pair.choose.subtitle": "Choose how Homey should connect to Watts Live.",
+  "pair.choose.connection_type": "Connection Type",
+  "pair.choose.connection_help": "Use the Homey MQTT app when available, or connect directly to your own MQTT broker.",
+  "pair.choose.option_homey": "Use Homey MQTT Client",
+  "pair.choose.option_custom": "Use Custom MQTT Server",
+  "pair.choose.custom_title": "Custom MQTT Server Settings",
+  "pair.choose.hostname": "Hostname",
+  "pair.choose.port": "Port",
+  "pair.choose.client_id": "Client ID",
+  "pair.choose.username": "Username",
+  "pair.choose.password": "Password",
+  "pair.choose.use_tls": "Use TLS",
+  "pair.choose.accept_self_signed": "Accept Self-Signed Certificates",
+  "pair.choose.continue": "Continue",
+  "pair.choose.validation.hostname_required": "Hostname is required",
+  "pair.choose.validation.hostname_no_protocol": "Hostname must not include mqtt:// or mqtts://",
+  "pair.choose.validation.hostname_no_spaces": "Hostname must not contain spaces",
+  "pair.choose.validation.hostname_no_path": "Hostname must not contain path separators",
+  "pair.choose.validation.port_invalid": "Port must be a whole number between 1 and 65535",
+  "pair.choose.validation.client_id_required": "Client ID is required",
+  "pair.loading.title": "Discovering Devices",
+  "pair.loading.subtitle": "Homey is searching for Watts Live devices on MQTT.",
+  "pair.loading.message": "Discovering devices, please wait...",
+  "pair": {
+    "choose": {
+      "title": "Select MQTT Connection Method",
+      "subtitle": "Choose how Homey should connect to Watts Live.",
+      "connection_type": "Connection Type",
+      "connection_help": "Use the Homey MQTT app when available, or connect directly to your own MQTT broker.",
+      "option_homey": "Use Homey MQTT Client",
+      "option_custom": "Use Custom MQTT Server",
+      "custom_title": "Custom MQTT Server Settings",
+      "hostname": "Hostname",
+      "port": "Port",
+      "client_id": "Client ID",
+      "username": "Username",
+      "password": "Password",
+      "use_tls": "Use TLS",
+      "accept_self_signed": "Accept Self-Signed Certificates",
+      "continue": "Continue",
+      "validation": {
+        "hostname_required": "Hostname is required",
+        "hostname_no_protocol": "Hostname must not include mqtt:// or mqtts://",
+        "hostname_no_spaces": "Hostname must not contain spaces",
+        "hostname_no_path": "Hostname must not contain path separators",
+        "port_invalid": "Port must be a whole number between 1 and 65535",
+        "client_id_required": "Client ID is required"
+      }
+    },
+    "loading": {
+      "title": "Discovering Devices",
+      "subtitle": "Homey is searching for Watts Live devices on MQTT.",
+      "message": "Discovering devices, please wait..."
+    }
+  }
 }

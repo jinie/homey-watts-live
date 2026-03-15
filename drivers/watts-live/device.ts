@@ -419,6 +419,10 @@ export default class WattsLiveDevice extends Homey.Device {
             'Reconnecting due to changed MQTT settings',
           );
           const driverSettings = new DriverSettings(newSettings);
+          const validationErrors = driverSettings.validate({ requireDeviceId: true });
+          if (validationErrors.length > 0) {
+            throw new Error(validationErrors[0]);
+          }
           await this.reconnectMqtt(driverSettings);
         } catch (ex: any) {
           await this.logMessage(

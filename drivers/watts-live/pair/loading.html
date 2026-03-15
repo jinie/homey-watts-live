@@ -32,17 +32,18 @@
 <body>
 
   <header class="homey-header">
-    <h1 class="homey-title" data-i18n="settings.title">
-      <!-- This will be filled with the translated string with key 'settings.title'. -->
-    </h1>
-    <p class="homey-subtitle" data-i18n="settings.subtitle">
-      <!-- This will be filled with the translated string with key 'settings.subtitle'. -->
-    </p>
+    <h1 class="homey-title" id="pageTitle"></h1>
+    <p class="homey-subtitle" id="pageSubtitle"></p>
   </header>
   <div class="spinner"></div>
-  <div class="message">Discovering devices, please wait...</div>
+  <div class="message" id="loadingMessage"></div>
 
   <script>
+    document.title = Homey.__('pair.loading.title');
+    document.getElementById('pageTitle').textContent = Homey.__('pair.loading.title');
+    document.getElementById('pageSubtitle').textContent = Homey.__('pair.loading.subtitle');
+    document.getElementById('loadingMessage').textContent = Homey.__('pair.loading.message');
+
     // Notify the pairing script to start device discovery
     Homey.emit('start_discovery', {}, function (err, result) {
       if (err) {

@@ -92,29 +92,11 @@ class WattsLiveDriver extends Homey.Driver {
 
           // Create an instance of DriverSettings based on the emitted data
           this.driverSettings = new DriverSettings(settings);
-          this.log(`Pairing settings: ${this.driverSettings.toSafeJSON()}`);
-
-          // Initialize MqttWrapper with Homey.app['homey'] and the constructed DriverSettings
-          this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
-
-          // Enforce a timeout so the pairing UI gets an error response instead of hanging.
-          const connectTimeoutMs = 10000;
-          let timeoutId: ReturnType<typeof setTimeout> | null = null;
-          try {
-            await Promise.race([
-              this.mqttWrapper.connect(),
-              new Promise<never>((_, reject) => {
-                timeoutId = setTimeout(() => {
-                  reject(new Error(`MQTT connection timeout after ${connectTimeoutMs}ms`));
-                }, connectTimeoutMs);
-              }),
-            ]);
-          } finally {
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
+          const validationErrors = this.driverSettings.validate();
+          if (validationErrors.length > 0) {
+            throw new Error(validationErrors[0]);
           }
-          // Proceed to the next step if successful
+          this.log(`Pairing settings: ${this.driverSettings.toSafeJSON()}`);
         } catch (err: any) {
           this.homey.log(`Selected pairing method failed: ${this.driverSettings?.toSafeJSON()}`);
           if (this.mqttWrapper) {
@@ -133,9 +115,15 @@ class WattsLiveDriver extends Homey.Driver {
     // Handler for starting device discovery
     session.setHandler('start_discovery', async () => {
       try {
-        if (this.mqttWrapper === null) {
-          throw new Error('MQTT wrapper is not initialized');
+        if (!this.driverSettings) {
+          throw new Error('Pairing settings are not initialized');
         }
+
+        if (this.mqttWrapper === null) {
+          this.mqttWrapper = new MqttWrapper(this.homey, this.driverSettings);
+        }
+
+        await this.mqttWrapper.connect();
 
         // Start discovering devices using the topic
         const discoveredDevices = await this.mqttWrapper.discoverDevices(
@@ -183,6 +171,12 @@ class WattsLiveDriver extends Homey.Driver {
         // Return a successful response
         return true;
       } catch (err: unknown) {
+        if (this.mqttWrapper) {
+          await this.mqttWrapper.disconnect().catch((disconnectError) => {
+            this.homey.log('Error during failed discovery cleanup', disconnectError);
+          });
+          this.mqttWrapper = null;
+        }
         throw new Error(`Failed to discover devices: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
