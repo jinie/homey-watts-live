@@ -62,7 +62,7 @@
     },
     "loading": {
       "title": "Finder enheder",
-      "subtitle": "Homey soger efter Watts Live-enheder pa MQTT.",
+      "subtitle": "Homey søger efter Watts Live-enheder pa MQTT.",
       "message": "Finder enheder, vent venligst..."
     }
   }

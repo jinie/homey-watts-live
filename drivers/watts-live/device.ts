@@ -3,8 +3,6 @@
 import Homey from 'homey';
 import {
   ReadingToCapabilityMap,
-  addedCapabilitiesV1toV2,
-  removedCapabilitiesV1toV2,
 } from '../../lib/constants';
 import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
@@ -41,8 +39,6 @@ export default class WattsLiveDevice extends Homey.Device {
    */
   async onInit() {
     this.isDeleted = false;
-    await this.migrateToNewMqttConnectivity();
-    await this.migrateCapabilities(); // Update capabilities from V1 to V2
     this.runtimeDebug = this.isRuntimeDebugEnabled();
     this.settingsDebug = this.getSetting('debugLogging') === true;
     const existingDebugLog = this.getSetting('debugLog');
@@ -663,103 +659,6 @@ export default class WattsLiveDevice extends Homey.Device {
     }
   }
 
-  /**
-   * Migrate custom capabilities between versions.
-   * No 'official' way of migrating exists, so for now just delete the old capabiliy and add a new one.
-   * This deletes history and may break flows, so don't make a habit of it.
-   */
-  async migrateCapabilities() {
-    if (this.getCapabilities().includes('meter_power')) {
-      await this.logMessage(DebugLogLevel.INFO, 'Removing meter_power capability');
-      await this.removeCapability('meter_power').catch((error) => {
-        if (this.runtimeDebug) throw error;
-        else {
-          this.logMessage(
-            DebugLogLevel.ERROR,
-            'migrateCapabilites, removeCapability error',
-            error,
-          ).catch(() => {});
-        }
-      });
-      await this.logMessage(DebugLogLevel.INFO, 'Adding meter_power.imported capability');
-      await this.addCapability('meter_power.imported').catch((error) => {
-        if (this.runtimeDebug) throw error;
-        else {
-          this.logMessage(
-            DebugLogLevel.ERROR,
-            'migrateCapabilites, addCapability error',
-            error,
-          ).catch(() => {});
-        }
-      });
-    }
-    if (this.getCapabilities().includes('measure_negative_active_energy')) {
-      await this.logMessage(DebugLogLevel.INFO, 'Removing measure_negative_active_energy capability');
-      await this.removeCapability('measure_negative_active_energy').catch(
-        (error) => {
-          if (this.runtimeDebug) throw error;
-          else {
-            this.logMessage(
-              DebugLogLevel.ERROR,
-              'migrateCapabilites, removeCapability error',
-              error,
-            ).catch(() => {});
-          }
-        },
-      );
-      await this.logMessage(DebugLogLevel.INFO, 'Adding metwer_power.exported capability');
-      await this.addCapability('meter_power.exported').catch((error) => {
-        if (this.runtimeDebug) throw error;
-        else {
-          this.logMessage(
-            DebugLogLevel.ERROR,
-            'migrateCapabilites, addCapability error',
-            error,
-          ).catch(() => {});
-        }
-      });
-    }
-
-    for (const capability of removedCapabilitiesV1toV2) {
-      if (this.getCapabilities().includes(capability)) {
-        await this.logMessage(DebugLogLevel.INFO, `Removing capability ${capability}`);
-      }
-
-      try {
-        await this.removeCapability(capability);
-      } catch (error) {
-        if (this.runtimeDebug) {
-          throw error;
-        } else {
-          await this.logMessage(
-            DebugLogLevel.ERROR,
-            'migrateCapabilites, removeCapability error',
-            error,
-          );
-        }
-      }
-    }
-
-    for (const capability of addedCapabilitiesV1toV2) {
-      if (!this.getCapabilities().includes(capability)) {
-        await this.logMessage(DebugLogLevel.INFO, `Adding capability ${capability}`);
-      }
-
-      try {
-        await this.addCapability(capability);
-      } catch (error) {
-        if (this.runtimeDebug) {
-          throw error;
-        } else {
-          await this.logMessage(
-            DebugLogLevel.ERROR,
-            'migrateCapabilites, Production addCapability error',
-            error,
-          );
-        }
-      }
-    }
-  }
 }
 
 module.exports = WattsLiveDevice;
