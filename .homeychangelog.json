@@ -136,5 +136,8 @@
   },
   "2.0.31": {
     "en": "Add Frequency measurering. Set minimum Homey version to 12.2 for frequency support. Add danish translations. More safeguards around MQTT connectivity edge cases."
+  },
+  "2.0.32": {
+    "en": "Add Frequency measurering. Set minimum Homey version to 12.2 for frequency support. Add danish translations. More safeguards around MQTT connectivity edge cases. Locale fixes."
   }
 }
