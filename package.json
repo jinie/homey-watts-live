@@ -15,7 +15,6 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "minimatch": "^10.2.4",
     "mqtt": "^5.7.1",
     "semver": "^7.7.4"
   }
