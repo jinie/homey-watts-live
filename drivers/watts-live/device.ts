@@ -2,6 +2,7 @@
 
 import Homey from 'homey';
 import { parsePayload, readingToCapabilities } from '../../lib/readings';
+import { measurementTopic, parseWattsTopic } from '../../lib/topics';
 import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import KvMap from '../../types/KvMap';
@@ -285,7 +286,7 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
   private isOwnTopic(topic: string): boolean {
-    return topic.replace(/^\//, '') === `watts/${this.getSetting('deviceId')}/measurement`;
+    return parseWattsTopic(topic) === this.getSetting('deviceId');
   }
 
   async onMessage(topic: string, message: unknown) {
@@ -704,11 +705,9 @@ export default class WattsLiveDevice extends Homey.Device {
       }
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connect signal received');
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connected');
-      await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
-      await this.logMessage(
-        DebugLogLevel.INFO,
-        `Subscribed to watts/${driverSettings.deviceId}/measurement`,
-      );
+      const topic = measurementTopic(driverSettings.deviceId);
+      await mqttWrapper.subscribe(topic);
+      await this.logMessage(DebugLogLevel.INFO, `Subscribed to ${topic}`);
       this.reconnectAttempt = 0;
       await this.setAvailable();
     } finally {

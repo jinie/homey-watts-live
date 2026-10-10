@@ -6,6 +6,7 @@ import IMqttConnector from '../types/IMqttConnector';
 import DiscoveredDevice from '../types/DiscoveredDevice';
 import BuiltinBroker from './BuiltinBroker';
 import delay from './delay';
+import { parseWattsTopic } from './topics';
 
 // Meters that published this recently are offered immediately during pairing
 const RECENTLY_SEEN_MS = 5 * 60 * 1000;
@@ -105,9 +106,9 @@ export default class BuiltinMqttConnector extends EventEmitter implements IMqttC
     const ids = new Set<string>(this.broker.recentlySeen(RECENTLY_SEEN_MS));
     if (ids.size === 0) {
       const onDiscoveryMessage = (receivedTopic: string) => {
-        const match = receivedTopic.match(/^\/?watts\/([^/]+)\/measurement$/);
-        if (match) {
-          ids.add(match[1]);
+        const serial = parseWattsTopic(receivedTopic);
+        if (serial) {
+          ids.add(serial);
         }
       };
       await this.subscribe(topic);

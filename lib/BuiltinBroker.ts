@@ -2,6 +2,7 @@
 
 import { EventEmitter } from 'events';
 import net from 'net';
+import { parseWattsTopic } from './topics';
 
 export interface BuiltinBrokerConfig {
   enabled: boolean;
@@ -28,7 +29,6 @@ export interface BuiltinBrokerStatus {
 }
 
 const RETRY_MS = 60 * 1000;
-const WATTS_TOPIC = /^\/?watts\/([^/]+)\/measurement$/;
 
 // Minimal shape of the aedes broker that is used here (aedes is ESM-only and loaded dynamically)
 interface AedesLike extends EventEmitter {
@@ -130,9 +130,9 @@ export default class BuiltinBroker extends EventEmitter {
   }
 
   private onPublish(topic: string, payload: Buffer): void {
-    const match = WATTS_TOPIC.exec(topic);
-    if (match) {
-      this.seen.set(match[1], Date.now());
+    const serial = parseWattsTopic(topic);
+    if (serial) {
+      this.seen.set(serial, Date.now());
       this.state.messages += 1;
       this.state.lastMessageAt = new Date().toISOString();
     }
