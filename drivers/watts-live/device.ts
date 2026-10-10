@@ -1,13 +1,10 @@
 'use strict';
 
 import Homey from 'homey';
-import {
-  ReadingToCapabilityMap,
-} from '../../lib/constants';
+import { parsePayload, readingToCapabilities } from '../../lib/readings';
 import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import KvMap from '../../types/KvMap';
-import MeterReading from '../../types/MeterReading';
 import DebugLogLevel from '../../types/DebugLogLevel';
 
 export default class WattsLiveDevice extends Homey.Device {
@@ -273,56 +270,21 @@ export default class WattsLiveDevice extends Homey.Device {
 
   public async processMqttMessage(topic: string, message: unknown) {
     try {
-      let msg: object = {};
-      if (Buffer.isBuffer(message)) {
-        msg = JSON.parse(message.toString());
-      } else if (typeof message === 'string') {
-        msg = JSON.parse(message);
-      } else if (message && typeof message === 'object') {
-        msg = message;
-      } else {
+      const reading = parsePayload(message);
+      if (reading === null) {
         await this.logMessage(
           DebugLogLevel.INFO,
-          `Skipping unsupported MQTT message type on ${topic}`,
+          `Skipping unsupported MQTT message on ${topic}: ${String(message)}`,
         );
         return;
       }
 
-      if (msg === null) {
-        await this.logMessage(
-          DebugLogLevel.INFO,
-          `Message converted to null: ${String(message)}`,
-        );
-        return;
-      }
-
-      // Extract device id from topic where device id is /watts/<device_id>/measurement
-      const readings: MeterReading = new MeterReading(msg);
       this.logMessage(
         DebugLogLevel.DEBUG,
-        `processMqttMessage: received reading ${JSON.stringify(readings)}`,
+        `processMqttMessage: received reading ${JSON.stringify(reading)}`,
       ).catch(() => {});
-      // Map readings to capabilities, convert undefined to 0
-      const kMap: KvMap = {};
-      Object.keys(ReadingToCapabilityMap).forEach((value) => {
-        const key = ReadingToCapabilityMap[value];
-        const reading = readings[value as unknown as keyof MeterReading];
-        if (reading === undefined || reading === null) {
-          return;
-        }
-        kMap[key] = reading;
-        // Convert from Watts to kW
-        if (
-          [
-            'meter_power.imported',
-            'meter_power.exported',
-            'meter_power.negative_reactive',
-            'meter_power.positive_reactive',
-          ].includes(key)
-        ) {
-          kMap[key] = (kMap[key] ?? 0) / 1000;
-        }
-      });
+      // Missing or non-numeric fields are skipped instead of being set to 0
+      const kMap: KvMap = readingToCapabilities(reading);
 
       // Set capabilities
       const capabilityUpdates: Array<Promise<void>> = [];

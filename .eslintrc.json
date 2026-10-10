@@ -34,12 +34,6 @@
       }
     },
     {
-      "files": ["types/MeterReading.ts"],
-      "rules": {
-        "camelcase": "off"
-      }
-    },
-    {
       "files": ["types/*.ts"],
       "rules": {
         "semi": "off",
