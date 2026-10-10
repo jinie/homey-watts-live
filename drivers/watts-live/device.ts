@@ -714,6 +714,9 @@ export default class WattsLiveDevice extends Homey.Device {
       await this.logMessage(DebugLogLevel.INFO, `Subscribed to ${topic}`);
       this.reconnectAttempt = 0;
       await this.setAvailable();
+      // The stale timer may have fired already; re-arm it so a silent meter
+      // becomes unavailable again instead of staying available after the reconnect
+      this.armDataTimers();
     } finally {
       this.isReconnectInProgress = false;
     }
