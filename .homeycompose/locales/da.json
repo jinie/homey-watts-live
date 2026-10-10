@@ -1,16 +1,22 @@
 {
-  "mqtt_client.no_messages": "Ingen beskeder modtaget på MQTT-emnet",
-  "mqtt_client.no_new_devices": "Ingen nye enheder fundet under søgning",
-  "device.unavailable.update": "Enheden er utilgængelig, prøv igen senere",
-  "device.unavailable.offline": "Enheden er offline",
-  "device.unavailable.mqtt_authorization_failed": "MQTT-godkendelse mislykkedes; kontroller broker-login og ACL'er",
-  "device.unavailable.mqtt_hostname_not_found": "MQTT-værtsnavnet kunne ikke findes; kontroller brokerens værtsnavn",
-  "device.unavailable.mqtt_connection_refused": "MQTT-brokeren afviste forbindelsen; prøver automatisk igen",
-  "device.unavailable.mqtt_timeout": "MQTT-brokeren fik timeout; prøver automatisk igen",
-  "device.unavailable.mqtt_connection_error": "MQTT-forbindelsesfejl",
-  "device.unavailable.mqtt_connection_lost": "MQTT-forbindelsen blev afbrudt; prøver automatisk igen",
-  "device.unavailable.mqtt_disconnected": "MQTT blev afbrudt; prøver automatisk igen",
-  "device.unavailable.no_data": "Ingen data modtaget fra Watts Live i 5 minutter",
+  "mqtt_client": {
+    "no_messages": "Ingen beskeder modtaget på MQTT-emnet",
+    "no_new_devices": "Ingen nye enheder fundet under søgning"
+  },
+  "device": {
+    "unavailable": {
+      "update": "Enheden er utilgængelig, prøv igen senere",
+      "offline": "Enheden er offline",
+      "mqtt_authorization_failed": "MQTT-godkendelse mislykkedes; kontroller broker-login og ACL'er",
+      "mqtt_hostname_not_found": "MQTT-værtsnavnet kunne ikke findes; kontroller brokerens værtsnavn",
+      "mqtt_connection_refused": "MQTT-brokeren afviste forbindelsen; prøver automatisk igen",
+      "mqtt_timeout": "MQTT-brokeren fik timeout; prøver automatisk igen",
+      "mqtt_connection_error": "MQTT-forbindelsesfejl",
+      "mqtt_connection_lost": "MQTT-forbindelsen blev afbrudt; prøver automatisk igen",
+      "mqtt_disconnected": "MQTT blev afbrudt; prøver automatisk igen",
+      "no_data": "Ingen data modtaget fra Watts Live i 5 minutter"
+    }
+  },
   "pair.choose.title": "Vælg MQTT-forbindelsesmetode",
   "pair.choose.subtitle": "Vælg hvordan Homey skal forbinde til Watts Live.",
   "pair.choose.connection_type": "Forbindelsestype",
