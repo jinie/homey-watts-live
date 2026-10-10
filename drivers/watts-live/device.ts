@@ -43,6 +43,7 @@ export default class WattsLiveDevice extends Homey.Device {
       this.debugLogLines = existingDebugLog.split('\n').slice(-this.maxDebugLogLines);
     }
     await this.logMessage(DebugLogLevel.INFO, 'Device initialized');
+    await this.addMissingCapabilities();
 
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
@@ -65,6 +66,19 @@ export default class WattsLiveDevice extends Homey.Device {
       );
       this.invalidateStatus(this.getConnectionIssueMessage(err));
       this.scheduleReconnect('initial connection failed');
+    }
+  }
+
+  /**
+   * Devices paired with an older version lack capabilities added to the driver since.
+   */
+  private async addMissingCapabilities(): Promise<void> {
+    for (const capability of this.driver.manifest.capabilities as string[]) {
+      if (!this.hasCapability(capability)) {
+        await this.addCapability(capability).catch((error) => {
+          this.homey.error(`Could not add capability ${capability}`, error);
+        });
+      }
     }
   }
 

@@ -11,6 +11,15 @@ const ENERGY_CAPABILITIES: string[] = [
   'meter_power.positive_reactive',
 ];
 
+// Field name without the positive_/negative_ prefix -> net capability
+export const NetPowerCapabilityMap: KvMap = {
+  active_power: 'measure_power.net',
+  active_power_l1: 'measure_power.net_l1',
+  active_power_l2: 'measure_power.net_l2',
+  active_power_l3: 'measure_power.net_l3',
+  reactive_power: 'measure_power.reactive',
+};
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
@@ -47,5 +56,23 @@ export function readingToCapabilities(reading: Record<string, unknown>): KvMap {
     }
     values[capability] = ENERGY_CAPABILITIES.includes(capability) ? value / 1000 : value;
   });
+
+  // Net power: import minus export (negative while exporting, e.g. solar)
+  Object.keys(NetPowerCapabilityMap).forEach((field) => {
+    const imported = reading[`positive_${field}`];
+    const exported = reading[`negative_${field}`];
+    if (!isFiniteNumber(imported) && !isFiniteNumber(exported)) {
+      return;
+    }
+    values[NetPowerCapabilityMap[field]] = (isFiniteNumber(imported) ? imported : 0)
+      - (isFiniteNumber(exported) ? exported : 0);
+  });
+
+  // Power factor (cos φ) = |P| / √(P² + Q²); undefined when there is no active or reactive power
+  const p = values['measure_power.net'];
+  const q = values['measure_power.reactive'];
+  if (isFiniteNumber(p) && isFiniteNumber(q) && (p !== 0 || q !== 0)) {
+    values.measure_power_factor = Math.round((Math.abs(p) / Math.hypot(p, q)) * 1000) / 1000;
+  }
   return values;
 }

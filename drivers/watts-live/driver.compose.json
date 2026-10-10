@@ -29,7 +29,13 @@
     "meter_power.positive_reactive",
     "measure_power.negative_reactive",
     "meter_power.negative_reactive",
-    "measure_power.positive_reactive"
+    "measure_power.positive_reactive",
+    "measure_power.net",
+    "measure_power.net_l1",
+    "measure_power.net_l2",
+    "measure_power.net_l3",
+    "measure_power.reactive",
+    "measure_power_factor"
   ],
   "capabilitiesOptions": {
     "meter_power.imported": {
@@ -94,6 +100,22 @@
     },
     "meter_power.negative_reactive": {
       "title": {"en": "Negative Reactive Energy", "da": "Negativ reaktiv energi"}
+    },
+    "measure_power.net": {
+      "title": {"en": "Net Power", "da": "Nettoeffekt"}
+    },
+    "measure_power.net_l1": {
+      "title": {"en": "Net Power L1", "da": "Nettoeffekt L1"}
+    },
+    "measure_power.net_l2": {
+      "title": {"en": "Net Power L2", "da": "Nettoeffekt L2"}
+    },
+    "measure_power.net_l3": {
+      "title": {"en": "Net Power L3", "da": "Nettoeffekt L3"}
+    },
+    "measure_power.reactive": {
+      "title": {"en": "Net Reactive Power", "da": "Reaktiv nettoeffekt"},
+      "units": {"en": "var"}
     }
 
   },
