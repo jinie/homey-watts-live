@@ -21,22 +21,22 @@
       "da": "MQTT-forbindelsestype"
     },
     "hint": {
-      "en": "Select whether to use Homey MQTT Client, a custom MQTT broker or the MQTT broker built into this app (configured in the app settings)",
-      "da": "Vælg om Homey MQTT Client, en brugerdefineret MQTT-broker eller appens indbyggede MQTT-broker (sættes op i appens indstillinger) skal bruges"
+      "en": "Select the MQTT broker built into this app (configured in the app settings), the separate MQTT Client app, or your own MQTT broker",
+      "da": "Vælg appens indbyggede MQTT-broker (sættes op i appens indstillinger), den separate app MQTT Client eller din egen MQTT-broker"
     },
     "values": [
       {
         "id": "homey",
         "label": {
-          "en": "Homey MQTT Client",
-          "da": "Homey MQTT Client"
+          "en": "MQTT Client app (must be installed)",
+          "da": "Appen MQTT Client (skal være installeret)"
         }
       },
       {
         "id": "custom",
         "label": {
-          "en": "Custom MQTT Client",
-          "da": "Brugerdefineret MQTT-klient"
+          "en": "Own MQTT broker",
+          "da": "Egen MQTT-broker"
         }
       },
       {

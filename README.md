@@ -9,8 +9,8 @@ Choose the connection type when adding a device (it can be changed later in the 
 | Connection type | What you need |
 |---|---|
 | **Built-in MQTT broker** | Nothing else. The app runs its own MQTT broker on Homey (default port 1883, optional login) and Watts Live publishes directly to it. Turn it on in the app settings, or choose it while pairing. |
-| **Homey MQTT Client** | Menno van Grinsven's MQTT Client app, installed and connected to the broker Watts Live publishes to. |
-| **Custom MQTT server** | Your own broker (e.g. Mosquitto). Host, port, login and TLS are entered during pairing. |
+| **MQTT Client app** | Menno van Grinsven's MQTT Client app, installed and connected to the broker Watts Live publishes to. |
+| **Own MQTT broker** | Your own broker (e.g. Mosquitto). Host, port, login and TLS are entered during pairing. |
 
 Watts Live publishes to `watts/<serial number>/measurement`.
 

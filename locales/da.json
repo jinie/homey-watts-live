@@ -2,9 +2,9 @@
   "pair.choose.title": "Vælg MQTT-forbindelsesmetode",
   "pair.choose.subtitle": "Vælg hvordan Homey skal forbinde til Watts Live.",
   "pair.choose.connection_type": "Forbindelsestype",
-  "pair.choose.connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug Homey MQTT Client-appen, eller forbind til din egen MQTT-broker.",
-  "pair.choose.option_homey": "Brug Homey MQTT Client",
-  "pair.choose.option_custom": "Brug brugerdefineret MQTT-server",
+  "pair.choose.connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug appen MQTT Client, eller forbind til din egen MQTT-broker.",
+  "pair.choose.option_homey": "Brug appen MQTT Client",
+  "pair.choose.option_custom": "Brug egen MQTT-broker",
   "pair.choose.custom_title": "Indstillinger for brugerdefineret MQTT-server",
   "pair.choose.hostname": "Værtsnavn",
   "pair.choose.port": "Port",
@@ -28,9 +28,9 @@
       "title": "Vælg MQTT-forbindelsesmetode",
       "subtitle": "Vælg hvordan Homey skal forbinde til Watts Live.",
       "connection_type": "Forbindelsestype",
-      "connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug Homey MQTT Client-appen, eller forbind til din egen MQTT-broker.",
-      "option_homey": "Brug Homey MQTT Client",
-      "option_custom": "Brug brugerdefineret MQTT-server",
+      "connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug appen MQTT Client, eller forbind til din egen MQTT-broker.",
+      "option_homey": "Brug appen MQTT Client",
+      "option_custom": "Brug egen MQTT-broker",
       "custom_title": "Indstillinger for brugerdefineret MQTT-server",
       "hostname": "Værtsnavn",
       "port": "Port",
@@ -119,7 +119,8 @@
   },
   "mqtt_client": {
     "no_messages": "Ingen beskeder modtaget på MQTT-emnet",
-    "no_new_devices": "Ingen nye enheder fundet under søgning"
+    "no_new_devices": "Ingen nye enheder fundet under søgning",
+    "not_installed": "Appen MQTT Client er ikke installeret eller kører ikke. Installér den, eller vælg i stedet den indbyggede MQTT-broker eller din egen MQTT-broker"
   },
   "device": {
     "unavailable": {

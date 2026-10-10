@@ -104,7 +104,7 @@ class WattsLiveDriver extends Homey.Driver {
 
         if (apiAppAvailable === false && settings.useHomeyMqttClient === 'homey') {
           this.isPairingConnectionInProgress = false;
-          throw new Error('MQTT Client App is not installed');
+          throw new Error(this.homey.__('mqtt_client.not_installed'));
         }
 
         try {
