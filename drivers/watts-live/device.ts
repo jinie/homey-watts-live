@@ -410,7 +410,10 @@ export default class WattsLiveDevice extends Homey.Device {
       ).catch(() => {});
       // Missing or non-numeric fields are skipped instead of being set to 0
       const kMap: KvMap = readingToCapabilities(reading);
-      await this.onValidReading(kMap);
+      // Only real measurements count as data (not e.g. {} or a status message)
+      if (Object.keys(kMap).length > 0) {
+        await this.onValidReading(kMap);
+      }
 
       // Set capabilities
       const capabilityUpdates: Array<Promise<void>> = [];
