@@ -263,6 +263,11 @@
         const homeyMqttOption = document.querySelector('option[value="homey_mqtt_client"]');
         if (homeyMqttOption) {
           homeyMqttOption.disabled = true;
+          // A disabled option can still be the selected one; move to an available method
+          if (mqttMethodSelect.value === 'homey_mqtt_client') {
+            mqttMethodSelect.value = 'custom_mqtt_client';
+            updateFormState();
+          }
         }
       }
     });

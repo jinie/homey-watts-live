@@ -190,6 +190,17 @@ class WattsLiveDriver extends Homey.Driver {
       return this.discoveredDevices;
     });
 
+    // Close a discovery connection that is still open when the pairing window is closed
+    session.setHandler('disconnect', async () => {
+      if (this.mqttWrapper) {
+        const wrapper = this.mqttWrapper;
+        this.mqttWrapper = null;
+        await wrapper.disconnect().catch((error) => {
+          this.homey.log('Error while closing pairing connection', error);
+        });
+      }
+    });
+
     // Handler to return the device data when pairing completes
     session.setHandler('get_device', async () => {
       if (this.discoveredDevices.length === 0) {
