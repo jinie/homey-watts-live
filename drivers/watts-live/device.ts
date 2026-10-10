@@ -29,6 +29,9 @@ export default class WattsLiveDevice extends Homey.Device {
   private reconnectAttempt: number = 0;
   private isReconnectInProgress: boolean = false;
   private isDeleted: boolean = false;
+  // Meter the current connection subscribed to; while settings are being saved
+  // this already holds a new deviceId that getSetting() does not return yet
+  private subscribedDeviceId: string | null = null;
   // Data monitoring: flow cards 'no_data_received' / 'data_received_within' and the stale timeout
   private lastMessageAt: number | null = null;
   private monitorSince: number = Date.now();
@@ -286,7 +289,7 @@ export default class WattsLiveDevice extends Homey.Device {
   }
 
   private isOwnTopic(topic: string): boolean {
-    return parseWattsTopic(topic) === this.getSetting('deviceId');
+    return this.subscribedDeviceId !== null && parseWattsTopic(topic) === this.subscribedDeviceId;
   }
 
   async onMessage(topic: string, message: unknown) {
@@ -706,6 +709,7 @@ export default class WattsLiveDevice extends Homey.Device {
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connect signal received');
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connected');
       const topic = measurementTopic(driverSettings.deviceId);
+      this.subscribedDeviceId = driverSettings.deviceId;
       await mqttWrapper.subscribe(topic);
       await this.logMessage(DebugLogLevel.INFO, `Subscribed to ${topic}`);
       this.reconnectAttempt = 0;
