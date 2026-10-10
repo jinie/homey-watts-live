@@ -149,7 +149,7 @@ export default class WattsLiveDevice extends Homey.Device {
       if (remaining > 0) {
         this.noDataTimers.push(this.homey.setTimeout(() => {
           this.homey.flow.getDeviceTriggerCard('no_data_received')
-            .trigger(this, { minutes }, { minutes })
+            .trigger(this, {}, { minutes })
             .catch((error) => this.homey.error('no_data_received trigger failed', error));
         }, remaining));
       }
