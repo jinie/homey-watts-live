@@ -113,6 +113,7 @@
     "save_failed": "Kunne ikke gemme: __message__",
     "load_failed": "Kunne ikke hente indstillingerne: __message__",
     "port_invalid": "Porten skal være et helt tal mellem 1 og 65535",
+    "username_required": "En adgangskode kræver også et brugernavn – Watts Live kan ikke logge ind med kun en adgangskode",
     "loading": "Henter…",
     "status_broker": "Indbygget broker",
     "status_error": "Fejl",

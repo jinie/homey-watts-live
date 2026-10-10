@@ -114,7 +114,8 @@
     "unknown": "ukendt",
     "never": "aldrig",
     "seconds_ago": "for __n__ s siden",
-    "minutes_ago": "for __n__ min. siden"
+    "minutes_ago": "for __n__ min. siden",
+    "username_required": "En adgangskode kræver også et brugernavn – Watts Live kan ikke logge ind med kun en adgangskode"
   },
   "mqtt_client": {
     "no_messages": "Ingen beskeder modtaget på MQTT-emnet",

@@ -96,7 +96,7 @@ export default class BuiltinBroker extends EventEmitter {
       enabled: this.config?.enabled === true,
       running: this.state.running,
       port: this.config?.port ?? 1883,
-      auth: !!this.config?.username,
+      auth: !!(this.config?.username || this.config?.password),
       clients: this.state.clients,
       messages: this.state.messages,
       lastMessageAt: this.state.lastMessageAt,
@@ -152,7 +152,9 @@ export default class BuiltinBroker extends EventEmitter {
     }
     this.aedes = aedes;
 
-    if (config.username) {
+    // A password alone also requires login, so the broker is never open by mistake
+    const loginRequired = !!(config.username || config.password);
+    if (loginRequired) {
       aedes.authenticate = (client, username, password, done) => {
         const ok = username === config.username
           && (password ? password.toString() : '') === config.password;
@@ -186,7 +188,7 @@ export default class BuiltinBroker extends EventEmitter {
     await new Promise<void>((resolve) => {
       server.once('listening', () => {
         this.state.running = true;
-        this.log(`Built-in MQTT broker listening on port ${config.port}${config.username ? ' (login required)' : ''}`);
+        this.log(`Built-in MQTT broker listening on port ${config.port}${loginRequired ? ' (login required)' : ''}`);
         resolve();
       });
       server.on('error', (error: NodeJS.ErrnoException) => {

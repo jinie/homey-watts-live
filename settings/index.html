@@ -230,6 +230,11 @@
           showMessage(t('port_invalid'), false);
           return;
         }
+        if (document.getElementById('builtin_broker_password').value
+          && !document.getElementById('builtin_broker_username').value.trim()) {
+          showMessage(t('username_required'), false);
+          return;
+        }
         saveButton.classList.add('is-loading');
         saveButton.disabled = true;
         try {

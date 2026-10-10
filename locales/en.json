@@ -114,7 +114,8 @@
     "unknown": "unknown",
     "never": "never",
     "seconds_ago": "__n__ s ago",
-    "minutes_ago": "__n__ min ago"
+    "minutes_ago": "__n__ min ago",
+    "username_required": "A password also needs a username – Watts Live cannot log in with a password alone"
   },
   "mqtt_client": {
     "no_messages": "No messages received on MQTT Topic",

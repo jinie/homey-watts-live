@@ -113,6 +113,7 @@
         "save_failed":"Could not save: __message__",
         "load_failed":"Could not load the settings: __message__",
         "port_invalid":"The port must be a whole number between 1 and 65535",
+        "username_required":"A password also needs a username – Watts Live cannot log in with a password alone",
         "loading":"Loading…",
         "status_broker":"Built-in broker",
         "status_error":"Error",
