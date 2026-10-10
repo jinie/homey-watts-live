@@ -215,20 +215,38 @@ export default class WattsLiveDevice extends Homey.Device {
    * Called when the device is deleted from Homey.
    */
   async onDeleted(): Promise<void> {
+    await this.logMessage(DebugLogLevel.INFO, 'Device deleted; disconnecting MQTT');
+    await this.persistDebugLog(true);
+    await this.shutdown();
+  }
+
+  /**
+   * Called when the app is stopped or updated. Without this the MQTT
+   * connection and reconnect timers of the old instance stay alive.
+   */
+  async onUninit(): Promise<void> {
+    await this.shutdown();
+  }
+
+  private async shutdown(): Promise<void> {
+    // isDeleted also stops scheduled and in-flight reconnects
     this.isDeleted = true;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-
-    // Perform cleanup by disconnecting MQTT and freeing any resources.
-    if (!this.mqttWrapper) {
-      return;
+    if (this.scheduledDebugPersistTimer) {
+      clearTimeout(this.scheduledDebugPersistTimer);
+      this.scheduledDebugPersistTimer = null;
     }
 
-    await this.logMessage(DebugLogLevel.INFO, 'Device deleted; disconnecting MQTT');
-    await this.persistDebugLog(true);
-    await this.mqttWrapper.disconnect();
+    const { mqttWrapper } = this;
+    this.mqttWrapper = null;
+    if (mqttWrapper) {
+      await mqttWrapper.disconnect().catch((error) => {
+        this.homey.error('Error while disconnecting MQTT', error);
+      });
+    }
   }
 
   /**
@@ -575,6 +593,11 @@ export default class WattsLiveDevice extends Homey.Device {
 
     try {
       await mqttWrapper.connect();
+      if (this.isDeleted || this.mqttWrapper !== mqttWrapper) {
+        // Device was uninitialised or reconnected again while connecting
+        await mqttWrapper.disconnect().catch(() => {});
+        return;
+      }
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connect signal received');
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connected');
       await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
