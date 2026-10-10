@@ -50,6 +50,27 @@
       font-size: 0.9em;
     }
 
+    .builtin-status {
+      margin: 12px 0;
+    }
+
+    .builtin-status div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--homey-color-line, #e5e7eb);
+      font-size: 0.9em;
+    }
+
+    .builtin-status .ok {
+      color: #1a7f37;
+    }
+
+    .builtin-status .bad {
+      color: #b3261e;
+    }
+
     .pair-actions {
       margin-top: 8px;
     }
@@ -69,6 +90,7 @@
         <select id="mqttMethod">
           <option value="homey_mqtt_client" id="homeyOption"></option>
           <option value="custom_mqtt_client" id="customOption"></option>
+          <option value="builtin_broker" id="builtinOption"></option>
         </select>
         <p class="pair-help" id="mqttMethodHelp"></p>
       </div>
@@ -116,6 +138,13 @@
         </div>
       </div>
 
+      <div id="builtinSettings" class="custom-mqtt-fields" hidden>
+        <h3 id="builtinTitle"></h3>
+        <p class="pair-help" id="builtinIntro"></p>
+        <div class="builtin-status" id="builtinStatus"></div>
+        <p class="pair-help" id="builtinHelp"></p>
+      </div>
+
       <p id="formError" class="pair-error" hidden></p>
 
       <div class="pair-actions">
@@ -151,6 +180,9 @@
     const passwordLabel = document.getElementById('passwordLabel');
     const useTlsLabel = document.getElementById('useTlsLabel');
     const acceptSelfSignedLabel = document.getElementById('acceptSelfSignedLabel');
+    const builtinSettings = document.getElementById('builtinSettings');
+    const builtinStatus = document.getElementById('builtinStatus');
+    let builtinStatusTimer = null;
 
     function t(key) {
       return Homey.__(key);
@@ -164,6 +196,10 @@
       mqttMethodHelp.textContent = t('pair.choose.connection_help');
       homeyOption.textContent = t('pair.choose.option_homey');
       customOption.textContent = t('pair.choose.option_custom');
+      document.getElementById('builtinOption').textContent = t('pair.choose.option_builtin');
+      document.getElementById('builtinTitle').textContent = t('pair.choose.builtin_title');
+      document.getElementById('builtinIntro').textContent = t('pair.choose.builtin_intro');
+      document.getElementById('builtinHelp').textContent = t('pair.choose.builtin_help');
       customSettingsTitle.textContent = t('pair.choose.custom_title');
       hostnameLabel.textContent = t('pair.choose.hostname');
       portLabel.textContent = t('pair.choose.port');
@@ -200,7 +236,51 @@
       }
     }
 
+    function usingBuiltinBroker() {
+      return mqttMethodSelect.value === 'builtin_broker';
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
+
+    function renderBuiltinStatus(status) {
+      const statusText = status.running
+        ? '<span class="ok">' + escapeHtml(t('pair.choose.builtin_running')) + '</span>'
+        : '<span class="bad">' + escapeHtml(status.error || (status.enabled
+          ? t('pair.choose.builtin_not_running')
+          : t('pair.choose.builtin_off'))) + '</span>';
+      const rows = [
+        [t('pair.choose.builtin_homey_ip'), escapeHtml(status.homeyAddress || '?')],
+        [t('pair.choose.port'), escapeHtml(status.port)],
+        [t('pair.choose.builtin_login'), escapeHtml(status.auth ? t('pair.choose.yes') : t('pair.choose.no'))],
+        [t('pair.choose.builtin_status'), statusText],
+        [t('pair.choose.builtin_seen'), status.seen && status.seen.length
+          ? escapeHtml(status.seen.join(', '))
+          : escapeHtml(t('pair.choose.builtin_none_yet'))],
+      ];
+      builtinStatus.innerHTML = rows.map(function (row) {
+        return '<div><span>' + escapeHtml(row[0]) + '</span><span>' + row[1] + '</span></div>';
+      }).join('');
+    }
+
+    function refreshBuiltinStatus() {
+      Homey.emit('get_builtin_broker_status', {}, function (err, status) {
+        if (!err && status) {
+          renderBuiltinStatus(status);
+        }
+      });
+    }
+
     function updateFormState() {
+      builtinSettings.hidden = !usingBuiltinBroker();
+      clearInterval(builtinStatusTimer);
+      if (!builtinSettings.hidden) {
+        refreshBuiltinStatus();
+        builtinStatusTimer = setInterval(refreshBuiltinStatus, 3000);
+      }
       customMqttSettings.hidden = !usingCustomMqtt();
       if (!customMqttSettings.hidden) {
         ensureSuggestedClientId();
@@ -236,6 +316,12 @@
     }
 
     function buildSettingsPayload() {
+      if (usingBuiltinBroker()) {
+        return {
+          useHomeyMqttClient: 'builtin'
+        };
+      }
+
       if (!usingCustomMqtt()) {
         return {
           useHomeyMqttClient: 'homey'
@@ -265,7 +351,7 @@
           homeyMqttOption.disabled = true;
           // A disabled option can still be the selected one; move to an available method
           if (mqttMethodSelect.value === 'homey_mqtt_client') {
-            mqttMethodSelect.value = 'custom_mqtt_client';
+            mqttMethodSelect.value = 'builtin_broker';
             updateFormState();
           }
         }
@@ -293,6 +379,7 @@
           continueButton.disabled = false;
           setFormError(err.message || String(err));
         } else {
+          clearInterval(builtinStatusTimer);
           Homey.nextView('loading');
         }
       });

@@ -7,6 +7,11 @@ import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import DiscoveredDevice from '../../types/DiscoveredDevice';
 
+interface WattsLiveAppApi {
+  enableBuiltinBroker(): Promise<void>;
+  getBuiltinBrokerStatus(): Promise<{ running: boolean; error: string | null }>;
+}
+
 interface PairedDevice {
   id: string;
 }
@@ -58,6 +63,9 @@ class WattsLiveDriver extends Homey.Driver {
       apiAppAvailable,
     }));
 
+    // Live status of the built-in broker for the pairing screen
+    session.setHandler('get_builtin_broker_status', async () => this.getApp().getBuiltinBrokerStatus());
+
     session.setHandler('error', async (errorMessage: string) => {
       // Emit a view notification in response to the error event
       await session.emit('showViewNotification', {
@@ -95,6 +103,15 @@ class WattsLiveDriver extends Homey.Driver {
           const validationErrors = this.driverSettings.validate();
           if (validationErrors.length > 0) {
             throw new Error(validationErrors[0]);
+          }
+
+          if (this.driverSettings.useHomeyMqttClient === 'builtin') {
+            // Choosing the built-in broker during pairing turns it on
+            await this.getApp().enableBuiltinBroker();
+            const status = await this.getApp().getBuiltinBrokerStatus();
+            if (!status.running) {
+              throw new Error(status.error || this.homey.__('builtin_broker.errors.not_running'));
+            }
           }
           this.log(`Pairing settings: ${this.driverSettings.toSafeJSON()}`);
         } catch (err: any) {
@@ -208,6 +225,10 @@ class WattsLiveDriver extends Homey.Driver {
       }
       return this.discoveredDevices[0];
     });
+  }
+
+  private getApp(): WattsLiveAppApi {
+    return this.homey.app as unknown as WattsLiveAppApi;
   }
 
   // Helper function to get already paired devices

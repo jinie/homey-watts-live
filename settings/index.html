@@ -1,0 +1,285 @@
+<!doctype html>
+<html>
+<head>
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+  <style>
+    .tabs { display: flex; gap: 8px; margin: 0 0 16px; border-bottom: 1px solid rgba(128, 128, 128, 0.3); }
+    .tab { background: none; border: none; padding: 8px 12px; font-size: 15px; cursor: pointer; color: inherit; opacity: 0.65; border-bottom: 3px solid transparent; }
+    .tab.active { opacity: 1; font-weight: 600; border-bottom-color: #587b70; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .hint { font-size: 13px; opacity: 0.7; margin: 4px 0 12px; line-height: 1.4; }
+    .status-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(128, 128, 128, 0.2); font-size: 14px; gap: 12px; }
+    .status-row span:first-child { opacity: 0.7; }
+    .status-row span:last-child { text-align: right; }
+    .ok { color: #1a7f37; }
+    .bad { color: #c62828; }
+    .message { font-size: 14px; margin: 10px 0 0; text-align: center; min-height: 1.4em; transition: opacity 0.3s; }
+    /* Homey's own stylesheet is loaded after this one and sets display again, hence !important */
+    .help-lang { display: none !important; }
+    .help-lang.active { display: block !important; }
+    .help h2 { font-size: 16px; margin: 20px 0 6px; }
+    .help p, .help li { font-size: 14px; line-height: 1.5; }
+    .help ul, .help ol { padding-left: 20px; }
+    .help code { background: rgba(128, 128, 128, 0.15); padding: 1px 4px; border-radius: 3px; }
+    .help table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+    .help th, .help td { border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding: 6px 4px; text-align: left; vertical-align: top; }
+    .help th { opacity: 0.7; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1 class="homey-title">Watts Live MQTT</h1>
+
+  <div class="tabs">
+    <button class="tab active" data-page="settings" data-i18n="settings.tab_settings"></button>
+    <button class="tab" data-page="status" data-i18n="settings.tab_status"></button>
+    <button class="tab" data-page="help" data-i18n="settings.tab_help"></button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="page-settings" class="page active">
+    <p class="hint" data-i18n="settings.intro"></p>
+    <fieldset class="homey-form-fieldset">
+      <legend class="homey-form-legend" data-i18n="settings.broker_legend"></legend>
+      <label class="homey-form-checkbox">
+        <input class="homey-form-checkbox-input" id="builtin_broker_enabled" type="checkbox" />
+        <span class="homey-form-checkbox-checkmark"></span>
+        <span class="homey-form-checkbox-text" data-i18n="settings.enabled"></span>
+      </label>
+      <p class="hint" data-i18n="settings.enabled_hint"></p>
+
+      <label class="homey-form-label" for="builtin_broker_port" data-i18n="settings.port"></label>
+      <input class="homey-form-input" id="builtin_broker_port" type="number" min="1" max="65535" />
+      <p class="hint" data-i18n="settings.port_hint"></p>
+
+      <label class="homey-form-label" for="builtin_broker_username" data-i18n="settings.username"></label>
+      <input class="homey-form-input" id="builtin_broker_username" type="text" autocomplete="off" />
+      <label class="homey-form-label" for="builtin_broker_password" data-i18n="settings.password"></label>
+      <input class="homey-form-input" id="builtin_broker_password" type="password" autocomplete="new-password" />
+      <p class="hint" data-i18n="settings.login_hint"></p>
+    </fieldset>
+
+    <button id="save" class="homey-button-primary-full" data-i18n="settings.save"></button>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- STATUS -->
+  <div id="page-status" class="page">
+    <div id="status"></div>
+  </div>
+
+  <!-- HELP (English) -->
+  <div id="page-help" class="page help">
+    <div class="help-lang" data-lang="en">
+      <h2>Three ways to receive Watts Live data</h2>
+      <p>The Watts Live module on your electricity meter publishes a measurement every few seconds over MQTT
+        to the topic <code>watts/&lt;serial number&gt;/measurement</code>. When you add a device you choose how Homey receives it:</p>
+      <ul>
+        <li><b>Built-in MQTT broker</b>: this app is the MQTT broker on Homey and Watts Live sends directly to Homey.
+          No other app or broker is needed. Turn it on under <b>Settings</b> (it is also turned on when you choose it while adding a device).</li>
+        <li><b>Homey MQTT Client</b>: uses the <i>MQTT Client</i> app, which must already be connected to the broker Watts Live sends to.</li>
+        <li><b>Custom MQTT server</b>: the device connects to your own broker (e.g. Mosquitto) with the address and login you enter.</li>
+      </ul>
+      <p>The connection type can be changed later in the device settings.</p>
+
+      <h2>Setting up Watts Live for the built-in broker</h2>
+      <p>MQTT is <b>not</b> set up in the Watts app, but over Bluetooth with the free app <b>nRF Connect for Mobile</b>
+        (iOS and Android). Source: Watts' guide
+        <a href="https://watts.zendesk.com/hc/da/articles/10271861655580-Brug-Watts-Live-sammen-med-Home-Assistant" data-external>Use Watts Live with Home Assistant</a> (Danish).</p>
+      <p><b>Requirements:</b> Watts Live is set up in the Watts app (Wi-Fi 2.4 GHz) and has firmware v2.2.1 or newer.</p>
+      <ol>
+        <li><b>Restart the module:</b> remove it from the meter until it stops blinking completely
+          (up to 5 minutes for Kamstrup) and insert it again. Bluetooth is now on for 30 minutes.</li>
+        <li>Open nRF Connect, start a scan, find <i>Watts Live</i> and tap <b>Connect</b>.</li>
+        <li>Under the <b>Client</b> tab, find the MQTT service <code>a2e1ea9b-01e8-4fe5-9b99-35e9cb44d4b6</code>.
+          Write the values below: tap the up arrow on the characteristic, enter the value, choose the type and tap <b>Send</b>.</li>
+        <li><b>Restart the module again</b> (remove and insert) – the settings are only read at start-up.</li>
+        <li>Within about a minute the meter appears under <b>Meters seen</b> on the <b>Status</b> tab.
+          Then add the device: Devices → + → Watts Live MQTT → Watts live → <i>Use the built-in MQTT broker</i>.</li>
+      </ol>
+      <table>
+        <tr><th>Characteristic (UUID starts with)</th><th>Type</th><th>Value</th></tr>
+        <tr><td>Hostname <code>8143af58…</code></td><td>Text (UTF-8)</td><td>Homey IP address: <b class="homey-ip">…</b></td></tr>
+        <tr><td>Port <code>c0175553…</code></td><td>UINT16 (Little Endian)</td><td>1883 – on iPhone as Byte Array (Hex): <code>5B07</code></td></tr>
+        <tr><td>Transport <code>2dc30968…</code></td><td>1 byte</td><td><code>00</code> (TCP – the built-in broker does not use TLS)</td></tr>
+        <tr><td>Username <code>41b6703a…</code></td><td>Text (UTF-8)</td><td>Empty – or the username set under Settings</td></tr>
+        <tr><td>Password <code>a59394ed…</code></td><td>Text (UTF-8)</td><td>Empty – or the password set under Settings</td></tr>
+      </table>
+      <p class="hint">An empty Hostname disables MQTT on the module. If you use another port than 1883, set the same port under Settings.</p>
+
+      <h2>Troubleshooting</h2>
+      <ul>
+        <li><b>“Cannot use port …”</b>: another app on Homey (for example an MQTT broker app) already uses the port.
+          Stop that app, or choose another port here and on the module. The app retries every minute.</li>
+        <li><b>No meters under “Meters seen”</b>: Watts Live is not sending to Homey. Check Hostname, Port, Transport and
+          login on the module with nRF Connect – and restart the module afterwards.</li>
+        <li><b>The device is unavailable</b>: no measurement has been received for a while. Check the Status tab and that
+          Watts Live has power and Wi-Fi. Use the flow card <i>No data received for … minutes</i> to be notified.</li>
+      </ul>
+    </div>
+
+    <!-- HJÆLP (dansk) -->
+    <div class="help-lang" data-lang="da">
+      <h2>Tre måder at modtage data fra Watts Live</h2>
+      <p>Watts Live-modulet i din elmåler sender en måling med få sekunders mellemrum over MQTT
+        til emnet <code>watts/&lt;serienummer&gt;/measurement</code>. Når du tilføjer en enhed, vælger du, hvordan Homey modtager dem:</p>
+      <ul>
+        <li><b>Indbygget MQTT-broker</b>: appen er selv MQTT-broker på Homey, og Watts Live sender direkte til Homey.
+          Der skal ikke bruges andre apps eller brokere. Slå den til under <b>Indstillinger</b> (den slås også til, når du vælger den ved tilføjelse af en enhed).</li>
+        <li><b>Homey MQTT Client</b>: bruger appen <i>MQTT Client</i>, som allerede skal være forbundet til den broker, Watts Live sender til.</li>
+        <li><b>Brugerdefineret MQTT-server</b>: enheden forbinder til din egen broker (fx Mosquitto) med den adresse og det login, du angiver.</li>
+      </ul>
+      <p>Forbindelsestypen kan ændres senere i enhedens indstillinger.</p>
+
+      <h2>Opsætning af Watts Live til den indbyggede broker</h2>
+      <p>MQTT sættes <b>ikke</b> op i Watts-appen, men over Bluetooth med den gratis app <b>nRF Connect for Mobile</b>
+        (iOS og Android). Kilde: Watts' vejledning
+        <a href="https://watts.zendesk.com/hc/da/articles/10271861655580-Brug-Watts-Live-sammen-med-Home-Assistant" data-external>Brug Watts Live sammen med Home Assistant</a>.</p>
+      <p><b>Krav:</b> Watts Live er sat op i Watts-appen (Wi-Fi 2,4 GHz) og har firmware v2.2.1 eller nyere.</p>
+      <ol>
+        <li><b>Genstart modulet:</b> tag det ud af elmåleren, til det holder helt op med at blinke
+          (op til 5 minutter for Kamstrup), og sæt det i igen. Nu er Bluetooth tændt i 30 minutter.</li>
+        <li>Åbn nRF Connect, start en scanning, find <i>Watts Live</i> og tryk <b>Connect</b>.</li>
+        <li>Under fanen <b>Client</b> finder du MQTT-tjenesten <code>a2e1ea9b-01e8-4fe5-9b99-35e9cb44d4b6</code>.
+          Skriv værdierne nedenfor: tryk på pil op ved egenskaben, skriv værdien, vælg typen og tryk <b>Send</b>.</li>
+        <li><b>Genstart modulet igen</b> (tag det ud og i) – indstillingerne læses kun ved opstart.</li>
+        <li>Inden for ca. et minut dukker måleren op under <b>Målere set</b> i fanen <b>Status</b>.
+          Tilføj derefter enheden: Enheder → + → Watts Live MQTT → Watts live → <i>Brug den indbyggede MQTT-broker</i>.</li>
+      </ol>
+      <table>
+        <tr><th>Egenskab (UUID begynder med)</th><th>Type</th><th>Værdi</th></tr>
+        <tr><td>Hostname <code>8143af58…</code></td><td>Text (UTF-8)</td><td>Homeys IP-adresse: <b class="homey-ip">…</b></td></tr>
+        <tr><td>Port <code>c0175553…</code></td><td>UINT16 (Little Endian)</td><td>1883 – på iPhone som Byte Array (Hex): <code>5B07</code></td></tr>
+        <tr><td>Transport <code>2dc30968…</code></td><td>1 byte</td><td><code>00</code> (TCP – den indbyggede broker bruger ikke TLS)</td></tr>
+        <tr><td>Username <code>41b6703a…</code></td><td>Text (UTF-8)</td><td>Tom – eller brugernavnet fra Indstillinger</td></tr>
+        <tr><td>Password <code>a59394ed…</code></td><td>Text (UTF-8)</td><td>Tom – eller adgangskoden fra Indstillinger</td></tr>
+      </table>
+      <p class="hint">Et tomt Hostname slår MQTT fra på modulet. Bruger du en anden port end 1883, skal samme port vælges under Indstillinger.</p>
+
+      <h2>Fejlfinding</h2>
+      <ul>
+        <li><b>„Kan ikke bruge port …“</b>: en anden app på Homey (fx en MQTT-broker-app) bruger allerede porten.
+          Stop den app, eller vælg en anden port her og på modulet. Appen prøver selv igen hvert minut.</li>
+        <li><b>Ingen målere under „Målere set“</b>: Watts Live sender ikke til Homey. Tjek Hostname, Port, Transport og
+          login på modulet med nRF Connect – og genstart modulet bagefter.</li>
+        <li><b>Enheden er utilgængelig</b>: der er ikke modtaget målinger i et stykke tid. Tjek fanen Status, og at
+          Watts Live har strøm og Wi-Fi. Brug flowkortet <i>Ingen data modtaget i … minutter</i> for at få besked.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    const FIELDS = ['builtin_broker_port', 'builtin_broker_username', 'builtin_broker_password'];
+
+    function esc(value) {
+      return String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function onHomeyReady(Homey) {
+      const t = (key, tokens) => Homey.__(`settings.${key}`, tokens);
+
+      // Static texts (locales may contain simple HTML)
+      document.querySelectorAll('[data-i18n]').forEach((el) => { el.innerHTML = Homey.__(el.dataset.i18n); });
+      document.getElementById('status').textContent = t('loading');
+      const lang = Homey.__('settings.lang') === 'da' ? 'da' : 'en';
+      document.querySelectorAll('.help-lang').forEach((el) => el.classList.toggle('active', el.dataset.lang === lang));
+
+      document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === tab));
+        document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === `page-${tab.dataset.page}`));
+      }));
+
+      // Open links outside the settings window (also works in the mobile app)
+      document.querySelectorAll('a[data-external]').forEach((a) => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        Homey.openURL(a.href);
+      }));
+
+      let messageTimer = null;
+      const showMessage = (text, ok) => {
+        const el = document.getElementById('message');
+        clearTimeout(messageTimer);
+        el.textContent = text;
+        el.className = `message ${ok ? 'ok' : 'bad'}`;
+        el.style.opacity = 1;
+        if (ok) messageTimer = setTimeout(() => { el.style.opacity = 0; }, 4000);
+      };
+
+      const get = (key) => new Promise((resolve, reject) => {
+        Homey.get(key, (err, value) => (err ? reject(err) : resolve(value)));
+      });
+      const set = (key, value) => new Promise((resolve, reject) => {
+        Homey.set(key, value, (err) => (err ? reject(err) : resolve()));
+      });
+
+      // Show the page only once the values are loaded, so it does not flicker
+      Promise.all(['builtin_broker_enabled', ...FIELDS].map(get))
+        .then(([enabled, port, username, password]) => {
+          document.getElementById('builtin_broker_enabled').checked = enabled === true;
+          document.getElementById('builtin_broker_port').value = port || 1883;
+          document.getElementById('builtin_broker_username').value = username || '';
+          document.getElementById('builtin_broker_password').value = password || '';
+        })
+        .catch((err) => showMessage(t('load_failed', { message: err.message || err }), false))
+        .finally(() => Homey.ready());
+
+      const saveButton = document.getElementById('save');
+      saveButton.addEventListener('click', async () => {
+        const port = Number(document.getElementById('builtin_broker_port').value);
+        if (!Number.isInteger(port) || port < 1 || port > 65535) {
+          showMessage(t('port_invalid'), false);
+          return;
+        }
+        saveButton.classList.add('is-loading');
+        saveButton.disabled = true;
+        try {
+          await set('builtin_broker_port', port);
+          await set('builtin_broker_username', document.getElementById('builtin_broker_username').value.trim());
+          await set('builtin_broker_password', document.getElementById('builtin_broker_password').value);
+          await set('builtin_broker_enabled', document.getElementById('builtin_broker_enabled').checked);
+          showMessage(t('saved'), true);
+        } catch (err) {
+          showMessage(t('save_failed', { message: err.message || err }), false);
+        } finally {
+          saveButton.classList.remove('is-loading');
+          saveButton.disabled = false;
+        }
+      });
+
+      const ago = (iso) => {
+        if (!iso) return t('never');
+        const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+        if (s < 60) return t('seconds_ago', { n: s });
+        if (s < 3600) return t('minutes_ago', { n: Math.round(s / 60) });
+        return new Date(iso).toLocaleString();
+      };
+
+      const renderStatus = (s) => {
+        const fresh = s.lastMessageAt && Date.now() - new Date(s.lastMessageAt).getTime() < 60000;
+        let state = `<span class="bad">${t('off')}</span>`;
+        if (s.enabled) state = s.running ? `<span class="ok">${t('running', { port: s.port })}</span>` : `<span class="bad">${t('not_running')}</span>`;
+        const rows = [
+          [t('status_broker'), state],
+          [t('status_error'), s.error ? `<span class="bad">${esc(s.error)}</span>` : t('none')],
+          [t('status_homey_ip'), s.homeyAddress ? esc(s.homeyAddress) : t('unknown')],
+          [t('status_clients'), s.clients],
+          [t('status_auth'), s.auth ? t('yes') : t('no')],
+          [t('status_last_message'), `<span class="${fresh ? 'ok' : 'bad'}">${ago(s.lastMessageAt)}</span>`],
+          [t('status_messages'), s.messages],
+          [t('status_seen'), s.seen && s.seen.length ? s.seen.map(esc).join(', ') : t('none_yet')],
+        ];
+        return rows.map(([k, v]) => `<div class="status-row"><span>${k}</span><span>${v}</span></div>`).join('');
+      };
+
+      const refresh = () => Homey.api('GET', '/builtin-broker/status', (err, s) => {
+        document.getElementById('status').innerHTML = err
+          ? `<span class="bad">${esc(err.message || err)}</span>`
+          : renderStatus(s);
+        if (!err && s.homeyAddress) document.querySelectorAll('.homey-ip').forEach((el) => { el.textContent = s.homeyAddress; });
+      });
+      refresh();
+      setInterval(refresh, 5000);
+    }
+  </script>
+</body>
+</html>

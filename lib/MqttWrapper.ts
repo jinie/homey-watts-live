@@ -74,6 +74,14 @@ export default class MqttWrapper extends EventEmitter {
         'HomeyMqttConnector',
       ) as new (homey: Homey.App['homey']) => IMqttConnector;
       connector = new HomeyMqttConnector(this.homey);
+    } else if (this.settings.useHomeyMqttClient === 'builtin') {
+      // eslint-disable-next-line node/no-missing-import
+      const builtinModule = await import('./BuiltinMqttConnector.js');
+      const BuiltinMqttConnector = this.resolveConnectorConstructor(
+        builtinModule,
+        'BuiltinMqttConnector',
+      ) as new (homey: Homey.App['homey']) => IMqttConnector;
+      connector = new BuiltinMqttConnector(this.homey);
     } else {
       // Load custom MQTT connector only when needed.
       // eslint-disable-next-line node/no-missing-import
