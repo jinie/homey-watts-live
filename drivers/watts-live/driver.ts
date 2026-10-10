@@ -12,6 +12,11 @@ interface WattsLiveAppApi {
   getBuiltinBrokerStatus(): Promise<{ running: boolean; error: string | null }>;
 }
 
+interface DataMonitoringDevice {
+  refreshNoDataArguments(): Promise<void>;
+  hasReceivedDataWithin(minutes: number): boolean;
+}
+
 interface PairedDevice {
   id: string;
 }
@@ -35,6 +40,19 @@ class WattsLiveDriver extends Homey.Driver {
   private isPairingConnectionInProgress: boolean = false;
 
   async onInit(): Promise<void> {
+    const noDataCard = this.homey.flow.getDeviceTriggerCard('no_data_received');
+    noDataCard.registerRunListener(async (args, state) => args.minutes === state.minutes);
+    // The minutes used in flows changed: let the devices restart their timers
+    noDataCard.on('update', () => {
+      this.getDevices().forEach((device) => {
+        (device as unknown as DataMonitoringDevice).refreshNoDataArguments().catch(this.error);
+      });
+    });
+
+    this.homey.flow.getConditionCard('data_received_within')
+      .registerRunListener(async (args) => (args.device as DataMonitoringDevice)
+        .hasReceivedDataWithin(Number(args.minutes)));
+
     this.log('WattsLiveDriver initialized');
   }
 

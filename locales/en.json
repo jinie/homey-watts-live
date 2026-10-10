@@ -126,5 +126,6 @@
     "never": "never",
     "seconds_ago": "__n__ s ago",
     "minutes_ago": "__n__ min ago"
-  }
+  },
+  "device.unavailable.no_data": "No data received from Watts Live for 5 minutes"
 }

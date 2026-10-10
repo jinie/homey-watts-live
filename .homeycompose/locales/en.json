@@ -10,6 +10,7 @@
     "device.unavailable.mqtt_connection_error":"MQTT connection error",
     "device.unavailable.mqtt_connection_lost":"MQTT connection lost; retrying automatically",
     "device.unavailable.mqtt_disconnected":"MQTT disconnected; retrying automatically",
+    "device.unavailable.no_data":"No data received from Watts Live for 5 minutes",
     "pair.choose.title":"Select MQTT Connection Method",
     "pair.choose.subtitle":"Choose how Homey should connect to Watts Live.",
     "pair.choose.connection_type":"Connection Type",

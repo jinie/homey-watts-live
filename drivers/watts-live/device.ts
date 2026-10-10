@@ -22,10 +22,18 @@ export default class WattsLiveDevice extends Homey.Device {
   private messageCount: number = 0;
   private readonly heartbeatIntervalMessages: number = 50;
   private readonly debugLogFlushEveryMessages: number = 10;
+  // Mark the device unavailable when no reading has arrived for this long
+  private readonly staleTimeoutMs: number = 5 * 60 * 1000;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt: number = 0;
   private isReconnectInProgress: boolean = false;
   private isDeleted: boolean = false;
+  // Data monitoring: flow cards 'no_data_received' / 'data_received_within' and the stale timeout
+  private lastMessageAt: number | null = null;
+  private monitorSince: number = Date.now();
+  private noDataMinutes: number[] = [];
+  private noDataTimers: ReturnType<typeof setTimeout>[] = [];
+  private staleTimer: ReturnType<typeof setTimeout> | null = null;
 
   private isRuntimeDebugEnabled(): boolean {
     return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
@@ -44,6 +52,8 @@ export default class WattsLiveDevice extends Homey.Device {
     }
     await this.logMessage(DebugLogLevel.INFO, 'Device initialized');
     await this.addMissingCapabilities();
+    this.monitorSince = Date.now();
+    await this.refreshNoDataArguments();
 
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
@@ -67,6 +77,84 @@ export default class WattsLiveDevice extends Homey.Device {
       this.invalidateStatus(this.getConnectionIssueMessage(err));
       this.scheduleReconnect('initial connection failed');
     }
+  }
+
+  /**
+   * Called for every valid reading: restarts the no-data timers, makes the
+   * device available again and fires the 'measurement_received' trigger.
+   */
+  private async onValidReading(values: KvMap): Promise<void> {
+    this.lastMessageAt = Date.now();
+    this.armDataTimers();
+    if (!this.getAvailable()) {
+      await this.setAvailable().catch(() => {});
+    }
+
+    const token = (capability: string): number => {
+      const value = values[capability] ?? this.getCapabilityValue(capability);
+      return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    };
+    this.homey.flow.getDeviceTriggerCard('measurement_received').trigger(this, {
+      power: token('measure_power'),
+      power_exported: token('measure_power.negative_active'),
+      power_net: token('measure_power.net'),
+      energy_imported: token('meter_power.imported'),
+      energy_exported: token('meter_power.exported'),
+    }).catch((error) => this.homey.error('measurement_received trigger failed', error));
+  }
+
+  /** Used by the 'data_received_within' condition card. */
+  public hasReceivedDataWithin(minutes: number): boolean {
+    return this.lastMessageAt !== null && Date.now() - this.lastMessageAt <= minutes * 60 * 1000;
+  }
+
+  /** Reads the minutes used in 'no_data_received' flows for this device. Called by the driver on flow changes. */
+  public async refreshNoDataArguments(): Promise<void> {
+    try {
+      const args = await this.homey.flow.getDeviceTriggerCard('no_data_received').getArgumentValues(this);
+      this.noDataMinutes = [...new Set(args
+        .map((arg: { minutes?: unknown }) => Number(arg.minutes))
+        .filter((minutes: number) => Number.isFinite(minutes) && minutes > 0))];
+    } catch (error) {
+      this.homey.error('Could not read no_data_received arguments', error);
+    }
+    this.armDataTimers();
+  }
+
+  private clearDataTimers(): void {
+    this.noDataTimers.forEach((timer) => this.homey.clearTimeout(timer));
+    this.noDataTimers = [];
+    if (this.staleTimer) {
+      this.homey.clearTimeout(this.staleTimer);
+      this.staleTimer = null;
+    }
+  }
+
+  /**
+   * (Re)starts one timer per 'no_data_received' minutes value, measured from the
+   * last reading (or from start-up if none has arrived), so each flow fires once per silence.
+   */
+  private armDataTimers(): void {
+    this.clearDataTimers();
+    if (this.isDeleted) {
+      return;
+    }
+    const silentFor = Date.now() - (this.lastMessageAt ?? this.monitorSince);
+    for (const minutes of this.noDataMinutes) {
+      const remaining = minutes * 60 * 1000 - silentFor;
+      if (remaining > 0) {
+        this.noDataTimers.push(this.homey.setTimeout(() => {
+          this.homey.flow.getDeviceTriggerCard('no_data_received')
+            .trigger(this, { minutes }, { minutes })
+            .catch((error) => this.homey.error('no_data_received trigger failed', error));
+        }, remaining));
+      }
+    }
+    const staleRemaining = this.staleTimeoutMs - silentFor;
+    this.staleTimer = this.homey.setTimeout(() => {
+      this.staleTimer = null;
+      this.setUnavailable(this.translate('device.unavailable.no_data')).catch(() => {});
+    }, Math.max(staleRemaining, 0));
   }
 
   /**
@@ -245,6 +333,7 @@ export default class WattsLiveDevice extends Homey.Device {
   private async shutdown(): Promise<void> {
     // isDeleted also stops scheduled and in-flight reconnects
     this.isDeleted = true;
+    this.clearDataTimers();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -317,6 +406,7 @@ export default class WattsLiveDevice extends Homey.Device {
       ).catch(() => {});
       // Missing or non-numeric fields are skipped instead of being set to 0
       const kMap: KvMap = readingToCapabilities(reading);
+      await this.onValidReading(kMap);
 
       // Set capabilities
       const capabilityUpdates: Array<Promise<void>> = [];

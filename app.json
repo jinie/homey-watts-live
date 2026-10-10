@@ -49,6 +49,139 @@
       }
     }
   },
+  "flow": {
+    "triggers": [
+      {
+        "id": "measurement_received",
+        "title": {
+          "en": "A measurement was received",
+          "da": "En måling er modtaget"
+        },
+        "hint": {
+          "en": "Fires for every measurement from Watts Live (typically every few seconds).",
+          "da": "Udløses for hver måling fra Watts Live (typisk med få sekunders mellemrum)."
+        },
+        "tokens": [
+          {
+            "name": "power",
+            "type": "number",
+            "title": {
+              "en": "Power (import)",
+              "da": "Effekt (import)"
+            },
+            "example": 850
+          },
+          {
+            "name": "power_exported",
+            "type": "number",
+            "title": {
+              "en": "Power (export)",
+              "da": "Effekt (eksport)"
+            },
+            "example": 0
+          },
+          {
+            "name": "power_net",
+            "type": "number",
+            "title": {
+              "en": "Net power",
+              "da": "Nettoeffekt"
+            },
+            "example": 850
+          },
+          {
+            "name": "energy_imported",
+            "type": "number",
+            "title": {
+              "en": "Imported energy (kWh)",
+              "da": "Importeret energi (kWh)"
+            },
+            "example": 12345.678
+          },
+          {
+            "name": "energy_exported",
+            "type": "number",
+            "title": {
+              "en": "Exported energy (kWh)",
+              "da": "Eksporteret energi (kWh)"
+            },
+            "example": 2345.678
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          }
+        ]
+      },
+      {
+        "id": "no_data_received",
+        "title": {
+          "en": "No data received for a number of minutes",
+          "da": "Ingen data modtaget i et antal minutter"
+        },
+        "titleFormatted": {
+          "en": "No data received for [[minutes]] minutes",
+          "da": "Ingen data modtaget i [[minutes]] minutter"
+        },
+        "hint": {
+          "en": "Fires once when Watts Live has not sent a measurement for this many minutes.",
+          "da": "Udløses én gang, når Watts Live ikke har sendt en måling i så mange minutter."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "min": 1,
+            "max": 1440,
+            "step": 1,
+            "placeholder": {
+              "en": "Minutes",
+              "da": "Minutter"
+            }
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "data_received_within",
+        "title": {
+          "en": "Data !{{has|has not}} been received in the last minutes",
+          "da": "Data !{{er|er ikke}} modtaget inden for de seneste minutter"
+        },
+        "titleFormatted": {
+          "en": "Data !{{has|has not}} been received in the last [[minutes]] minutes",
+          "da": "Data !{{er|er ikke}} modtaget inden for de seneste [[minutes]] minutter"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "min": 1,
+            "max": 1440,
+            "step": 1,
+            "placeholder": {
+              "en": "Minutes",
+              "da": "Minutter"
+            }
+          }
+        ]
+      }
+    ]
+  },
   "drivers": [
     {
       "name": {
