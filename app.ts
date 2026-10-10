@@ -31,14 +31,14 @@ class WattsLiveApp extends Homey.App {
       if (!key.startsWith('builtin_broker_')) {
         return;
       }
-      // The settings page saves several keys at once; restart only once
+      // The settings page saves four keys one after another; restart once, when all are saved
       if (this.brokerRestartTimer) {
         this.homey.clearTimeout(this.brokerRestartTimer);
       }
       this.brokerRestartTimer = this.homey.setTimeout(() => {
         this.brokerRestartTimer = null;
-        this.startBuiltinBroker(false).catch(this.error);
-      }, 1000);
+        this.startBuiltinBroker(false).catch((error) => this.error(error));
+      }, 3000);
     });
     await this.startBuiltinBroker(true);
   }

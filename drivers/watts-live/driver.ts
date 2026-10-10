@@ -45,7 +45,7 @@ class WattsLiveDriver extends Homey.Driver {
     // The minutes used in flows changed: let the devices restart their timers
     noDataCard.on('update', () => {
       this.getDevices().forEach((device) => {
-        (device as unknown as DataMonitoringDevice).refreshNoDataArguments().catch(this.error);
+        (device as unknown as DataMonitoringDevice).refreshNoDataArguments().catch((error) => this.error(error));
       });
     });
 
