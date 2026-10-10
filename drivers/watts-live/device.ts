@@ -185,7 +185,16 @@ export default class WattsLiveDevice extends Homey.Device {
     }, 0);
   }
 
+  private isOwnTopic(topic: string): boolean {
+    return topic.replace(/^\//, '') === `watts/${this.getSetting('deviceId')}/measurement`;
+  }
+
   async onMessage(topic: string, message: unknown) {
+    // The Homey MQTT Client app delivers every subscribed topic to every listener,
+    // so with several meters each device also receives the other meters' readings.
+    if (!this.isOwnTopic(topic)) {
+      return;
+    }
     this.messageCount += 1;
     if (!this.runtimeDebug && this.messageCount % this.heartbeatIntervalMessages === 0) {
       this.logMessage(
