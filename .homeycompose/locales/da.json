@@ -1,5 +1,5 @@
 {
-  "mqtt_client.no_messages": "Ingen beskeder modtaget pa MQTT-emnet",
+  "mqtt_client.no_messages": "Ingen beskeder modtaget på MQTT-emnet",
   "mqtt_client.no_new_devices": "Ingen nye enheder fundet under søgning",
   "device.unavailable.update": "Enheden er utilgængelig, prøv igen senere",
   "device.unavailable.offline": "Enheden er offline",
@@ -14,7 +14,7 @@
   "pair.choose.title": "Vælg MQTT-forbindelsesmetode",
   "pair.choose.subtitle": "Vælg hvordan Homey skal forbinde til Watts Live.",
   "pair.choose.connection_type": "Forbindelsestype",
-  "pair.choose.connection_help": "Brug Homey MQTT-appen når den er tilgængelig, eller forbind direkte til din egen MQTT-broker.",
+  "pair.choose.connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug Homey MQTT Client-appen, eller forbind til din egen MQTT-broker.",
   "pair.choose.option_homey": "Brug Homey MQTT Client",
   "pair.choose.option_custom": "Brug brugerdefineret MQTT-server",
   "pair.choose.custom_title": "Indstillinger for brugerdefineret MQTT-server",
@@ -33,14 +33,14 @@
   "pair.choose.validation.port_invalid": "Port skal være et helt tal mellem 1 og 65535",
   "pair.choose.validation.client_id_required": "Klient-ID er påkrævet",
   "pair.loading.title": "Finder enheder",
-  "pair.loading.subtitle": "Homey søger efter Watts Live-enheder pa MQTT.",
+  "pair.loading.subtitle": "Homey søger efter Watts Live-enheder på MQTT.",
   "pair.loading.message": "Finder enheder, vent venligst...",
   "pair": {
     "choose": {
       "title": "Vælg MQTT-forbindelsesmetode",
       "subtitle": "Vælg hvordan Homey skal forbinde til Watts Live.",
       "connection_type": "Forbindelsestype",
-      "connection_help": "Brug Homey MQTT-appen nar den er tilgængelig, eller forbind direkte til din egen MQTT-broker.",
+      "connection_help": "Lad Watts Live sende direkte til appens indbyggede MQTT-broker, brug Homey MQTT Client-appen, eller forbind til din egen MQTT-broker.",
       "option_homey": "Brug Homey MQTT Client",
       "option_custom": "Brug brugerdefineret MQTT-server",
       "custom_title": "Indstillinger for brugerdefineret MQTT-server",
@@ -77,7 +77,7 @@
     },
     "loading": {
       "title": "Finder enheder",
-      "subtitle": "Homey søger efter Watts Live-enheder pa MQTT.",
+      "subtitle": "Homey søger efter Watts Live-enheder på MQTT.",
       "message": "Finder enheder, vent venligst..."
     }
   },
