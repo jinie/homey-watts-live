@@ -142,5 +142,8 @@
   },
   "2.0.33": {
     "en": "Bugfixes and dependency updates."
+  },
+  "2.1.0": {
+    "en": "MQTT broker built in, better support for solar setups, and bugfixes."
   }
 }
