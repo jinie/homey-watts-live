@@ -206,6 +206,15 @@ export default class CustomMqttConnector extends EventEmitter implements IMqttCo
       this.mqttClient.on('close', () => {
         this.homey.log('Disconnected from MQTT broker');
         this.emitDisconnected();
+        // A connect timeout or a broker that drops the socket closes the client without an 'error' event.
+        // Reject so the caller's reconnect logic is not blocked forever.
+        if (!settled) {
+          settled = true;
+          const client = this.mqttClient;
+          this.resetClientState();
+          client?.end(true);
+          reject(new Error('Connection closed before the broker acknowledged it'));
+        }
       });
 
       this.mqttClient.on('error', (err) => {

@@ -1,0 +1,22 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Power factor",
+    "da": "Effektfaktor"
+  },
+  "desc": {
+    "en": "Power factor (cos φ), 0-1",
+    "da": "Effektfaktor (cos φ), 0-1"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "decimals": 2,
+  "min": 0,
+  "max": 1,
+  "units": {
+    "en": "cos φ"
+  },
+  "insights": true,
+  "icon": "/assets/power_factor.svg"
+}

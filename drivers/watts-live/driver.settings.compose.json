@@ -21,22 +21,29 @@
       "da": "MQTT-forbindelsestype"
     },
     "hint": {
-      "en": "Select whether to use Homey MQTT Client or Custom MQTT Client",
-      "da": "Vælg om Homey MQTT Client eller en brugerdefineret MQTT-klient skal bruges"
+      "en": "Select the MQTT broker built into this app (configured in the app settings), the separate MQTT Client app, or your own MQTT broker",
+      "da": "Vælg appens indbyggede MQTT-broker (sættes op i appens indstillinger), den separate app MQTT Client eller din egen MQTT-broker"
     },
     "values": [
       {
         "id": "homey",
         "label": {
-          "en": "Homey MQTT Client",
-          "da": "Homey MQTT Client"
+          "en": "MQTT Client app (must be installed)",
+          "da": "Appen MQTT Client (skal være installeret)"
         }
       },
       {
         "id": "custom",
         "label": {
-          "en": "Custom MQTT Client",
-          "da": "Brugerdefineret MQTT-klient"
+          "en": "Own MQTT broker",
+          "da": "Egen MQTT-broker"
+        }
+      },
+      {
+        "id": "builtin",
+        "label": {
+          "en": "Built-in MQTT broker",
+          "da": "Indbygget MQTT-broker"
         }
       }
     ],
@@ -51,7 +58,7 @@
     },
     "hint": {
       "en": "The hostname of the MQTT broker (required for Custom MQTT Client)",
-      "da": "Værtsnavnet pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
+      "da": "Værtsnavnet på MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
     },
     "value": "localhost",
     "required": true,
@@ -69,7 +76,7 @@
     },
     "hint": {
       "en": "The port of the MQTT broker (required for Custom MQTT Client)",
-      "da": "Porten pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
+      "da": "Porten på MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
     },
     "value": 1883,
     "required": true,
@@ -171,7 +178,7 @@
     "type": "checkbox",
     "label": {
       "en": "Enable Debug Logging",
-      "da": "Aktiver fejlsogningslog"
+      "da": "Aktiver fejlsøgningslog"
     },
     "hint": {
       "en": "Enable verbose logs and store recent entries below.",
@@ -184,7 +191,7 @@
     "type": "textarea",
     "label": {
       "en": "Debug Log",
-      "da": "Fejlsogningslog"
+      "da": "Fejlsøgningslog"
     },
     "hint": {
       "en": "Recent debug log entries. You can clear this field manually.",

@@ -31,6 +31,12 @@
     "name": "Jimmy Selgen Nielsen",
     "email": "jimmy.selgen@gmail.com"
   },
+  "api": {
+    "getBuiltinBrokerStatus": {
+      "method": "GET",
+      "path": "/builtin-broker/status"
+    }
+  },
   "homeyCommunityTopicId": 109554,
   "source": "https://github.com/jinie/homey-watts-live",
   "bugs": {
@@ -42,6 +48,139 @@
         "username": "JimmySelgenNielsen"
       }
     }
+  },
+  "flow": {
+    "triggers": [
+      {
+        "id": "measurement_received",
+        "title": {
+          "en": "A measurement was received",
+          "da": "En måling er modtaget"
+        },
+        "hint": {
+          "en": "Fires for every measurement from Watts Live (typically every few seconds).",
+          "da": "Udløses for hver måling fra Watts Live (typisk med få sekunders mellemrum)."
+        },
+        "tokens": [
+          {
+            "name": "power",
+            "type": "number",
+            "title": {
+              "en": "Power (import)",
+              "da": "Effekt (import)"
+            },
+            "example": 850
+          },
+          {
+            "name": "power_exported",
+            "type": "number",
+            "title": {
+              "en": "Power (export)",
+              "da": "Effekt (eksport)"
+            },
+            "example": 0
+          },
+          {
+            "name": "power_net",
+            "type": "number",
+            "title": {
+              "en": "Net power",
+              "da": "Nettoeffekt"
+            },
+            "example": 850
+          },
+          {
+            "name": "energy_imported",
+            "type": "number",
+            "title": {
+              "en": "Imported energy (kWh)",
+              "da": "Importeret energi (kWh)"
+            },
+            "example": 12345.678
+          },
+          {
+            "name": "energy_exported",
+            "type": "number",
+            "title": {
+              "en": "Exported energy (kWh)",
+              "da": "Eksporteret energi (kWh)"
+            },
+            "example": 2345.678
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          }
+        ]
+      },
+      {
+        "id": "no_data_received",
+        "title": {
+          "en": "No data received for a number of minutes",
+          "da": "Ingen data modtaget i et antal minutter"
+        },
+        "titleFormatted": {
+          "en": "No data received for [[minutes]] minutes",
+          "da": "Ingen data modtaget i [[minutes]] minutter"
+        },
+        "hint": {
+          "en": "Fires once when Watts Live has not sent a measurement for this many minutes.",
+          "da": "Udløses én gang, når Watts Live ikke har sendt en måling i så mange minutter."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "min": 1,
+            "max": 1440,
+            "step": 1,
+            "placeholder": {
+              "en": "Minutes",
+              "da": "Minutter"
+            }
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "data_received_within",
+        "title": {
+          "en": "Data !{{has|has not}} been received in the last minutes",
+          "da": "Data !{{er|er ikke}} modtaget inden for de seneste minutter"
+        },
+        "titleFormatted": {
+          "en": "Data !{{has|has not}} been received in the last [[minutes]] minutes",
+          "da": "Data !{{er|er ikke}} modtaget inden for de seneste [[minutes]] minutter"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=watts-live"
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "min": 1,
+            "max": 1440,
+            "step": 1,
+            "placeholder": {
+              "en": "Minutes",
+              "da": "Minutter"
+            }
+          }
+        ]
+      }
+    ]
   },
   "drivers": [
     {
@@ -75,7 +214,13 @@
         "meter_power.positive_reactive",
         "measure_power.negative_reactive",
         "meter_power.negative_reactive",
-        "measure_power.positive_reactive"
+        "measure_power.positive_reactive",
+        "measure_power.net",
+        "measure_power.net_l1",
+        "measure_power.net_l2",
+        "measure_power.net_l3",
+        "measure_power.reactive",
+        "measure_power_factor"
       ],
       "capabilitiesOptions": {
         "meter_power.imported": {
@@ -203,6 +348,39 @@
             "en": "Negative Reactive Energy",
             "da": "Negativ reaktiv energi"
           }
+        },
+        "measure_power.net": {
+          "title": {
+            "en": "Net Power",
+            "da": "Nettoeffekt"
+          }
+        },
+        "measure_power.net_l1": {
+          "title": {
+            "en": "Net Power L1",
+            "da": "Nettoeffekt L1"
+          }
+        },
+        "measure_power.net_l2": {
+          "title": {
+            "en": "Net Power L2",
+            "da": "Nettoeffekt L2"
+          }
+        },
+        "measure_power.net_l3": {
+          "title": {
+            "en": "Net Power L3",
+            "da": "Nettoeffekt L3"
+          }
+        },
+        "measure_power.reactive": {
+          "title": {
+            "en": "Net Reactive Power",
+            "da": "Reaktiv nettoeffekt"
+          },
+          "units": {
+            "en": "var"
+          }
         }
       },
       "energy": {
@@ -288,22 +466,29 @@
             "da": "MQTT-forbindelsestype"
           },
           "hint": {
-            "en": "Select whether to use Homey MQTT Client or Custom MQTT Client",
-            "da": "Vælg om Homey MQTT Client eller en brugerdefineret MQTT-klient skal bruges"
+            "en": "Select the MQTT broker built into this app (configured in the app settings), the separate MQTT Client app, or your own MQTT broker",
+            "da": "Vælg appens indbyggede MQTT-broker (sættes op i appens indstillinger), den separate app MQTT Client eller din egen MQTT-broker"
           },
           "values": [
             {
               "id": "homey",
               "label": {
-                "en": "Homey MQTT Client",
-                "da": "Homey MQTT Client"
+                "en": "MQTT Client app (must be installed)",
+                "da": "Appen MQTT Client (skal være installeret)"
               }
             },
             {
               "id": "custom",
               "label": {
-                "en": "Custom MQTT Client",
-                "da": "Brugerdefineret MQTT-klient"
+                "en": "Own MQTT broker",
+                "da": "Egen MQTT-broker"
+              }
+            },
+            {
+              "id": "builtin",
+              "label": {
+                "en": "Built-in MQTT broker",
+                "da": "Indbygget MQTT-broker"
               }
             }
           ],
@@ -318,7 +503,7 @@
           },
           "hint": {
             "en": "The hostname of the MQTT broker (required for Custom MQTT Client)",
-            "da": "Værtsnavnet pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
+            "da": "Værtsnavnet på MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
           },
           "value": "localhost",
           "required": true,
@@ -336,7 +521,7 @@
           },
           "hint": {
             "en": "The port of the MQTT broker (required for Custom MQTT Client)",
-            "da": "Porten pa MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
+            "da": "Porten på MQTT-brokeren (krævet for brugerdefineret MQTT-klient)"
           },
           "value": 1883,
           "required": true,
@@ -438,7 +623,7 @@
           "type": "checkbox",
           "label": {
             "en": "Enable Debug Logging",
-            "da": "Aktiver fejlsogningslog"
+            "da": "Aktiver fejlsøgningslog"
           },
           "hint": {
             "en": "Enable verbose logs and store recent entries below.",
@@ -451,7 +636,7 @@
           "type": "textarea",
           "label": {
             "en": "Debug Log",
-            "da": "Fejlsogningslog"
+            "da": "Fejlsøgningslog"
           },
           "hint": {
             "en": "Recent debug log entries. You can clear this field manually.",
@@ -750,6 +935,28 @@
       "getable": true,
       "setable": false,
       "icon": "/assets/images/measure_watt_avg.svg"
+    },
+    "measure_power_factor": {
+      "type": "number",
+      "title": {
+        "en": "Power factor",
+        "da": "Effektfaktor"
+      },
+      "desc": {
+        "en": "Power factor (cos φ), 0-1",
+        "da": "Effektfaktor (cos φ), 0-1"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "decimals": 2,
+      "min": 0,
+      "max": 1,
+      "units": {
+        "en": "cos φ"
+      },
+      "insights": true,
+      "icon": "/assets/power_factor.svg"
     },
     "measure_power_l1": {
       "type": "number",

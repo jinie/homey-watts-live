@@ -1,13 +1,11 @@
 'use strict';
 
 import Homey from 'homey';
-import {
-  ReadingToCapabilityMap,
-} from '../../lib/constants';
+import { parsePayload, readingToCapabilities } from '../../lib/readings';
+import { measurementTopic, parseWattsTopic } from '../../lib/topics';
 import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import KvMap from '../../types/KvMap';
-import MeterReading from '../../types/MeterReading';
 import DebugLogLevel from '../../types/DebugLogLevel';
 
 export default class WattsLiveDevice extends Homey.Device {
@@ -25,10 +23,21 @@ export default class WattsLiveDevice extends Homey.Device {
   private messageCount: number = 0;
   private readonly heartbeatIntervalMessages: number = 50;
   private readonly debugLogFlushEveryMessages: number = 10;
+  // Mark the device unavailable when no reading has arrived for this long
+  private readonly staleTimeoutMs: number = 5 * 60 * 1000;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt: number = 0;
   private isReconnectInProgress: boolean = false;
   private isDeleted: boolean = false;
+  // Meter the current connection subscribed to; while settings are being saved
+  // this already holds a new deviceId that getSetting() does not return yet
+  private subscribedDeviceId: string | null = null;
+  // Data monitoring: flow cards 'no_data_received' / 'data_received_within' and the stale timeout
+  private lastMessageAt: number | null = null;
+  private monitorSince: number = Date.now();
+  private noDataMinutes: number[] = [];
+  private noDataTimers: ReturnType<typeof setTimeout>[] = [];
+  private staleTimer: ReturnType<typeof setTimeout> | null = null;
 
   private isRuntimeDebugEnabled(): boolean {
     return process.env.DEBUG === '1' || process.env.DEBUG === 'true';
@@ -46,6 +55,9 @@ export default class WattsLiveDevice extends Homey.Device {
       this.debugLogLines = existingDebugLog.split('\n').slice(-this.maxDebugLogLines);
     }
     await this.logMessage(DebugLogLevel.INFO, 'Device initialized');
+    await this.addMissingCapabilities();
+    this.monitorSince = Date.now();
+    await this.refreshNoDataArguments();
 
     // Get device-specific settings and create a DriverSettings object
     const driverSettings = this.getDeviceSettings();
@@ -68,6 +80,97 @@ export default class WattsLiveDevice extends Homey.Device {
       );
       this.invalidateStatus(this.getConnectionIssueMessage(err));
       this.scheduleReconnect('initial connection failed');
+    }
+  }
+
+  /**
+   * Called for every valid reading: restarts the no-data timers, makes the
+   * device available again and fires the 'measurement_received' trigger.
+   */
+  private async onValidReading(values: KvMap): Promise<void> {
+    this.lastMessageAt = Date.now();
+    this.armDataTimers();
+    if (!this.getAvailable()) {
+      await this.setAvailable().catch(() => {});
+    }
+
+    const token = (capability: string): number => {
+      const value = values[capability] ?? this.getCapabilityValue(capability);
+      return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    };
+    this.homey.flow.getDeviceTriggerCard('measurement_received').trigger(this, {
+      power: token('measure_power'),
+      power_exported: token('measure_power.negative_active'),
+      power_net: token('measure_power.net'),
+      energy_imported: token('meter_power.imported'),
+      energy_exported: token('meter_power.exported'),
+    }).catch((error) => this.homey.error('measurement_received trigger failed', error));
+  }
+
+  /** Used by the 'data_received_within' condition card. */
+  public hasReceivedDataWithin(minutes: number): boolean {
+    return this.lastMessageAt !== null && Date.now() - this.lastMessageAt <= minutes * 60 * 1000;
+  }
+
+  /** Reads the minutes used in 'no_data_received' flows for this device. Called by the driver on flow changes. */
+  public async refreshNoDataArguments(): Promise<void> {
+    try {
+      const args = await this.homey.flow.getDeviceTriggerCard('no_data_received').getArgumentValues(this);
+      this.noDataMinutes = [...new Set(args
+        .map((arg: { minutes?: unknown }) => Number(arg.minutes))
+        .filter((minutes: number) => Number.isFinite(minutes) && minutes > 0))];
+    } catch (error) {
+      this.homey.error('Could not read no_data_received arguments', error);
+    }
+    this.armDataTimers();
+  }
+
+  private clearDataTimers(): void {
+    this.noDataTimers.forEach((timer) => this.homey.clearTimeout(timer));
+    this.noDataTimers = [];
+    if (this.staleTimer) {
+      this.homey.clearTimeout(this.staleTimer);
+      this.staleTimer = null;
+    }
+  }
+
+  /**
+   * (Re)starts one timer per 'no_data_received' minutes value, measured from the
+   * last reading (or from start-up if none has arrived), so each flow fires once per silence.
+   */
+  private armDataTimers(): void {
+    this.clearDataTimers();
+    if (this.isDeleted) {
+      return;
+    }
+    const silentFor = Date.now() - (this.lastMessageAt ?? this.monitorSince);
+    for (const minutes of this.noDataMinutes) {
+      const remaining = minutes * 60 * 1000 - silentFor;
+      if (remaining > 0) {
+        this.noDataTimers.push(this.homey.setTimeout(() => {
+          this.homey.flow.getDeviceTriggerCard('no_data_received')
+            .trigger(this, {}, { minutes })
+            .catch((error) => this.homey.error('no_data_received trigger failed', error));
+        }, remaining));
+      }
+    }
+    const staleRemaining = this.staleTimeoutMs - silentFor;
+    this.staleTimer = this.homey.setTimeout(() => {
+      this.staleTimer = null;
+      this.setUnavailable(this.translate('device.unavailable.no_data')).catch(() => {});
+    }, Math.max(staleRemaining, 0));
+  }
+
+  /**
+   * Devices paired with an older version lack capabilities added to the driver since.
+   */
+  private async addMissingCapabilities(): Promise<void> {
+    for (const capability of this.driver.manifest.capabilities as string[]) {
+      if (!this.hasCapability(capability)) {
+        await this.addCapability(capability).catch((error) => {
+          this.homey.error(`Could not add capability ${capability}`, error);
+        });
+      }
     }
   }
 
@@ -185,7 +288,16 @@ export default class WattsLiveDevice extends Homey.Device {
     }, 0);
   }
 
+  private isOwnTopic(topic: string): boolean {
+    return this.subscribedDeviceId !== null && parseWattsTopic(topic) === this.subscribedDeviceId;
+  }
+
   async onMessage(topic: string, message: unknown) {
+    // The Homey MQTT Client app delivers every subscribed topic to every listener,
+    // so with several meters each device also receives the other meters' readings.
+    if (!this.isOwnTopic(topic)) {
+      return;
+    }
     this.messageCount += 1;
     if (!this.runtimeDebug && this.messageCount % this.heartbeatIntervalMessages === 0) {
       this.logMessage(
@@ -209,20 +321,39 @@ export default class WattsLiveDevice extends Homey.Device {
    * Called when the device is deleted from Homey.
    */
   async onDeleted(): Promise<void> {
+    await this.logMessage(DebugLogLevel.INFO, 'Device deleted; disconnecting MQTT');
+    await this.persistDebugLog(true);
+    await this.shutdown();
+  }
+
+  /**
+   * Called when the app is stopped or updated. Without this the MQTT
+   * connection and reconnect timers of the old instance stay alive.
+   */
+  async onUninit(): Promise<void> {
+    await this.shutdown();
+  }
+
+  private async shutdown(): Promise<void> {
+    // isDeleted also stops scheduled and in-flight reconnects
     this.isDeleted = true;
+    this.clearDataTimers();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-
-    // Perform cleanup by disconnecting MQTT and freeing any resources.
-    if (!this.mqttWrapper) {
-      return;
+    if (this.scheduledDebugPersistTimer) {
+      clearTimeout(this.scheduledDebugPersistTimer);
+      this.scheduledDebugPersistTimer = null;
     }
 
-    await this.logMessage(DebugLogLevel.INFO, 'Device deleted; disconnecting MQTT');
-    await this.persistDebugLog(true);
-    await this.mqttWrapper.disconnect();
+    const { mqttWrapper } = this;
+    this.mqttWrapper = null;
+    if (mqttWrapper) {
+      await mqttWrapper.disconnect().catch((error) => {
+        this.homey.error('Error while disconnecting MQTT', error);
+      });
+    }
   }
 
   /**
@@ -264,56 +395,25 @@ export default class WattsLiveDevice extends Homey.Device {
 
   public async processMqttMessage(topic: string, message: unknown) {
     try {
-      let msg: object = {};
-      if (Buffer.isBuffer(message)) {
-        msg = JSON.parse(message.toString());
-      } else if (typeof message === 'string') {
-        msg = JSON.parse(message);
-      } else if (message && typeof message === 'object') {
-        msg = message;
-      } else {
+      const reading = parsePayload(message);
+      if (reading === null) {
         await this.logMessage(
           DebugLogLevel.INFO,
-          `Skipping unsupported MQTT message type on ${topic}`,
+          `Skipping unsupported MQTT message on ${topic}: ${String(message)}`,
         );
         return;
       }
 
-      if (msg === null) {
-        await this.logMessage(
-          DebugLogLevel.INFO,
-          `Message converted to null: ${String(message)}`,
-        );
-        return;
-      }
-
-      // Extract device id from topic where device id is /watts/<device_id>/measurement
-      const readings: MeterReading = new MeterReading(msg);
       this.logMessage(
         DebugLogLevel.DEBUG,
-        `processMqttMessage: received reading ${JSON.stringify(readings)}`,
+        `processMqttMessage: received reading ${JSON.stringify(reading)}`,
       ).catch(() => {});
-      // Map readings to capabilities, convert undefined to 0
-      const kMap: KvMap = {};
-      Object.keys(ReadingToCapabilityMap).forEach((value) => {
-        const key = ReadingToCapabilityMap[value];
-        const reading = readings[value as unknown as keyof MeterReading];
-        if (reading === undefined || reading === null) {
-          return;
-        }
-        kMap[key] = reading;
-        // Convert from Watts to kW
-        if (
-          [
-            'meter_power.imported',
-            'meter_power.exported',
-            'meter_power.negative_reactive',
-            'meter_power.positive_reactive',
-          ].includes(key)
-        ) {
-          kMap[key] = (kMap[key] ?? 0) / 1000;
-        }
-      });
+      // Missing or non-numeric fields are skipped instead of being set to 0
+      const kMap: KvMap = readingToCapabilities(reading);
+      // Only real measurements count as data (not e.g. {} or a status message)
+      if (Object.keys(kMap).length > 0) {
+        await this.onValidReading(kMap);
+      }
 
       // Set capabilities
       const capabilityUpdates: Array<Promise<void>> = [];
@@ -604,15 +704,22 @@ export default class WattsLiveDevice extends Homey.Device {
 
     try {
       await mqttWrapper.connect();
+      if (this.isDeleted || this.mqttWrapper !== mqttWrapper) {
+        // Device was uninitialised or reconnected again while connecting
+        await mqttWrapper.disconnect().catch(() => {});
+        return;
+      }
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connect signal received');
       await this.logMessage(DebugLogLevel.INFO, 'MQTT connected');
-      await mqttWrapper.subscribe(`watts/${driverSettings.deviceId}/measurement`);
-      await this.logMessage(
-        DebugLogLevel.INFO,
-        `Subscribed to watts/${driverSettings.deviceId}/measurement`,
-      );
+      const topic = measurementTopic(driverSettings.deviceId);
+      this.subscribedDeviceId = driverSettings.deviceId;
+      await mqttWrapper.subscribe(topic);
+      await this.logMessage(DebugLogLevel.INFO, `Subscribed to ${topic}`);
       this.reconnectAttempt = 0;
       await this.setAvailable();
+      // The stale timer may have fired already; re-arm it so a silent meter
+      // becomes unavailable again instead of staying available after the reconnect
+      this.armDataTimers();
     } finally {
       this.isReconnectInProgress = false;
     }

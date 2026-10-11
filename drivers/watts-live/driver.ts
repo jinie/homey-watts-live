@@ -7,6 +7,16 @@ import DriverSettings from '../../types/DriverSettings';
 import MqttWrapper from '../../lib/MqttWrapper';
 import DiscoveredDevice from '../../types/DiscoveredDevice';
 
+interface WattsLiveAppApi {
+  enableBuiltinBroker(): Promise<void>;
+  getBuiltinBrokerStatus(): Promise<{ running: boolean; error: string | null }>;
+}
+
+interface DataMonitoringDevice {
+  refreshNoDataArguments(): Promise<void>;
+  hasReceivedDataWithin(minutes: number): boolean;
+}
+
 interface PairedDevice {
   id: string;
 }
@@ -30,6 +40,19 @@ class WattsLiveDriver extends Homey.Driver {
   private isPairingConnectionInProgress: boolean = false;
 
   async onInit(): Promise<void> {
+    const noDataCard = this.homey.flow.getDeviceTriggerCard('no_data_received');
+    noDataCard.registerRunListener(async (args, state) => args.minutes === state.minutes);
+    // The minutes used in flows changed: let the devices restart their timers
+    noDataCard.on('update', () => {
+      this.getDevices().forEach((device) => {
+        (device as unknown as DataMonitoringDevice).refreshNoDataArguments().catch((error) => this.error(error));
+      });
+    });
+
+    this.homey.flow.getConditionCard('data_received_within')
+      .registerRunListener(async (args) => (args.device as DataMonitoringDevice)
+        .hasReceivedDataWithin(Number(args.minutes)));
+
     this.log('WattsLiveDriver initialized');
   }
 
@@ -58,6 +81,9 @@ class WattsLiveDriver extends Homey.Driver {
       apiAppAvailable,
     }));
 
+    // Live status of the built-in broker for the pairing screen
+    session.setHandler('get_builtin_broker_status', async () => this.getApp().getBuiltinBrokerStatus());
+
     session.setHandler('error', async (errorMessage: string) => {
       // Emit a view notification in response to the error event
       await session.emit('showViewNotification', {
@@ -78,7 +104,7 @@ class WattsLiveDriver extends Homey.Driver {
 
         if (apiAppAvailable === false && settings.useHomeyMqttClient === 'homey') {
           this.isPairingConnectionInProgress = false;
-          throw new Error('MQTT Client App is not installed');
+          throw new Error(this.homey.__('mqtt_client.not_installed'));
         }
 
         try {
@@ -95,6 +121,15 @@ class WattsLiveDriver extends Homey.Driver {
           const validationErrors = this.driverSettings.validate();
           if (validationErrors.length > 0) {
             throw new Error(validationErrors[0]);
+          }
+
+          if (this.driverSettings.useHomeyMqttClient === 'builtin') {
+            // Choosing the built-in broker during pairing turns it on
+            await this.getApp().enableBuiltinBroker();
+            const status = await this.getApp().getBuiltinBrokerStatus();
+            if (!status.running) {
+              throw new Error(status.error || this.homey.__('builtin_broker.errors.not_running'));
+            }
           }
           this.log(`Pairing settings: ${this.driverSettings.toSafeJSON()}`);
         } catch (err: any) {
@@ -190,6 +225,17 @@ class WattsLiveDriver extends Homey.Driver {
       return this.discoveredDevices;
     });
 
+    // Close a discovery connection that is still open when the pairing window is closed
+    session.setHandler('disconnect', async () => {
+      if (this.mqttWrapper) {
+        const wrapper = this.mqttWrapper;
+        this.mqttWrapper = null;
+        await wrapper.disconnect().catch((error) => {
+          this.homey.log('Error while closing pairing connection', error);
+        });
+      }
+    });
+
     // Handler to return the device data when pairing completes
     session.setHandler('get_device', async () => {
       if (this.discoveredDevices.length === 0) {
@@ -197,6 +243,10 @@ class WattsLiveDriver extends Homey.Driver {
       }
       return this.discoveredDevices[0];
     });
+  }
+
+  private getApp(): WattsLiveAppApi {
+    return this.homey.app as unknown as WattsLiveAppApi;
   }
 
   // Helper function to get already paired devices

@@ -50,7 +50,7 @@ export default class HomeyMqttConnector extends EventEmitter implements IMqttCon
     const mqttClient = this.getApiApp();
     const available = await mqttClient.getInstalled();
     if (available === false) {
-      throw new Error('nl.scanno.mqtt app not found or unavailable');
+      throw new Error(this.homey.__('mqtt_client.not_installed'));
     }
 
     this.MQTTClient = mqttClient;
